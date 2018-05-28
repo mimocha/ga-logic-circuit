@@ -1,0 +1,24 @@
+# ignores all these sub-directories (including everything within)
+db/
+greybox_tmp/
+incremental_db/
+output_files/
+pll/
+pll_sim/
+
+# Files to keep track of:
+# .qpf	->	Quartus Project Files
+# .bdf	->	Quartus Block Schematic
+# .v	->	Verilog HDL file
+
+# ignore the rest
+*.bak
+*.bsf
+*.cmp
+*.f
+*.ppf
+*.qip
+*.sdc
+*.sip
+*.spd
+*.txt
