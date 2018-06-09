@@ -16,18 +16,19 @@ reg		[3:0]	i;
 
 // Initial Block
 initial begin
-	counter = 32'h0;
-	digit = 4'h0;
-	i = 3'h0;
+	counter	<= 32'h0;
+	digit	<= 4'h0;
+	i		<= 3'h0;
 end
 
 // Always Block
 always @ (posedge CLOCK) 
 begin
 	counter = counter + 32'h1;
-	i = 3'h0;
 	
 	if (counter % 32'h200000 == 0) begin
+		// Index Var
+		i = 3'h0;
 		
 		// Display Counter
 		digit = (digit + 4'h1) % 4'hA;

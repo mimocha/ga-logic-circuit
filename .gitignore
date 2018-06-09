@@ -3,23 +3,27 @@ db/
 greybox_tmp/
 incremental_db/
 output_files/
+.qsys_edit/
+## Module Folders ##
 pll_sim/
 ssd_pll_sim/
 
-# Files to keep track of:
+## Files to keep track of: ##
 # .qpf	->	Quartus Project Files
 # .bdf	->	Quartus Block Schematic
 # .v	->	Verilog HDL file
 # .sym	->	Symbol files converted from Verilog
-# .sdc	->	Synopsys Design Constraint File (Timing Analyzer)
 
 # ignore the rest
-*.bak
+*.bak # Backup Files
+*.v.bak
 *.bsf
 *.cmp
 *.f
 *.ppf
 *.qip
+*.qws
+*.sdc # Synopsys Design Constraint File (Timing Analyzer)
 *.sip
 *.spd
 *.txt
