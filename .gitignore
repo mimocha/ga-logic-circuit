@@ -9,9 +9,12 @@ pll_sim/
 ssd_pll_sim/
 
 ## Files to keep track of: ##
-# .qpf	->	Quartus Project Files
-# .bdf	->	Quartus Block Schematic
-# .v	->	Verilog HDL file
+# .qpf	->	Quartus Project File
+# .bdf	->	Quartus Block Schematic File
+# .c	->	C Program files
+# .cpp	->	C++ Program files
+# .exe	->	Executables
+# .v	->	Verilog HDL files
 # .sym	->	Symbol files converted from Verilog
 
 ## Ignore the rest ##
@@ -26,6 +29,7 @@ ssd_pll_sim/
 *.f
 *.ppf
 *.qip
+*.qsf
 *.qws
 # Synopsys Design Constraint File (Timing Analyzer)
 *.sdc
