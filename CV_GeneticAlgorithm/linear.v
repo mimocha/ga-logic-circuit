@@ -2,6 +2,7 @@
 
 module linear (
 	input wire IN,
+	input wire A,
 	output wire OUT
 	);
 	

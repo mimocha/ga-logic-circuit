@@ -1,46 +1,75 @@
 /* Main C++ file for Genetic Algorithm Program.
 	Controls all functions within this project.
+	Expected to be replaced with Python later on.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Project definitions
-#define PVAR "GeneticAlgorithm" //Project Name
-#define PLOC " .\\CV_GeneticAlgorithm\\GeneticAlgorithm" //Project Location
-#define QMAP "quartus_map"
-#define QFIT "quartus_fit"
-#define QASM "quartus_asm"
-#define QPGM "quartus_pgm"
+// Quartus options definition Char buffer for Windows system command.
+char QMAP[] = "quartus_map"
+			" --read_settings_files=on"
+			" --write_settings_files=off"
+			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm -c GeneticAlgorithm",
+	QFIT[] = "quartus_fit"
+			" --read_settings_files=off"
+			" --write_settings_files=off"
+			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm -c GeneticAlgorithm",
+	QASM[] = "quartus_asm"
+			" --read_settings_files=off"
+			" --write_settings_files=off"
+			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm -c GeneticAlgorithm",
+	QPGM[] = "quartus_pgm"
+			" -c DE-SoC -m JTAG -o p"
+			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm.cdf";
 
-char *cmdconcat (const char *QCMD, const char *LOC, const char *VAR);
+void init (void);
+int quartus_cmd (void);
 
 int main (void) {
-	puts("\n\n----- Genetic Algorithm v0.01 Initialized -----\n\n");
+	// 0: Initialization
+	init();
 
-	puts("\n----- Running Quartus Script -----\n");
+	// ----- Loop Generation ----- //
+	// ----- Loop Speciment ----- //
+	// 1: Cellular Automaton Generation
 
-	char buffer[256];
-	strcpy(buffer, cmdconcat(QMAP, PLOC, PVAR));
-	system(buffer);
-	strcpy(buffer, cmdconcat(QFIT, PLOC, PVAR));
-	system(buffer);
-	strcpy(buffer, cmdconcat(QASM, PLOC, PVAR));
-	system(buffer);
-	// system(cmdconcat(QMAP, PLOC, PVAR));
+	// 2: CA to Verilog Compilation
 
-	system("pause");
+	// 3: Compile & Load onto FPGA
+	puts("\nCompile & Load\n");
+	quartus_cmd();
 
+	// 4: Evaluation
+	// ----- End Speciment Loop ----- //
+
+	// 5: Genetic Algorithm
+
+	// ----- End Generation Loop ----- //
+
+	printf("\nPress anything to continue\n");
+	getchar();
 	return 0;
 }
 
-char *cmdconcat (const char *QCMD, const char *LOC, const char *VAR) {
-	char cmdbuf[256];
-	char *ptr = cmdbuf;
-	strcpy(cmdbuf, QCMD);
-	strcat(cmdbuf, LOC);
-	strcat(cmdbuf, " -c ");
-	strcat(cmdbuf, VAR);
-	return ptr;
+void init () {
+	puts("\nLoading ...\n");
+
+	puts(QMAP);
+	puts(QFIT);
+	puts(QASM);
+	puts(QPGM);
+
+	puts("\n\n----- Genetic Algorithm v0.01 Initialized -----\n\n");
+}
+
+int quartus_cmd (void) {
+	// To add error catches.
+	// Return 0 or -1 when error.
+	system(QMAP);
+	system(QFIT);
+	system(QASM);
+	system(QPGM);
+	return 1;
 }
