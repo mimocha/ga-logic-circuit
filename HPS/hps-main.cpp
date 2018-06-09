@@ -1,3 +1,6 @@
+/* Main C++ file for evaluation program ran on DE0-SoC HPS system.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 
