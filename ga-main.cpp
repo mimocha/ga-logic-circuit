@@ -11,18 +11,18 @@
 char QMAP[] = "quartus_map"
 			" --read_settings_files=on"
 			" --write_settings_files=off"
-			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm -c GeneticAlgorithm",
+			" .\\fpga\\fpga -c fpga_main",
 	QFIT[] = "quartus_fit"
 			" --read_settings_files=off"
 			" --write_settings_files=off"
-			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm -c GeneticAlgorithm",
+			" .\\fpga\\fpga -c fpga_main",
 	QASM[] = "quartus_asm"
 			" --read_settings_files=off"
 			" --write_settings_files=off"
-			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm -c GeneticAlgorithm",
+			" .\\fpga\\fpga -c fpga_main",
 	QPGM[] = "quartus_pgm"
 			" -c DE-SoC -m JTAG -o p"
-			" .\\CV_GeneticAlgorithm\\GeneticAlgorithm.cdf";
+			" .\\fpga\\output_files\\fpga_main.cdf";
 
 void init (void);
 int quartus_cmd (void);
@@ -48,8 +48,8 @@ int main (void) {
 
 	// ----- End Generation Loop ----- //
 
-	printf("\nPress anything to continue\n");
-	getchar();
+	// printf("\nPress anything to continue\n");
+	// getchar();
 	return 0;
 }
 
@@ -65,11 +65,33 @@ void init () {
 }
 
 int quartus_cmd (void) {
-	// To add error catches.
-	// Return 0 or -1 when error.
-	system(QMAP);
-	system(QFIT);
-	system(QASM);
-	system(QPGM);
-	return 1;
+	int i;
+
+	// Quartus command returns 0 on success; not 0 otherwise
+	i = system(QMAP);
+	if (i != 0) { // Error Catch
+		printf("\n Error at command:\n %s\n System returns: %d\n", QMAP, i);
+		// system("pause");
+		return -1;
+	}
+	i = system(QFIT);
+	if (i != 0) { // Error Catch
+		printf("\n Error at command:\n %s\n System returns: %d\n", QFIT, i);
+		// system("pause");
+		return -1;
+	}
+	i = system(QASM);
+	if (i != 0) { // Error Catch
+		printf("\n Error at command:\n %s\n System returns: %d\n", QASM, i);
+		// system("pause");
+		return -1;
+	}
+	i = system(QPGM);
+	if (i != 0) { // Error Catch
+		printf("\n Error at command:\n %s\n System returns: %d\n", QPGM, i);
+		// system("pause");
+		return -1;
+	}
+
+	return 0;
 }

@@ -4,13 +4,14 @@ greybox_tmp/
 incremental_db/
 output_files/
 .qsys_edit/
-## Module Folders ##
-pll_sim/
-ssd_pll_sim/
+simulation/
+CV_HelloWorld/
 
 ## Files to keep track of: ##
 # .qpf	->	Quartus Project File
+# .qsf	->	Quartus Project Settings File
 # .bdf	->	Quartus Block Schematic File
+# .pin	->	Quartus Pin Assignment
 # .c	->	C Program files
 # .cpp	->	C++ Program files
 # .exe	->	Executables
@@ -18,22 +19,28 @@ ssd_pll_sim/
 # .sym	->	Symbol files converted from Verilog
 
 ## Ignore the rest ##
-# Backup Files
+	# Backup Files
 *.bak
-# Verilog Backup Files
-*.v.bak
-# Block Symbol Files
+	# Block Symbol Files
 *.bsf
-# VHDL Component Files
+	# VHDL Component Files
 *.cmp
+	# Compile Finish Time
+*.done
 *.f
+*.jdi
+*.json
 *.ppf
 *.qip
-*.qsf
 *.qws
-# Synopsys Design Constraint File (Timing Analyzer)
+	# Report File
+*.rpt
+	# Synopsys Design Constraint File (Timing Analyzer)
 *.sdc
 *.sip
+*.sld
+*.smsg
 *.spd
 *.srf
+*.summary
 *.txt

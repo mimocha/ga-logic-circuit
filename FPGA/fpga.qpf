@@ -18,13 +18,13 @@
 #
 # Quartus Prime
 # Version 18.0.0 Build 614 04/24/2018 SJ Lite Edition
-# Date created = 21:37:37  June 04, 2018
+# Date created = 14:44:29  June 10, 2018
 #
 # -------------------------------------------------------------------------- #
 
 QUARTUS_VERSION = "18.0"
-DATE = "21:37:37  June 04, 2018"
+DATE = "14:44:29  June 10, 2018"
 
 # Revisions
 
-PROJECT_REVISION = "GeneticAlgorithm"
+PROJECT_REVISION = "fpga_main"
