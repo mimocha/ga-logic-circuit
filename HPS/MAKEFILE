@@ -1,21 +1,20 @@
+# mingw32-make.exe MAKEFILE
 #
-TARGET = hps-c
-
-# CC = arm-linux-gnueabilhf-gcc -g -Wall main.c -o hps-c
+TARGET = hps-eval
 
 #
 CROSS_COMPILE = arm-linux-gnueabilhf-
 CFLAGS = -g -Wall -I ${SOCEDS_DEST_ROOT}/ip/altera_hps/hwlib/include
 LDFLAGS = -g -Wall
-CC = ${CROSS_COMPILE}gcc
+CC = ${CROSS_COMPILE}g++
 ARCH = arm
 
 build: $(TARGET)
 
-$(TARGET): main.o
+$(TARGET): hps-main.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
-%.o : %.c
+%.o : %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean

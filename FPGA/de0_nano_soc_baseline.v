@@ -1,9 +1,9 @@
 //--------------------------------------------------------------------------//
-// Title:        de0_nano_soc_baseline.v                                       //
+// Title:        de0_nano_soc_baseline.v                                    //
 // Rev:          Rev 0.1                                                    //
 // Last Revised: 09/14/2015                                                 //
 //--------------------------------------------------------------------------//
-// Description: Baseline design file contains DE0 Nano SoC    				 //
+// Description: Baseline design file contains DE0 Nano SoC                  //
 //              Board pins and I/O Standards.                               //
 //--------------------------------------------------------------------------//
 //Copyright 2015 Altera Corporation. All rights reserved.  Altera products
@@ -143,22 +143,21 @@ module de0_nano_soc_baseline(
 	input				[3:0]			SW,
 
 	//////////// USER ///////////
-	output reg [7:0] state
+	inout wire 			[3:0] 			ARR0,
+	inout wire 			[3:0] 			ARR1,
+	inout wire 			[3:0]			ARR2
 
 );
 
-assign LED [7:0] = state [7:0];
+assign ARR0 [0] = (SW [0] && SW [1]);
+assign ARR0 [1] = (SW [1] && SW [2]);
+assign ARR0 [2] = (SW [2] && SW [3]);
 
-always @ (posedge FPGA_CLK_50) begin
+assign ARR1 [0] = (ARR0 [0] && ARR0 [1]);
+assign ARR1 [1] = (ARR0 [1] && ARR0 [2]);
 
-	if (KEY[0]) begin
-		state [7:4] <= SW [3:0];
-		state [3:0] <= 0;
-	end else begin
-		state [7:4] <= 0;
-		state [3:0] <= SW [3:0];
-	end
+assign ARR2 [0] = (ARR1 [0] && ARR1 [1]);
 
-end
+assign LED [0] 	= ARR2;
 
 endmodule

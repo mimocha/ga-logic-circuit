@@ -3,14 +3,16 @@
 
 #include <stdio.h>
 
-int main (void) {
-	printf("\nHPS File Initialized\n");
+float main (int IN[4], int OUT[4]) {
+	puts("\nHPS Initialized\n");
 
 	// Put Evaluation Code Here
 	// All testing is internal to DE-HPS
 	// Return results to PC as fitness score
 
-	printf("\nPress anything to continue");
+
+
+	puts("\nPress anything to continue");
 	getchar();
 
 	return 0;

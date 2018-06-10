@@ -42,6 +42,7 @@ int main (void) {
 	quartus_cmd();
 
 	// 4: Evaluation
+	
 	// ----- End Speciment Loop ----- //
 
 	// 5: Genetic Algorithm
