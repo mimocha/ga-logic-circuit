@@ -1,22 +1,17 @@
-# mingw32-make.exe MAKEFILE
 #
+SOURCE = hps-main
 TARGET = hps-eval
+CC = arm-linux-gnueabihf-g++
 
-#
-CROSS_COMPILE = arm-linux-gnueabilhf-
-CFLAGS = -g -Wall -I ${SOCEDS_DEST_ROOT}/ip/altera_hps/hwlib/include
-LDFLAGS = -g -Wall
-CC = ${CROSS_COMPILE}g++
-ARCH = arm
-
+# Command: "make" or "make build"
 build: $(TARGET)
+# Step 2: Convert $(TARGET).o -> $(TARGET) with command below
+$(TARGET): $(TARGET).o
+	$(CC) -g -Wall $(TARGET).o -o $(TARGET)
+# Step 1: Convert $(SOURCE).cpp -> $(TARGET).o with command below
+$(TARGET).o: $(SOURCE).cpp
+	$(CC) -g -Wall -c $(SOURCE).cpp -o $(TARGET).o
 
-$(TARGET): hps-main.o
-	$(CC) $(LDFLAGS) $^ -o $@
-
-%.o : %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
-
-.PHONY: clean
+# Command: "make clean"
 clean:
 	rm -f $(TARGET) *.a *.o *~
