@@ -145,21 +145,11 @@ module fpga_main(
 
 );
 
-	assign LED[1:0] = SW[3:0];
+	bit			[15:0][15:0]	ARRAY;
 
-	// assign ARR[0][0] = 1;
-	// assign ARR[1][1] = 0;
-	// assign ARR[2][2] = 1;
-
-	// assign ARR[0][0] = (SW [0] && SW [1]);
-	// assign ARR[0][1] = (SW [1] && SW [2]);
-	// assign ARR[0][2] = (SW [2] && SW [3]);
-	//
-	// assign ARR[1][0] = (ARR[0][0] && ARR[0][1]);
-	// assign ARR[1][1] = (ARR[0][1] && ARR[0][2]);
-	//
-	// assign ARR[2][0] = (ARR[1][0] && ARR[1][1]);
-	//
-	// assign LED [0]	= ARR[2][0];
+	assign ARRAY[15][0] = SW[1];
+	assign ARRAY[15][15:1] = ARRAY[15][14:0];
+	assign LED[7] = ARRAY[15][15];
+	assign LED[0] = SW[0];
 
 endmodule

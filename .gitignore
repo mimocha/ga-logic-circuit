@@ -30,6 +30,7 @@ CV_HelloWorld/
 *.f
 *.jdi
 *.json
+*.o
 *.ppf
 *.qip
 *.qws

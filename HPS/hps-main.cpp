@@ -4,10 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
+#include <bitset>
+
+int evaluate (int input, char tt);
 
 int main (int argc, char* argv[]) {
 	static int flag_i[2], flag_o[2], flag_d[2], flag_tt[2]; // option flags
-	static int ic, oc;
+	static int input, output; // input-count, output-count, truth-table
+	static char tt;
 
 	/* Option Arguments:
 		flag_x[0] == Option "-x" was used
@@ -45,78 +49,63 @@ int main (int argc, char* argv[]) {
 
 	// Option -i: Input
 	if (flag_i[0]) { // Load Value
-		ic = strtol(argv[flag_i[1]+1], NULL, 10);
+		input = strtol(argv[flag_i[1]+1], NULL, 10);
 	}
 	if (flag_d[0]) { // Debug Info
 		if (flag_i[0] == 0) {
 			printf("Input argument -i not found!\n");
 			// return -1;
-		} else if (ic <= 0) {
-			printf("Invalid argument -i : %d\n", ic);
+		} else if (input <= 0) {
+			printf("Invalid argument -i: %d\n", input);
 			// return -1;
 		} else {
-			printf("Argument -i: %d\n", ic);
+			printf("Argument -i: %d\n", input);
 		}
 	}
 
 	// Option -o: Output
 	if (flag_o[0]) { // Load Value
-		oc = strtol(argv[flag_o[1]+1], NULL, 10);
+		output = strtol(argv[flag_o[1]+1], NULL, 10);
 	}
 	if (flag_d[0]) { // Debug Info
 		if (flag_o[0] == 0) {
 			printf("Input argument -o not found!\n");
 			// return -1;
-		} else if (oc <= 0) {
-			printf("Invalid argument -o : %d\n", oc);
+		} else if (output <= 0) {
+			printf("Invalid argument -o: %d\n", output);
 			// return -1;
 		} else {
-			printf("Argument -o: %d\n", oc);
+			printf("Argument -o: %d\n", output);
 		}
 	}
 
 	// Option -tt: Truth Table
-	if (flag_tt[0]) {
-		// Load truth table
+	if (flag_tt[0]) { // Load Value
+		// Load truth table as hexadecimal 0-F
+		// Quick & dirty code for now,
+		// Handles 2-bit input, 1-bit output = 4 x 1-bit output
+		tt = strtol(argv[flag_tt[1]+1], NULL, 16);
+	} else {
+		tt = 0;
 	}
-	if (flag_d[0]) {
-		printf("Place holder for -tt\n");
+	if (flag_d[0]) { // Debug Info
+		if (flag_tt[0] == 0) {
+			printf("Input argument -tt not found. Default to: 0000.\n");
+		} else {
+			printf("Argument -tt: ");
+			std::bitset<4> foo (tt);
+			std::cout << foo << std::endl;
+		}
 	}
-
-	// -tt to denote truth table inputs | total 2^i possible states
-	// int state = 2;
-	// for (int i=1; i<ic; i++)
-	// 	state *= 2;
-	// int tt[state][ic+oc] = {};
-	// for (int i=1; i<argc; i++) {
-	// 	if (strcmp(argv[i], "-tt") == 0) {
-	// 		static int idx;
-	// 		for (int j=0; j<state; j++) {
-	// 			for (int k=0; k<ic+oc; k++) {
-	// 				if (argv[i+1+idx] == NULL) // Undefined Catch
-	// 					break;
-	// 				tt[j][k] = strtol(argv[i+1+idx], NULL, 2);
-	// 				idx++; // index variable for keeping track of tt variable
-	// 			}
-	// 		}
-	// 		break;
-	// 	} else if (i == argc-1) {
-	// 		puts("Truth Table argument -tt not found!\n");
-	// 		return -1;
-	// 	}
-	// }
-	//
-	// puts("TT: \n");
-	// for (int i=0; i<state; i++) {
-	// 	for (int j=0; j<ic+oc; j++) {
-	// 		printf("%d ",tt[i][j]);
-	// 	}
-	// 	puts("\n");
-	// }
 
 	// Put Evaluation Code Here
-	// All testing is internal to DE-HPS
+	evaluate(input, tt);
+
 	// Return results to PC as fitness score
 
 	return 0;
+}
+
+int evaluate (int input, char tt) {
+	// Evaluates 2^input state
 }
