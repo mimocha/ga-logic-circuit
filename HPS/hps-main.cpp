@@ -5,12 +5,9 @@
 #include <string.h>
 #include <iostream>
 #include <bitset>
-#include <time.h>
-
-time_t test_time;
 
 char getoutput (unsigned short input, unsigned short state);
-void delay (int cycles);
+// void delay (int cycles);
 
 int main (int argc, char* argv[]) {
 
@@ -19,9 +16,6 @@ int main (int argc, char* argv[]) {
 	unsigned short flag_i[2], flag_o[2], flag_d[2], flag_tt[2]; // option flags
 	unsigned short input, output; // input-count, output-count
 	unsigned char tt; // Truth Table in hexadecimal
-
-	time(&test_time);
-	printf("%d\n",test_time);
 
 	/* Option Arguments:
 		flag_x[0] == Option "-x" was used
@@ -48,7 +42,7 @@ int main (int argc, char* argv[]) {
 	}
 
 	// Option -d: Debug
-	if (flag_d[0]) {
+	if (flag_d[0] == 1) {
 		// Debug info
 		printf("\n----- HPS Initialized | argc: %d -----\n", argc);
 		for (int i=0; i<argc; i++) {
@@ -63,7 +57,7 @@ int main (int argc, char* argv[]) {
 	} else {
 		input = 0;
 	}
-	if (flag_d[0]) { // Debug Info
+	if (flag_d[0] == 1) { // Debug Info
 		if (input <= 0) {
 			printf("Invalid argument -i: %d\n", input);
 			// return -1;
@@ -78,7 +72,7 @@ int main (int argc, char* argv[]) {
 	} else {
 		output = 0;
 	}
-	if (flag_d[0]) { // Debug Info
+	if (flag_d[0] == 1) { // Debug Info
 		if (output <= 0) {
 			printf("Invalid argument -o: %d\n", output);
 			// return -1;
@@ -96,7 +90,7 @@ int main (int argc, char* argv[]) {
 	} else {
 		tt = 0;
 	}
-	if (flag_d[0]) { // Debug Info
+	if (flag_d[0] == 1) { // Debug Info
 		if (flag_tt[0] == 0) {
 			printf("Input argument -tt not found. Default to: 0000.\n");
 		} else {
@@ -111,7 +105,7 @@ int main (int argc, char* argv[]) {
 	// Put Evaluation Code Here
 	unsigned short correct, state = 1;
 	unsigned char result;
-	// float accuracy = 0;
+	float accuracy;
 
 	// Calculate the number of truth table state (2^input)
 	for (short i=0; i<input; i++)
@@ -122,10 +116,10 @@ int main (int argc, char* argv[]) {
 	result = getoutput(input, state);
 
 	correct = ~(result^tt); // count the number of ones
+	std::bitset<4> bit_acc (correct);
+	accuracy = ((float)bit_acc.count() / bit_acc.size());
 
-	// accuracy = (float)correct/state;
-
-	if (flag_d[0]) {
+	if (flag_d[0] == 1) {
 		puts("\n Evaluation Results:");
 		std::bitset<4> bit_in (tt);
 		std::cout << "Expected Output: " << bit_in << std::endl;
@@ -133,11 +127,14 @@ int main (int argc, char* argv[]) {
 		std::cout << "Actual Output: " << bit_out << std::endl;
 		std::bitset<4> bit_cor (correct);
 		std::cout << "Input XNOR Output: " << bit_cor << std::endl;
+		std::cout << "Number of ones: " << bit_cor.count() << std::endl;
+		std::cout << "Number of zeroes: " << bit_cor.size() - bit_cor.count() << std::endl;
+		printf("Accuracy = %.2f\n", accuracy);
 	}
 
 	// Return results to PC as fitness score
 
-	return 0;
+	return bit_acc.count();
 }
 
 char getoutput (unsigned short input, unsigned short state) {
@@ -170,8 +167,8 @@ char getoutput (unsigned short input, unsigned short state) {
 	return result;
 }
 
-void delay (int cycles) {
-	for (int i=cycles; i!=0; i--) {
-		// No Operation
-	}
-}
+// void delay (int cycles) {
+// 	for (int i=cycles; i!=0; i--) {
+// 		// No Operation
+// 	}
+// }
