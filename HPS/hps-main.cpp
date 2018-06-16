@@ -1,6 +1,12 @@
-/* Main C++ file for evaluation program ran on DE0-SoC HPS system.
+/* Main C++ file for FPGA circuit evaluation
+	Ran on HPS side.
 */
 
+// Altera HPS library definition
+#define soc_cv_av
+#include "hwlib\include\hwlib.h"
+
+// Standard C++ library definition
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -45,7 +51,6 @@ int main (int argc, char* argv[]) {
 
 	// Option -d: Debug
 	if (flag_d[0] == 1) {
-		// Debug info
 		printf("\n----- HPS Initialized | argc: %d -----\n", argc);
 		for (int i=0; i<argc; i++) {
 			std::cout << argv[i] << ' ';
@@ -112,9 +117,11 @@ int main (int argc, char* argv[]) {
 
 	tt_actual = getoutput(state);
 
-	// XNOR function sets bit which are the same to 1 (aka. A == B)
+	// XNOR function sets bits, which are the same, to 1 (aka. A == B)
 	tt_xnor = ~(tt_expect ^ tt_actual);
 
+	// Checks individually which bits are ones
+	// <bitset> count() function is much more elegant, but not supported on HPS device's current GCC library.
 	if ((tt_xnor & 8) != 0) correct++;
 	if ((tt_xnor & 4) != 0) correct++;
 	if ((tt_xnor & 2) != 0) correct++;
