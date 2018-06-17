@@ -3,10 +3,19 @@
 	Expected to be replaced with Python later on.
 */
 
+// Standard Library Definition
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 #include <time.h>
+
+using namespace std;
+typedef unsigned short ushort;
+
+// Custom Function Definitions
+#include "ga-main.h" // Class definition
+#include "cellgen.h" // Cellular Automaton Generation
 
 // Timer for tracking performance
 time_t tstart, tmap, tfit, tasm, tpgm, tend;
@@ -36,16 +45,28 @@ int main (void) {
 	init();
 
 	// ----- Loop Generation ----- //
-	// ----- Loop Speciment ----- //
+	// ----- Loop Speciment ----- //.
 	// 1: Cellular Automaton Generation
+
+	ushort dim = 50;
+	ushort test[dim] = {0};
+	test[dim/2] = 1;
+	cellgen(dim, test, 122);
+	cellgen(dim, test, 60);
+	cellgen(dim, test, 90);
+
+	// for (int i=33; i<256; i++)
+	// 	cout << (unsigned char)i << ' ';
 
 	// 2: CA to Verilog Compilation
 
 	// 3: Compile & Load onto FPGA
-	puts("\nCompile & Load\n");
-	time(&tstart);
-	quartus_cmd();
-	time(&tend);
+	// puts("\nCompile & Load\n");
+	// time(&tstart);
+	// quartus_cmd();
+	// time(&tend);
+
+
 
 	// 4: Evaluation
 
@@ -55,20 +76,17 @@ int main (void) {
 
 	// ----- End Generation Loop ----- //
 
-	// printf("\nPress anything to continue\n");
-	// getchar();
-
-	printf("\n\n----- Performance Results -----\n"
-		"Start Time: %s \n"
-		"End Time: %s \n"
-		"Total Compile Time: %4.0f seconds\n"
-		"QMAP Time: %3.0f seconds\n"
-		"QFIT Time: %3.0f seconds\n"
-		"QASM Time: %3.0f seconds\n"
-		"QPGM Time: %3.0f seconds\n",
-		ctime(&tstart), ctime(&tend), difftime(tpgm, tstart),
-		difftime(tmap, tstart), difftime(tfit, tmap),
-		difftime(tasm, tfit), difftime(tpgm, tasm));
+	// printf("\n\n----- Performance Results -----\n"
+	// 	"Start Time: %s \n"
+	// 	"End Time: %s \n"
+	// 	"Total Compile Time: %4.0f seconds\n"
+	// 	"QMAP Time: %3.0f seconds\n"
+	// 	"QFIT Time: %3.0f seconds\n"
+	// 	"QASM Time: %3.0f seconds\n"
+	// 	"QPGM Time: %3.0f seconds\n",
+	// 	ctime(&tstart), ctime(&tend), difftime(tpgm, tstart),
+	// 	difftime(tmap, tstart), difftime(tfit, tmap),
+	// 	difftime(tasm, tfit), difftime(tpgm, tasm));
 	return 0;
 }
 
