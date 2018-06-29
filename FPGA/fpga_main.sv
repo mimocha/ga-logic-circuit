@@ -1,45 +1,12 @@
-/*--------------------------------------------------------------------------//
-// Original Title:        de0_nano_soc_baseline.v                           //
-// Rev:                   Rev 0.1                                           //
-// Last Revised:          09/14/2015                                        //
-//--------------------------------------------------------------------------//
-// Description: Baseline design file contains DE0 Nano SoC                  //
-//              Board pins and I/O Standards.                               //
-//--------------------------------------------------------------------------//
-//Copyright 2015 Altera Corporation. All rights reserved.  Altera products
-//are protected under numerous U.S. and foreign patents, maskwork rights,
-//copyrights and other intellectual property laws.
-//
-//This reference design file, and your use thereof, is subject to and
-//governed by the terms and conditions of the applicable Altera Reference
-//Design License Agreement.  By using this reference design file, you
-//indicate your acceptance of such terms and conditions between you and
-//Altera Corporation.  In the event that you do not agree with such terms and
-//conditions, you may not use the reference design file. Please promptly
-//destroy any copies you have made.
-//
-//This reference design file being provided on an "as-is" basis and as an
-//accommodation and therefore all warranties, representations or guarantees
-//of any kind (whether express, implied or statutory) including, without
-//limitation, warranties of merchantability, non-infringement, or fitness for
-//a particular purpose, are specifically disclaimed.  By making this
-//reference design file available, Altera expressly does not recommend,
-//suggest or require that this reference design file be used in combination
-//with any other product not provided by Altera
-//----------------------------------------------------------------------------*/
-
-//Group Enable Definitions
-//This lists every pinout group
-//Users can enable any group by uncommenting the corresponding line below:
-//`define enable_ADC
-//`define enable_ARDUINO
-//`define enable_GPIO0
-//`define enable_GPIO1
+`define enable_ADC
+`define enable_ARDUINO
+`define enable_GPIO0
+`define enable_GPIO1
 //`define enable_HPS
 
-module fpga_main(
+module fpga_main (
 	//////////// CLOCK //////////
-	input						FPGA_CLK_50,
+	input						FPGA_CLK1_50,
 	input						FPGA_CLK2_50,
 	input						FPGA_CLK3_50,
 
@@ -56,7 +23,7 @@ module fpga_main(
 	//////////// ARDUINO ////////////
 	/* 3.3-V LVTTL */
 	inout					[15:0]	ARDUINO_IO,
-	inout								ARDUINO_RESET_N,
+	inout							ARDUINO_RESET_N,
 `endif
 
 `ifdef enable_GPIO0
@@ -94,7 +61,7 @@ module fpga_main(
 	output						HPS_DDR3_CK_P,
 	inout			 [3:0]		HPS_DDR3_DQS_N,
 	inout			 [3:0]		HPS_DDR3_DQS_P,
-
+	
 	/* 3.3-V LVTTL */
 	output						HPS_ENET_GTX_CLK,
 	inout						HPS_ENET_INT_N,
@@ -141,15 +108,75 @@ module fpga_main(
 	/* 3.3-V LVTTL */
 	input				[3:0]			SW
 
-	/////////// USER ///////////
-
 );
 
-	bit			[15:0][15:0]	ARRAY;
+// Simple Test
+//	bit			[3:0][3:0]	ARRAY;
+//
+//	assign ARRAY[0][0] = SW[0];
+//	assign ARRAY[1][0] = SW[1];
+//	assign ARRAY[2][0] = SW[2];
+//	assign ARRAY[3][0] = SW[3];
+//	
+//	assign ARRAY[0][3:1] = ARRAY[0][2:0];
+//	assign ARRAY[1][3:1] = ARRAY[1][2:0];
+//	assign ARRAY[2][3:1] = ARRAY[2][2:0];
+//	assign ARRAY[3][3:1] = ARRAY[3][2:0];
+//	
+//	assign LED[0] = ARRAY[0][3];
+//	assign LED[1] = ARRAY[1][3];
+//	assign LED[2] = ARRAY[2][3];
+//	assign LED[3] = ARRAY[3][3];
+//	
+//	assign GPIO_0[0] = ARRAY[0][3];
+//	assign GPIO_0[1] = ARRAY[1][3];
 
-	assign ARRAY[15][0] = SW[1];
-	assign ARRAY[15][15:1] = ARRAY[15][14:0];
-	assign LED[7] = ARRAY[15][15];
-	assign LED[0] = SW[0];
 
+// Module Instantiation Test
+	wire	[7:0]	address_sig;// Address to write to
+	wire	[7:0]	data_sig;	// Data to write
+	wire			wren_sig;	// Write Enable Signal
+	wire	[7:0]	q_sig;		// Output data from current address
+	wire			ram_busy;	// Ram is busy signal
+	wire			init_sig;	// Initialize Signal
+	
+// 256 8-bit Words == 256 Byte Data
+ram_1port	ram_1port_0 (
+	.address	( address_sig ),
+	.clock		( FPGA_CLK1_50 ),
+	.data		( data_sig ),
+	.wren		( wren_sig ), // Write on 0
+	.q			( q_sig )
+	);
+
+ram_init	ram_init_0 (
+	.clock			( FPGA_CLK1_50 ),
+	.init			( init_sig ),
+	.dataout		( dataout_sig ),
+	.init_busy		( ram_busy ),
+	.ram_address	( address_sig ),
+	.ram_wren		( wren_sig )
+	);
+
+	
+// RAM Usage Test
+	reg		[]	counter
+
+
+// Update (Display data at current pointer)
+always @ ( posedge FPGA_CLK1_50 ) begin
+	
+
+	// Read only if RAM is not busy
+	if ( ram_busy != 1'b1 ) begin
+		LED [7:0] <= q_sig [7:0];
+	end
+end
+
+
+
+// Move Address Pointer
+always @ ( posedge KEY [0] ) begin
+	init_sig <= 1'b1;
 endmodule
+

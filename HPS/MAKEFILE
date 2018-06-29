@@ -1,6 +1,6 @@
 #
 SOURCE = hps-main
-TARGET = hps-eval
+TARGET = hps-main
 CC = arm-linux-gnueabihf-g++
 
 # Command: "make" or "make build"

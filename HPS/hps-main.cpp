@@ -2,14 +2,11 @@
 	Ran on HPS side.
 */
 
-// Altera HPS library definition
-#define soc_cv_av
-#include "hwlib\include\hwlib.h"
-
 // Standard C++ library definition
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "iostream"
 
 char getoutput (unsigned short state);
 

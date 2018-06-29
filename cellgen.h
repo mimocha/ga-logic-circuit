@@ -4,11 +4,12 @@
 #ifndef CELLGEN_H_INCLUDED
 #define CELLGEN_H_INCLUDED
 
+#include "ga-main.h"
 #include "cellgen.cpp"
 
-/* CELLGEN(int dim, int input[])
+/* CELLGEN(unsigned short dim, unsigned short input[], unsigned short rule)
 	Insert explanation here
 */
-void cellgen (ushort dim, ushort input[], ushort rule);
+void cellgen (uint8_t input[], uint8_t *rule);
 
 #endif

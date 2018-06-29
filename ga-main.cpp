@@ -1,46 +1,16 @@
 /* Main C++ file for Genetic Algorithm Program.
 	Controls all functions within this project.
-	Expected to be replaced with Python later on.
 */
 
-// Standard Library Definition
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
-#include <time.h>
-
-using namespace std;
-typedef unsigned short ushort;
-
 // Custom Function Definitions
-#include "ga-main.h" // Class definition
+#include "ga-main.h" // Class & Header definition
 #include "cellgen.h" // Cellular Automaton Generation
 
-// Timer for tracking performance
-time_t tstart, tmap, tfit, tasm, tpgm, tend;
-
-// Quartus options definition Char buffer for Windows system command.
-char QMAP[] = "quartus_map"
-			" --read_settings_files=on"
-			" --write_settings_files=off"
-			" .\\fpga\\fpga -c fpga_main",
-	QFIT[] = "quartus_fit"
-			" --read_settings_files=off"
-			" --write_settings_files=off"
-			" .\\fpga\\fpga -c fpga_main",
-	QASM[] = "quartus_asm"
-			" --read_settings_files=off"
-			" --write_settings_files=off"
-			" .\\fpga\\fpga -c fpga_main",
-	QPGM[] = "quartus_pgm"
-			" -c DE-SoC -m JTAG -o p"
-			" .\\fpga\\output_files\\fpga_main.cdf";
-
-void init (void);
+inline void init (void);
 int quartus_cmd (void);
+uint8_t dtor (uint16_t decval, uint8_t base);
 
-int main (void) {
+int main (int argc, int *argv) {
 	// 0: Initialization
 	init();
 
@@ -48,15 +18,22 @@ int main (void) {
 	// ----- Loop Speciment ----- //.
 	// 1: Cellular Automaton Generation
 
-	ushort dim = 50;
-	ushort test[dim] = {0};
-	test[dim/2] = 1;
-	cellgen(dim, test, 122);
-	cellgen(dim, test, 60);
-	cellgen(dim, test, 90);
+	uint8_t seed[DIM] = {0};
+	seed[DIM/2] = 1;
 
-	// for (int i=33; i<256; i++)
-	// 	cout << (unsigned char)i << ' ';
+	// Randomly creates rule
+	uint8_t rule[K_CUBE];
+	for (int r = 0; r < 3; r++) {
+		for (int i = 0; i < K_CUBE; i++) {
+			rule[i] = rand() % K;
+			printf(" %d", rule[i]);
+		}
+		cout << endl;
+		cellgen(seed, rule);
+	}
+
+
+	// cout << (unsigned char) 7;
 
 	// 2: CA to Verilog Compilation
 
@@ -65,8 +42,6 @@ int main (void) {
 	// time(&tstart);
 	// quartus_cmd();
 	// time(&tend);
-
-
 
 	// 4: Evaluation
 
@@ -90,15 +65,18 @@ int main (void) {
 	return 0;
 }
 
-void init () {
+inline void init () {
 	puts("\nLoading ...\n");
 
-	puts(QMAP);
-	puts(QFIT);
-	puts(QASM);
-	puts(QPGM);
+	// Initializes RNG
+	srand(time(NULL));
 
-	puts("\n\n----- Genetic Algorithm v0.01 Initialized -----\n\n");
+	// puts(QMAP);
+	// puts(QFIT);
+	// puts(QASM);
+	// puts(QPGM);
+
+	puts("\n\n----- Genetic Algorithm v0.10 Initialized -----\n\n");
 }
 
 int quartus_cmd (void) {
@@ -134,5 +112,9 @@ int quartus_cmd (void) {
 		return -1;
 	}
 
+	return 0;
+}
+
+uint8_t dtor (uint16_t decval, uint8_t base=0) {
 	return 0;
 }

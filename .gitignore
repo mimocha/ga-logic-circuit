@@ -6,10 +6,12 @@ output_files/
 .qsys_edit/
 simulation/
 CV_HelloWorld/
+soc_system/
 
 ## Files to keep track of: ##
 # .qpf	->	Quartus Project File
 # .qsf	->	Quartus Project Settings File
+# .qip	->	Quartus IP File
 # .bdf	->	Quartus Block Schematic File
 # .pin	->	Quartus Pin Assignment
 # .c	->	C Program files
@@ -32,7 +34,6 @@ CV_HelloWorld/
 *.json
 *.o
 *.ppf
-*.qip
 *.qws
 	# Report File
 *.rpt
