@@ -1,44 +1,23 @@
-`define enable_ADC
-`define enable_ARDUINO
-`define enable_GPIO0
-`define enable_GPIO1
-//`define enable_HPS
+
+`define enable_HPS
 
 module fpga_main (
-	//////////// CLOCK //////////
-	input						FPGA_CLK1_50,
-	input						FPGA_CLK2_50,
-	input						FPGA_CLK3_50,
+	input		FPGA_CLK1_50,
+	input		FPGA_CLK2_50,
+	input		FPGA_CLK3_50,
 
-`ifdef enable_ADC
-	//////////// ADC //////////
-	/* 3.3-V LVTTL */
-	output						ADC_CONVST,
-	output						ADC_SCLK,
-	output						ADC_SDI,
-	input						ADC_SDO,
-`endif
+	output		ADC_CONVST,
+	output		ADC_SCLK,
+	output		ADC_SDI,
+	input		ADC_SDO,
 
-`ifdef enable_ARDUINO
-	//////////// ARDUINO ////////////
-	/* 3.3-V LVTTL */
-	inout					[15:0]	ARDUINO_IO,
-	inout							ARDUINO_RESET_N,
-`endif
+	inout		[15:0]	ARDUINO_IO,
+	inout				ARDUINO_RESET_N,
 
-`ifdef enable_GPIO0
-	//////////// GPIO 0 ////////////
-	/* 3.3-V LVTTL */
-	inout				[35:0]		GPIO_0,
-`endif
-
-`ifdef enable_GPIO1
-	//////////// GPIO 1 ////////////
-	/* 3.3-V LVTTL */
-	inout				[35:0]		GPIO_1,
-`endif
-
-`ifdef enable_HPS
+	inout		[35:0]	GPIO_0,
+	inout		[35:0]	GPIO_1,
+	
+	`ifdef enable_HPS
 	//////////// HPS //////////
 	/* 3.3-V LVTTL */
 	inout						HPS_CONV_USB_N,
@@ -94,89 +73,62 @@ module fpga_main (
 	input						HPS_USB_DIR,
 	input						HPS_USB_NXT,
 	output						HPS_USB_STP,
-`endif
-
-	//////////// KEY ////////////
-	/* 3.3-V LVTTL */
-	input				[1:0]			KEY,
-
-	//////////// LED ////////////
-	/* 3.3-V LVTTL */
-	output				[7:0]			LED,
-
-	//////////// SW ////////////
-	/* 3.3-V LVTTL */
-	input				[3:0]			SW
-
-);
-
-// Simple Test
-//	bit			[3:0][3:0]	ARRAY;
-//
-//	assign ARRAY[0][0] = SW[0];
-//	assign ARRAY[1][0] = SW[1];
-//	assign ARRAY[2][0] = SW[2];
-//	assign ARRAY[3][0] = SW[3];
-//	
-//	assign ARRAY[0][3:1] = ARRAY[0][2:0];
-//	assign ARRAY[1][3:1] = ARRAY[1][2:0];
-//	assign ARRAY[2][3:1] = ARRAY[2][2:0];
-//	assign ARRAY[3][3:1] = ARRAY[3][2:0];
-//	
-//	assign LED[0] = ARRAY[0][3];
-//	assign LED[1] = ARRAY[1][3];
-//	assign LED[2] = ARRAY[2][3];
-//	assign LED[3] = ARRAY[3][3];
-//	
-//	assign GPIO_0[0] = ARRAY[0][3];
-//	assign GPIO_0[1] = ARRAY[1][3];
-
-
-// Module Instantiation Test
-	wire	[7:0]	address_sig;// Address to write to
-	wire	[7:0]	data_sig;	// Data to write
-	wire			wren_sig;	// Write Enable Signal
-	wire	[7:0]	q_sig;		// Output data from current address
-	wire			ram_busy;	// Ram is busy signal
-	wire			init_sig;	// Initialize Signal
+	`endif
 	
-// 256 8-bit Words == 256 Byte Data
-ram_1port	ram_1port_0 (
-	.address	( address_sig ),
-	.clock		( FPGA_CLK1_50 ),
-	.data		( data_sig ),
-	.wren		( wren_sig ), // Write on 0
-	.q			( q_sig )
+	input		[1:0]	KEY,
+	output		[7:0]	LED,
+	input		[3:0]	SW
+	
 	);
 
-ram_init	ram_init_0 (
-	.clock			( FPGA_CLK1_50 ),
-	.init			( init_sig ),
-	.dataout		( dataout_sig ),
-	.init_busy		( ram_busy ),
-	.ram_address	( address_sig ),
-	.ram_wren		( wren_sig )
-	);
 
+// ----- Module Instantiation Test -----
+
+
+//	wire	[7:0]	address_sig;// Address to write to
+//	wire	[7:0]	data_sig;	// Data to write
+//	wire			wren_sig;	// Write Enable Signal
+//	wire	[7:0]	q_sig;		// Output data from current address
+//	
+//// 256 8-bit Words == 256 Byte Data == 256 circuit blocks
+//ram_1port	ram_1port_0 (
+//	.address	( address_sig ),
+//	.clock		( FPGA_CLK1_50 ),
+//	.data		( data_sig ),
+//	.wren		( wren_sig ), // Write on 0
+//	.q			( q_sig )
+//	);
+
+//	wire	[2:0]	logic_in_sig;
+//	wire	[2:0]	logic_out_sig;
 	
-// RAM Usage Test
-	reg		[]	counter
+// Logic Grid Module
+//logic_grid	logic_grid_0 (
+//	.clock		( FPGA_CLK1_50 ),
+//	.wren		( wren_sig ),
+//	.login		( logic_in_sig ),
+//	.logout		( logic_out_sig )
+//	);
+//	
+//// Circuit Block System	
+//circuit_block	circuit_block_0 (
+//	.clk_clk			( FPGA_CLK1_50 ), // Clock
+//	.memory_mem_a		(  ),	// Memory Address
+//	.memory_mem_ba		(  ),	// Memory Address
+//	.memory_mem_ck		(  ),	// Memory Clock Pos
+//	.memory_mem_ck_n	(  ),	// Memory Clock Neg
+//	.memory_mem_cke		(  ),	// Memory Clock Enable
+//	.memory_mem_cs_n	(  ),	//
+//	.memory_mem_ras_n	(  ),	//
+//	.memory_mem_cas_n	(  ),	//
+//	.memory_mem_we_n	(  ),	// Memory Write Enable
+//	.memory_mem_reset_n	(  ),	// Memory Reset
+//	.memory_mem_dq		(  ),	//
+//	.memory_mem_dqs		(  ),	// Memory Bus Pos
+//	.memory_mem_dqs_n	(  ),	// Memory Bus Neg
+//	.memory_mem_odt		(  ),	//
+//	.memory_mem_dm		(  ),	//
+//	.memory_oct_rzqin	(  ),	//
+//);
 
-
-// Update (Display data at current pointer)
-always @ ( posedge FPGA_CLK1_50 ) begin
-	
-
-	// Read only if RAM is not busy
-	if ( ram_busy != 1'b1 ) begin
-		LED [7:0] <= q_sig [7:0];
-	end
-end
-
-
-
-// Move Address Pointer
-always @ ( posedge KEY [0] ) begin
-	init_sig <= 1'b1;
 endmodule
-

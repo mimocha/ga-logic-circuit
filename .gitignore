@@ -6,7 +6,7 @@ output_files/
 .qsys_edit/
 simulation/
 CV_HelloWorld/
-soc_system/
+circuit_block/
 
 ## Files to keep track of: ##
 # .qpf	->	Quartus Project File
@@ -29,6 +29,7 @@ soc_system/
 *.cmp
 	# Compile Finish Time
 *.done
+*.exe
 *.f
 *.jdi
 *.json

@@ -2,67 +2,18 @@
 	Generates a grid of logic gates and connections based on given arguments.
 */
 
-#include "cellgen.h"
-
-inline uint8_t cellfunc (uint8_t nb[], uint8_t *rule);
-inline uint16_t convert (uint8_t nb[]);
-
-void cellgen (uint8_t input[], uint8_t *rule) {
-	// Define
-	uint8_t array[DIM][DIM];
-	// array[0][] = input[];
-	for (uint8_t i=0; i<DIM; i++)
-		array[0][i] = input[i];
-
-	// Calculate each cell
-	uint8_t neighbor[3];
-	for (uint8_t i=1; i<DIM; i++) {
-		for (uint8_t j=0; j<DIM; j++) {
-			if (j==0) {
-				neighbor[0] = 0;
-				neighbor[1] = array[i-1][j];
-				neighbor[2] = array[i-1][j+1];
-			} else if (j<DIM-1) {
-				neighbor[0] = array[i-1][j-1];
-				neighbor[1] = array[i-1][j];
-				neighbor[2] = array[i-1][j+1];
-			} else {
-				neighbor[0] = array[i-1][j-1];
-				neighbor[1] = array[i-1][j];
-				neighbor[2] = 0;
-			}
-			array[i][j] = cellfunc(neighbor, rule);
-		}
-		// cout << endl;
-	}
-
-	// Print
-	// Predefined ASCII Terminal output
-	for (uint8_t i=0; i<DIM; i++) {
-		for (uint8_t j=0; j<DIM; j++) {
-			switch (array[i][j]) {
-				case 0: // NULL
-					cout << (unsigned char)176;
-					break;
-				case 1: // NAND
-					cout << (unsigned char)219;
-					break;
-				case 2: // LEFT
-					cout << (unsigned char)47;
-					break;
-				case 3: // RIGHT
-					cout << (unsigned char)92;
-					break;
-				default: // OOB
-					cout << 'X';
-			}
-		}
-		cout << endl;
-	}
+inline uint16_t convert (const uint8_t *nb) {
+	/* inline uint16_t CONVERT (uint8_t nb[3])
+		Converts array nb[3] of base-K into a decimal value.
+		Assumes nb[3] is in LSB format.
+		Inline specifier helps make this more efficient for the compiler.
+	*/
+	uint16_t result = 0;
+	result += nb[0] + (nb[1]*K) + (nb[2]*K*K);
+	return result;
 }
 
-// Consider using function strtol() or strtoul() to handle multiple bases.
-inline uint8_t cellfunc (uint8_t nb[], uint8_t *rule) {
+inline uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
 /* Function CELLFUNC(uint8_t neighbor[3], uint8_t *rule)
 	Takes in two inputs:
 	+ An array of unsigned char of length 3 - the neighbors
@@ -129,24 +80,87 @@ inline uint8_t cellfunc (uint8_t nb[], uint8_t *rule) {
 
 	// Out of Bound Error Catch
 	if (idx > K_CUBE) {
-		puts ("K_CUBE ERROR CATCH");
-		printf("IDX: %d K_CUBE: %d\n", idx, K_CUBE);
-		printf("NB: %d %d %d\n", nb[0], nb[1], nb[2]);
-		system("pause");
-		return -1;
+		printf ("\nIDX: %d K_CUBE: %d\n", idx, K_CUBE);
+		printf ("NB: %d %d %d\n", nb[0], nb[1], nb[2]);
+		perror ("K_CUBE ERROR CATCH");
+		exit (EXIT_FAILURE);
 	}
 
 	// Access and return value from LUT
 	return rule[idx];
 }
 
-inline uint16_t convert (uint8_t nb[]) {
-	/* inline uint16_t CONVERT (uint8_t nb[3])
-		Converts array nb[3] of base-K into a decimal value.
-		Assumes nb[3] is in LSB format.
-		Inline specifier helps make this more efficient for the compiler.
-	*/
-	uint16_t result = 0;
-	result += nb[0] + (nb[1]*K) + (nb[2]*K*K);
-	return result;
+inline void cellprint (uint8_t cell) {
+ /* CELLPRINT (uint8_t cell)
+	Prints a predetermined ASCII character to terminal, based on a cell's value. Seperated as a function for a cleaner code in CELLGEN().
+*/
+	switch (cell) {
+		case 0: // NULL
+			cout << (unsigned char)176;
+			break;
+		case 1: // LEFT
+			cout << (unsigned char)47;
+			break;
+		case 2: // RIGHT
+			cout << (unsigned char)92;
+			break;
+		case 3: // XOR
+			cout << (unsigned char)94;
+			break;
+		case 4: // FORWARD
+			cout << (unsigned char)179;
+			break;
+		case 5: // NAND
+			cout << (unsigned char)219;
+			break;
+		default: // Undefined
+			cout << 'X';
+	}
+}
+
+void cellgen (const uint8_t *input, const uint8_t *rule, uint8_t *output=nullptr) {
+	// Define working variables
+	static uint8_t array[DIM][DIM], neighbor[3];
+	static uint8_t i, j;
+
+	// Calculate each cell
+	for (i=0; i<DIM; i++) {
+		for (j=0; j<DIM; j++) {
+			if (i==0) { // Loading first row as input
+				array[i][j] = input[j];
+			} else { // Calculate the rest
+				if (j==0) {
+					neighbor[0] = 0;
+					neighbor[1] = array[i-1][j];
+					neighbor[2] = array[i-1][j+1];
+				} else if (j<DIM-1) {
+					neighbor[0] = array[i-1][j-1];
+					neighbor[1] = array[i-1][j];
+					neighbor[2] = array[i-1][j+1];
+				} else {
+					neighbor[0] = array[i-1][j-1];
+					neighbor[1] = array[i-1][j];
+					neighbor[2] = 0;
+				}
+				array[i][j] = cellfunc(neighbor, rule);
+			}
+		}
+	}
+
+	// Print - Predefined ASCII Terminal output
+	if (SHOW_G) {
+		for (i=0; i<DIM; i++) {
+			for (j=0; j<DIM; j++) {
+				cellprint(array[i][j]);
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+
+	// Returns output as the last row, if an output array was given
+	if (output != nullptr) {
+		for (j=0; j<DIM; j++)
+			output[j] = array[DIM-1][j];
+	}
 }

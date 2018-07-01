@@ -1,17 +1,17 @@
 #
-SOURCE = hps-main
-TARGET = hps-main
 CC = arm-linux-gnueabihf-g++
+SOURCE = ga-main.cpp
+TARGET = ga-program.exe
+HEADER = ga-main.h cellgen.h
+FLAGS = -g -Wall -std=c++11
 
-# Command: "make" or "make build"
-build: $(TARGET)
-# Step 2: Convert $(TARGET).o -> $(TARGET) with command below
-$(TARGET): $(TARGET).o
-	$(CC) -g -Wall $(TARGET).o -o $(TARGET)
-# Step 1: Convert $(SOURCE).cpp -> $(TARGET).o with command below
-$(TARGET).o: $(SOURCE).cpp
-	$(CC) -g -Wall -c $(SOURCE).cpp -o $(TARGET).o
+# Build for x86
+build :
+	g++ $(FLAGS) $(SOURCE) -o $(TARGET)
 
-# Command: "make clean"
-clean:
-	rm -f $(TARGET) *.a *.o *~
+# Cross Compile for ARM
+build-arm :
+	$(CC) $(FLAGS) $(SOURCE) -o $(TARGET)
+
+clean :
+	rm -f $(TARGET) *.a *.o *.exe
