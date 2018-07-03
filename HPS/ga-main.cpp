@@ -16,7 +16,7 @@ int main (int argc, char **argv) {
 	if (SHOW_T) time_total = clock();
 
 	// Create new population
-	GeneticAlgorithm test[POP];
+	GeneticAlgorithm pop[POP];
 
 	// ----- Loop Generation ----- //
 	for (uint16_t gen=1; gen<=GEN_LIM; gen++) {
@@ -24,29 +24,28 @@ int main (int argc, char **argv) {
 		printf("\n --- Generation %3d --- \n", gen);
 
 		// 1: Genetic Algorithm Fuctions
-		ga.Sort(test);
-		ga.Selection(test);
+		ga.Selection(pop);
 
 		// ----- Loop Speciment ----- //
 		for (uint16_t idx=0; idx<POP; idx++) {
 			// 2: Cellular Automaton Generation
-			cellgen(seed, test[idx].getdna());
+			cellgen(seed, pop[idx].getdna());
 
 			// 3: Edit Memory of FPGA RAM
 
 			// 4: Evaluation
-			test[idx].Eval();
+			pop[idx].Eval();
 		}
 		// ----- End Speciment Loop ----- //
+		ga.Sort(pop);
 
 		// 5: (Optional) Display Results
 		if (SHOW_R) { // Results
-			puts("----- Top Individuals -----");
-			puts(" RANK | UID | FITNESS | DNA");
+			puts(" RANK |   UID   | FITNESS | DNA");
 			for (int i=0; i<POP; i++) {
-				printf(" %4d | %3d | %7d | ",
-				test[i].getrnk(), test[i].getuid(), test[i].getfit());
-				uint8_t *output = test[i].getdna();
+				printf(" %4d | %7d | %7d | ",
+				pop[i].getrnk(), pop[i].getuid(), pop[i].getfit());
+				uint8_t *output = pop[i].getdna();
 				for (int j=0; j<K_CUBE; j++) {
 					if (output[j] < 16) {
 						printf("%X", output[j]);
@@ -73,14 +72,15 @@ int main (int argc, char **argv) {
 	}
 	// ----- End Generation Loop ----- //
 	if (SHOW_R) {
-		printf("\n\n ----- %d Generations Simulated ----- \n", GEN_LIM);
-		printf("%d individuals lived and died\n", uid_counter);
+		printf("\n\n <----- %d Generations Simulated -----> \n", GEN_LIM);
+		printf("\t %d individuals lived and died\n", uid_counter);
 	}
 	if (SHOW_T) {
 		time_total = clock() - time_total;
-		printf("\n\n Performance: %d Gen in %ld Clicks | %f Seconds \n",
-		GEN_LIM, time_total, ((float)time_total)/CLOCKS_PER_SEC );
-		printf("%f Secs per gen\n", ((float)time_total)/CLOCKS_PER_SEC/GEN_LIM);
+		cout << endl;
+		printf("\t Performance: %ld Clicks | %f Seconds \n",
+		time_total, ((float)time_total)/CLOCKS_PER_SEC );
+		printf("\t Average %f Secs per generation\n", ((float)time_total)/CLOCKS_PER_SEC/GEN_LIM);
 	}
 
 	return EXIT_SUCCESS;

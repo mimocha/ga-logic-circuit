@@ -1,12 +1,6 @@
 ## ignores all these directories ##
-db/
-greybox_tmp/
-incremental_db/
-output_files/
-.qsys_edit/
-simulation/
 CV_HelloWorld/
-circuit_block/
+FPGA/
 
 ## Files to keep track of: ##
 # .qpf	->	Quartus Project File

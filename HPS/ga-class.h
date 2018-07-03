@@ -18,19 +18,17 @@ private:
 	bool		elite_flag; // 0 for not-elite; 1 for elite
 	bool		eval_flag; // 0 for not-yet-evaluated; 1 for evaluated
 
-	void Randna (uint8_t *dna); // Randomly generates DNA
 	void Reset (); // Resets the individual
 
 public:
 	GeneticAlgorithm (); // Constructor
 	void Eval (); // Signle-Evaluation function
-	void Eval_All (GeneticAlgorithm *array); // Population-Evaluation function
 	void Sort (GeneticAlgorithm *array); // Sorting function
 
 	// ----- Genetic Algorithm Functions ----- //
 	void Selection (GeneticAlgorithm *array);
-	private: void Crossover (const uint8_t *dna_a, const uint8_t *dna_b);
-	private: void Mutate ();
+	void Crossover (const uint8_t *dna_a, const uint8_t *dna_b);
+	void Mutate ();
 
 public:
 	// ----- Get Functions ----- //
@@ -47,12 +45,6 @@ public:
 	void setage (uint16_t set);
 	void setdna (uint8_t* set);
 } ga;
-
-void GeneticAlgorithm::Randna (uint8_t *dna) {
-	// Randomly Initializes DNA sequence, of length K_CUBE, in base-K
-	for (int i=0; i<K_CUBE; i++)
-		dna[i] = rand() % K;
-}
 
 void GeneticAlgorithm::Reset () {
 	// Assign new id
@@ -73,7 +65,8 @@ GeneticAlgorithm::GeneticAlgorithm () {
 	uid_counter++;
 
 	// Randomly generate dna
-	Randna (dna);
+	for (int i=0; i<K_CUBE; i++)
+		dna[i] = rand() % K;
 
 	// Zero initialize the rest
 	fitness = 0;
@@ -94,16 +87,6 @@ void GeneticAlgorithm::Eval () {
 		eval_flag = 1;
 	}
 	age += 1;
-}
-
-void GeneticAlgorithm::Eval_All (GeneticAlgorithm *array) {
-	// Evaluates the entire population - Might be deprecated
-	volatile uint16_t result;
-
-	for (int i=0; i<POP; i++) {
-	// --- Insert Evaluation Code Here --- //
-		array[i].Eval();
-	}
 }
 
 void GeneticAlgorithm::Sort (GeneticAlgorithm *array) {
@@ -147,7 +130,8 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 			live.push_back(idx);
 			continue;
 		}
-		if ( (rand()%POP) >= idx ) { // 'Normal' selection
+		uint16_t rng = rand()%POP;
+		if ( rng >= idx ) { // 'Normal' selection
 			live.push_back(idx); // lives
 		} else {
 			dead.push_back(idx); // dies
@@ -219,9 +203,6 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 		if (SHOW_D) tmp.clear();
 	}
 
-	// Replace dead individuals with new offsprings.
-	// Initialize offsprings, new uid, zeroes fitness(?), reset flags.
-
 	live.clear();
 	dead.clear();
 }
@@ -243,19 +224,32 @@ void GeneticAlgorithm::Crossover (const uint8_t *dna_a, const uint8_t *dna_b) {
 void GeneticAlgorithm::Mutate () {
 	for (uint16_t i=0; i<K_CUBE; i++) {
 		if ( (rand()%10000) < (PM*10000) ) {
-			switch ( rand()%4 ) {
-				case 0:
-					dna[i] = 0;
+			// Uses another random number to decrease chance of major mutations
+			uint8_t rng = rand()%50;
+			switch ( rng ) {
+				case 0: { // Swap (swaps this gene with another random gene)
+					uint8_t tmp = dna[i];
+					uint16_t swap = rand()%K_CUBE;
+					dna[i] = dna[swap];
+					dna[swap] = tmp;
 					break;
-				case 1:
-					dna[i] = K-1;
+				}
+				case 1: { // Scramble (scramble genes in a random range)
+					uint16_t range = (rand()%K_CUBE)/2;
+					if (i > range) {
+						random_shuffle (&dna[range], &dna[i]);
+					} else if (range > i) {
+						random_shuffle (&dna[i], &dna[range]);
+					}
 					break;
-				case 2:
-					dna[i] = rand()%K;
+				}
+				default: { // Single-gene mutations
+					uint8_t p = rand() % 3;
+					if (p==0) 	dna[i] = 0;
+					if (p==1) 	dna[i] = K-1;
+					if (p==2)	dna[i] = rand()%K;
 					break;
-				case 3:
-					// random shuffle
-					break;
+				}
 			}
 		}
 	}
