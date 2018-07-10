@@ -148,7 +148,7 @@ void cellgen (const uint8_t *input, const uint8_t *rule, uint8_t *output=nullptr
 	}
 
 	// Print - Predefined ASCII Terminal output
-	if (SHOW_G) {
+	if (SHOW_C) {
 		for (i=0; i<DIM; i++) {
 			for (j=0; j<DIM; j++) {
 				cellprint(array[i][j]);

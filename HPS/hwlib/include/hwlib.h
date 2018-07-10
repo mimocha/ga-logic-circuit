@@ -52,6 +52,8 @@ extern "C"
 {
 #endif  /* __cplusplus */
 
+#define soc_cv_av
+
 #if !defined(soc_cv_av) && !defined(soc_a10)
 #error You must define soc_cv_av or soc_a10 before compiling with HwLibs
 #endif

@@ -5,50 +5,55 @@
 #ifndef GAMAIN_H_INCLUDED
 #define GAMAIN_H_INCLUDED
 
-// Standard Library Definition
+// ----- Standard Library Definition ----- //
+
 #include "stdio.h" // Standard library
 #include "stdlib.h" // String to integers
 #include "string.h" // String manipulation
 #include "stdint.h" // uint definitions
 #include "time.h" // Timing & performance
-
+#include "math.h" // rounding
 #include <iostream> // cin cout
 #include <algorithm> // sort for GeneticAlgorithm::Sort()
-#include <vector> // dynamic arrays in GeneticAlgorithm::Selection()
+#include <vector> // vectors
+using namespace std; // namespace
 
-// Namespace
-using namespace std;
+// ----- Parameter Definitions ----- //
 
-// Parameter Definitions
 #define DIM 50 // Cell Array dimension
 #define K 4 // Numbers of color represented in CA
-#define K_CUBE K*K*K // Predefined K^3 for speed (Sorry...)
-
+#define K_CUBE K*K*K // Predefined K^3 for legibility (Sorry...)
+#define GXDIM 50 // Fitness Graph X-Dimensions
+#define GYDIM 40 // Fitness Graph Y-Dimensions
 // Genetics Algorithm Parameter
 #define POP 100 // Population size
-#define GEN_LIM 100 // Generation limit
-// #define PC 0.5 // Crossover Probability (Unused)
+#define GEN_LIM 50 // Generation limit
 #define PM 0.05 // Mutation Probability
 #define POOL 5 // Tournament Selection Poolsize
 
-// Enum for terminal input arguments
+// ----- Global variables ----- //
+
+clock_t time_total, time_gen; // Performance timing variables
+uint32_t uid_counter = 0; // Unique ID for any individual created.
+uint8_t seed[DIM] = {0}; // CA Seed array
+
+// Stuff for input argument handling
+bool SHOW_C = 0; // Toggles Pretty CA Plots
+bool SHOW_F = 1; // Toggles Fitness Tracking
+bool SHOW_T = 0; // Toggles Performance Timing
+bool SHOW_R = 0; // Toggles Result Displays
+bool SHOW_D = 0; // Toggles Debug
 enum option_args {
 	help, // help
-	show_g, // graphics
+	show_c, // CA graph
+	show_f, // fitness tracking
 	show_t, // time
 	show_r, // results
 	show_d, // debug
 	null // null
 };
 
-// Global variables
-clock_t time_total, time_gen; // Performance timing variables
-uint32_t uid_counter = 0; // Unique ID for any individual created.
-uint8_t seed[DIM] = {0}; // CA Seed array
-
-bool SHOW_G = 0; // Toggles Pretty CA Plots
-bool SHOW_T = 0; // Toggles Performance Timing
-bool SHOW_R = 0; // Toggles Result Displays
-bool SHOW_D = 0; // Toggles Debug
+// Fitness tracking variables: Max, Min, Median, Mean per generation
+uint16_t maxfit[GEN_LIM], minfit[GEN_LIM], medfit[GEN_LIM], avgfit[GEN_LIM];
 
 #endif
