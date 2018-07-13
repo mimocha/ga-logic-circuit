@@ -63,7 +63,7 @@ int main (int argc, char **argv) {
 				}
 				cout << endl;
 				if (i >= 10) {
-					printf(" .\n .\n .\n");
+					printf("\t\t.\n\t\t.\n\t\t.\n");
 					break;
 				}
 			}
@@ -76,7 +76,7 @@ int main (int argc, char **argv) {
 	}
 	// ----- End Generation Loop ----- //
 	printf("\n\n <----- %d Generations Simulated -----> \n", GEN_LIM);
-	printf(" %d individuals lived and died\n", uid_counter);
+	printf(" %8d individuals lived and died\n", uid_counter);
 	if (SHOW_F) {
 		disp_fitness();
 	}
@@ -121,7 +121,7 @@ void init (int argc, char **argv) {
 			}
 		}
 	} else {
-		// Help();
+		Help();
 	}
 
 	// Initializes RNG
@@ -133,7 +133,7 @@ void init (int argc, char **argv) {
 	printf("COLOR = %d | POPULATION = %d | GENERATION LIMIT = %d\n"
 		"CA GRAPH = %d | FITNESS = %d | TIMER = %d | RESULTS = %d | DEBUG = %d\n",
 		K, POP, GEN_LIM, SHOW_C, SHOW_F, SHOW_T, SHOW_R, SHOW_D);
-	puts("\n\n----- Genetic Algorithm v0.5 Initialized -----\n\n");
+	printf("\n\n----- Genetic Algorithm v%3.f Initialized -----\n\n", VERSION);
 }
 
 option_args handling (std::string const& inString) {
@@ -171,8 +171,13 @@ void track_fitness (GeneticAlgorithm *pop, const uint16_t gen) {
 	maxfit[idx] = pop[0].getfit();
 	// Minimum Fitness of each generation
 	minfit[idx] = pop[POP-1].getfit();
-	// Median Fitness (Doesn't get average of 2 middle indv, but close enough)
-	medfit[idx] = pop[POP/2].getfit();
+	// Median Fitness
+	if (POP%2==0) {
+		medfit[idx] = ( pop[POP/2].getfit() + pop[(POP/2)-1].getfit() )/2;
+	} else {
+		medfit[idx] = pop[ (uint16_t)floor(POP/2) ].getfit();
+	}
+
 	// Mean Fitness
 	avgfit[idx] = 0;
 	for (int i=0; i<POP; i++) {
@@ -180,105 +185,167 @@ void track_fitness (GeneticAlgorithm *pop, const uint16_t gen) {
 	}
 	avgfit[idx] /= POP;
 
+	if (SHOW_D) {
+		// For catching integer underflows
+		if (idx > 1) {
+			if (avgfit[idx] < avgfit[idx-1]) {
+				for (int i=0; i<POP; i++) pop[i].debug();
+			}
+		}
+	}
+
 	printf("Max: %u | Min: %u | Median: %u | Avg: %u \n",
 	maxfit[idx], minfit[idx], medfit[idx], avgfit[idx]);
 }
 
 void disp_fitness () {
+	uint16_t x, y, i;
+
+	// ----- Fitness Statistics Table ----- //
+
 	puts("\n\t --- Fitness Statistics --- ");
 	puts("  Gen | Maximum | Median | Minimum | Average");
 	puts("--------------------------------------------");
-	// Fitness Statistics Table
-	for (int i=0; i<GEN_LIM; i++) {
+
+	for (i=0; i<GEN_LIM; i++) {
 		printf(" %4u | %7u | %6u | %7u | %7u \n",
 		i+1, maxfit[i], medfit[i], minfit[i], avgfit[i]);
+
+		// Fancy shorten break in the middle
+		if (i > 30) {
+			puts("\t\t.\n\t\t.\n\t\t.\n");
+			break;
+		}
 	}
 
-	// Prints pretty fitness function graph, because procrastination
-	puts("\n\t --- Fitness Graph ---   ");
+	if (i > 30) {
+		for (i=GEN_LIM-21; i<GEN_LIM; i++) {
+				printf(" %4u | %7u | %6u | %7u | %7u \n",
+				i+1, maxfit[i], medfit[i], minfit[i], avgfit[i]);
+		}
+	}
 
-	int x_range = GEN_LIM;
-	int y_range = *max_element(maxfit, maxfit+GEN_LIM)
-	 - *min_element(minfit, minfit+GEN_LIM);
-	int y_max = *max_element(maxfit, maxfit+GEN_LIM);
+	// ----- Prints pretty fitness function graph ----- //
+	/* The hard part was figuring out a universal way to scale up and down both axis.
+	Done by using a scale constant x_scale and y_scale to perform operations on the working array.
 
-	float x_scale = (float)GXDIM/x_range; // Scale > 1 == Stretch
-	float y_scale = (float)GYDIM/y_range; // Scale < 1 == Compress
+	> Scales the y-axis by dividing the values of the array (similar to image shrinking),
+	then subtract the smallest value of the array to zero the graph on the origin.
+	Use the floor function to ensure data stays within output range.
 
-	printf("Scale XY: %f %f\n", x_scale, y_scale);
+	> Scales the x-axis by dividing the index of the array by x_scale,
+	then rounding down with floor(). This effectively "scales" the array itself,
+	by changing which grid on the graph some data point is loaded onto.
+
+	> (GYDIM - y) is used as a loading index. As loading is done from top to bottom of the array,
+	Using this is effectively the same as using the loop for(y=GYDIM-1; y>=0; y--)
+
+	> Graph is loaded onto as first a 4-bit binary value.
+	Where each category of value - max, med, min, avg - would flip the bits for each cell,
+	if they are chosen to be displayed on the cell. This is done with the bitwise OR function.
+	This bit value is then passed through a switch-case
+	which translates the bit value into some ASCII character, to be printed.
+	*/
+
+	// Use a working array because process is destructive to data
+	// (Leaves an intact copy of data if we decide to use it later.)
+	float workarray[4][GEN_LIM] = {0};
+
+	// Load into work array in this order: MAX - MED - MIN - AVG
+	for (x=0; x<GEN_LIM; x++) {
+		workarray[0][x] = maxfit[x];
+		workarray[1][x] = medfit[x];
+		workarray[2][x] = minfit[x];
+		workarray[3][x] = avgfit[x];
+	}
+
+	const uint16_t x_range = GEN_LIM;
+	const uint16_t y_range = *max_element(maxfit, maxfit + GEN_LIM)
+	 - *min_element(minfit, minfit + GEN_LIM);
+	const uint16_t y_max = *max_element(maxfit, maxfit + GEN_LIM);
+	const uint16_t y_min = *min_element(minfit, minfit + GEN_LIM);
+
+	// Scale > 1 == Stretch | Scale == 1 == Maintain | Scale < 1 == Compress
+	const float x_scale = (float)GXDIM/x_range;
+	const float y_scale = (float)GYDIM/y_range;
 
 	unsigned char graph[GYDIM][GXDIM] = {0};
-	for (int y=0; y<GYDIM; y++) {
-		for (int x=0; x<GXDIM; x++) {
-			// Load value
-			if (maxfit[x] == y_max-y) graph[y][x] += 1;
-			if (medfit[x] == y_max-y) graph[y][x] += 2;
-			if (minfit[x] == y_max-y) graph[y][x] += 4;
-			if (avgfit[x] == y_max-y) graph[y][x] += 8;
 
-			// Convert
+	// Scale Y
+	// Multiply by scaling factor to scale input range to output domain.
+	// Subtract the minimum value to translate plot down to origin (0).
+	for (x=0; x<GEN_LIM; x++) {
+		for (y=0; y<4; y++) {
+			workarray[y][x] = floor (y_scale * workarray[y][x] - (y_min * y_scale) );
+		}
+	}
+
+	// Scale X & load onto graph
+	for (y=0; y<GYDIM; y++) {
+		for (x=0; x<GXDIM; x++) {
+			// Load value
+			// Scaled X index; skips or merges x-axis based on scale value.
+			i = (int)floor(x/x_scale);
+			if (workarray[0][i] == GYDIM-y) graph[y][x] |= 1;
+			if (workarray[1][i] == GYDIM-y) graph[y][x] |= 2;
+			if (workarray[2][i] == GYDIM-y) graph[y][x] |= 4;
+			if (workarray[3][i] == GYDIM-y) graph[y][x] |= 8;
+
+			// Convert to ASCII
 			switch (graph[y][x]) {
-				case 0:
+				case 0: // NULL
 					graph[y][x] = 0;
 					break;
-				case 1:
-					graph[y][x] = 43;
+				case 1: // MAX
+					graph[y][x] = '+';
 					break;
-				case 2:
-					graph[y][x] = 109;
+				case 2: // MEDIAN
+					graph[y][x] = 'M';
 					break;
-				case 4:
-					graph[y][x] = 45;
+				case 4: // MIN
+					graph[y][x] = '-';
 					break;
-				case 8:
-					graph[y][x] = 42;
+				case 8: // AVG
+					graph[y][x] = 'A';
 					break;
-				default:
-					graph[y][x] = 176;
+				default: // Other mixture
+					graph[y][x] = '*';
 					break;
 			}
 		}
 	}
 
+	// Printing //
+	puts("\n\t --- Fitness Graph ---");
+	printf("Legend: + Max | - Min | M Median | A Average | * Mixed |"
+	"| Scale XY: %f %f\n\n", x_scale, y_scale);
 
-
-	// --- X Scaling --- //
-	// Bin as in histogram bins
-	// int bin_cnt = ceil((float)x_scale*GEN_LIM); // Bin count
-	// int bin_sze = ceil((float)1/x_scale); // Bin size
-	// unsigned int scaled_val[4][bin_cnt] = {0};
-
-	// if (x_scale < 1) {
-	// 	// X is compressed
-	// 	for (int i=0; i<bin_cnt; i++) { // loop over each bin
-	// 		for (int j=0; j<bin_sze; j++) { // sum for each bin
-	// 			scaled_val[0][i] += maxfit[i*bin_sze+j];
-	// 			scaled_val[1][i] += medfit[i*bin_sze+j];
-	// 			scaled_val[2][i] += minfit[i*bin_sze+j];
-	// 			scaled_val[3][i] += avgfit[i*bin_sze+j];
-	// 		}
-	// 		// take average
-	// 		scaled_val[0][i] /= bin_sze;
-	// 		scaled_val[1][i] /= bin_sze;
-	// 		scaled_val[2][i] /= bin_sze;
-	// 		scaled_val[3][i] /= bin_sze;
-	// 	}
-	//
-	//
-	// }
-
-	// Printing
-	for (int y=0; y<GYDIM; y++) {
-		if (y < GYDIM-1) { // print graph edge
-			printf("  |");
-		} else {
-			printf("  +");
-		}
-		for (int x=0; x<GXDIM; x++) { // print graph value
-			if (y < GYDIM-1) { // graph edge
-				cout << graph[y][x];
+	for (y=0; y<=GYDIM; y++) {
+		// Left Edge & Label
+		if (y+1 < GYDIM) { // Everything before the bottom row
+			if (y%10==0) { // Print Labels & Borders
+				printf(" %3d |", y_max-y);
 			} else {
-				cout << "-";
+				printf("     |");
+			}
+		} else if (y == GYDIM-1) { // Bottom Row - Corner
+			printf(" %3d +", y_max-y);
+		} else { // X Axis Label Space
+			printf("     ");
+		}
+
+		// Graph Values & Bottom Edge & Label
+		for (x=0; x<=GXDIM; x++) {
+			if (y+1 < GYDIM) { // Everything before bottom ro - print actual values
+				cout << graph[y][x];
+			} else if (y == GYDIM-1) { // Bottom row - Lines
+				cout << '-';
+			} else { // X Axis Labels
+				if (x%25==0) {
+					printf("%.0f",floor(x/x_scale));
+				} else {
+					cout << ' ';
+				}
 			}
 		}
 		cout << endl;

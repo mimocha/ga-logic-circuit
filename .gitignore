@@ -1,7 +1,8 @@
 ## ignores all these directories ##
 CV_HelloWorld/
 FPGA/
-RAM_TEST/
+hwlib/
+ref/
 
 ## Files to keep track of: ##
 # .qpf	->	Quartus Project File
