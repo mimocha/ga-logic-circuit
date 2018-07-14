@@ -22,7 +22,7 @@ int main (int argc, char **argv) {
 	// ----- Loop Generation ----- //
 	for (uint16_t gen=1; gen<=GEN_LIM; gen++) {
 		if (SHOW_T) time_gen = clock();
-		printf("\n --- Generation %3d --- \n", gen);
+		printf("\t --- Generation %3d --- \n", gen);
 
 		// 1: Genetic Algorithm Fuctions
 		ga.Selection(pop);
@@ -91,7 +91,7 @@ int main (int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
-// ----- GA Main Functions ----- //
+// ----- Miscellany Functions ----- //
 
 void init (int argc, char **argv) {
 	// Input Argument Handlings
@@ -133,7 +133,7 @@ void init (int argc, char **argv) {
 	printf("COLOR = %d | POPULATION = %d | GENERATION LIMIT = %d\n"
 		"CA GRAPH = %d | FITNESS = %d | TIMER = %d | RESULTS = %d | DEBUG = %d\n",
 		K, POP, GEN_LIM, SHOW_C, SHOW_F, SHOW_T, SHOW_R, SHOW_D);
-	printf("\n\n----- Genetic Algorithm v%3.f Initialized -----\n\n", VERSION);
+	printf("\n\n----- Genetic Algorithm v%5.3f Initialized -----\n\n", VERSION);
 }
 
 option_args handling (std::string const& inString) {
@@ -199,29 +199,27 @@ void track_fitness (GeneticAlgorithm *pop, const uint16_t gen) {
 }
 
 void disp_fitness () {
-	uint16_t x, y, i;
+	uint16_t x, y, i, j;
 
 	// ----- Fitness Statistics Table ----- //
 
 	puts("\n\t --- Fitness Statistics --- ");
 	puts("  Gen | Maximum | Median | Minimum | Average");
 	puts("--------------------------------------------");
-
 	for (i=0; i<GEN_LIM; i++) {
 		printf(" %4u | %7u | %6u | %7u | %7u \n",
 		i+1, maxfit[i], medfit[i], minfit[i], avgfit[i]);
 
 		// Fancy shorten break in the middle
-		if (i > 30) {
+		if ((GEN_LIM > 50) && (i > 10)) {
 			puts("\t\t.\n\t\t.\n\t\t.\n");
-			break;
-		}
-	}
 
-	if (i > 30) {
-		for (i=GEN_LIM-21; i<GEN_LIM; i++) {
-				printf(" %4u | %7u | %6u | %7u | %7u \n",
-				i+1, maxfit[i], medfit[i], minfit[i], avgfit[i]);
+			for (j=GEN_LIM-21; j<GEN_LIM; j++) {
+					printf(" %4u | %7u | %6u | %7u | %7u \n",
+					j+1, maxfit[j], medfit[j], minfit[j], avgfit[j]);
+			}
+
+			break;
 		}
 	}
 
@@ -274,10 +272,11 @@ void disp_fitness () {
 	// Scale Y
 	// Multiply by scaling factor to scale input range to output domain.
 	// Subtract the minimum value to translate plot down to origin (0).
-	for (x=0; x<GEN_LIM; x++) {
-		for (y=0; y<4; y++) {
-			workarray[y][x] = floor (y_scale * workarray[y][x] - (y_min * y_scale) );
-		}
+	for (y=0; y<GEN_LIM; y++) {
+		workarray[0][y] = floor (y_scale * workarray[0][y] - (y_min * y_scale) );
+		workarray[1][y] = floor (y_scale * workarray[1][y] - (y_min * y_scale) );
+		workarray[2][y] = floor (y_scale * workarray[2][y] - (y_min * y_scale) );
+		workarray[3][y] = floor (y_scale * workarray[3][y] - (y_min * y_scale) );
 	}
 
 	// Scale X & load onto graph
@@ -315,39 +314,96 @@ void disp_fitness () {
 		}
 	}
 
-	// Printing //
-	puts("\n\t --- Fitness Graph ---");
-	printf("Legend: + Max | - Min | M Median | A Average | * Mixed |"
-	"| Scale XY: %f %f\n\n", x_scale, y_scale);
+	// Printing
+	// This part is pretty hacky, lots of hard-coded stuff
+	puts("\n\t\t\t --- Fitness Graph ---");
+	printf("\tLegend: + Max | - Min | M Median | A Average | * Mixed |"
+	" Scale XY: %f %f\n\n", x_scale, y_scale);
 
-	for (y=0; y<=GYDIM; y++) {
-		// Left Edge & Label
-		if (y+1 < GYDIM) { // Everything before the bottom row
-			if (y%10==0) { // Print Labels & Borders
-				printf(" %3d |", y_max-y);
-			} else {
-				printf("     |");
-			}
-		} else if (y == GYDIM-1) { // Bottom Row - Corner
-			printf(" %3d +", y_max-y);
-		} else { // X Axis Label Space
-			printf("     ");
-		}
+	for (y=0; y<=GYDIM+2; y++) {
+		for (x=0; x<GXDIM+2; x++) {
 
-		// Graph Values & Bottom Edge & Label
-		for (x=0; x<=GXDIM; x++) {
-			if (y+1 < GYDIM) { // Everything before bottom ro - print actual values
-				cout << graph[y][x];
-			} else if (y == GYDIM-1) { // Bottom row - Lines
-				cout << '-';
-			} else { // X Axis Labels
-				if (x%25==0) {
-					printf("%.0f",floor(x/x_scale));
-				} else {
+			// Graph Actual
+			if (y < GYDIM) {
+				switch (x) {
+					case 0: // Y-Axis Name - 2 Spaces
+						if (y <= (GYDIM/2+3) && y >= (GYDIM/2-3)) {
+							switch (y - (GYDIM/2-3)) {
+								case 0:
+									cout << " F";
+									break;
+								case 1:
+									cout << " I";
+									break;
+								case 2:
+									cout << " T";
+									break;
+								case 3:
+									cout << " N";
+									break;
+								case 4:
+									cout << " E";
+									break;
+								case 5:
+									cout << " S";
+									break;
+								case 6:
+									cout << " S";
+									break;
+							}
+						} else {
+							cout << "  ";
+						}
+						break;
+					case 1: // Y-Axis Label - 9 Spaces
+						// Prints label every set interval
+						if (y%5 == 0) printf(" %6.0f >", y_max - (y/y_scale));
+						else printf("        |");
+						break;
+					default: // Graph Actual - GXDIM Spaces
+						cout << graph[y][x-2];
+						break;
+				}
+
+			// Graph Border - 11 Spaces total
+			} else if (y == GYDIM) {
+				switch (x) {
+					case 0: // Y-Axis Name's 2 Spaces
+						cout << "  ";
+						break;
+					case 1: // Y-Axis Corner Label - 9 Spaces
+						printf(" %6.0f +", y_max - (y/y_scale));
+						break;
+					default: // Graph Border - GXDIM Spaces
+						if ((x-1)%10 == 0 ) cout << '^';
+						else cout << '-';
+						break;
+				}
+
+			// X-Axis Value Labels
+			} else if (y == GYDIM+1) {
+				switch (x) {
+					case 0: // Y-Axis Name's 2 Spaces
+						cout << "  "; // 2 Spaces
+						break;
+					case 1: // Y-Axis Label's 9 Spaces
+						cout << "        0"; // 8 Spaces + 1
+						break;
+					default: // X-Axis Label - GXDIM Spaces
+						if ((x-1)%10 == 0) printf("%10.0f",floor((x-1)/x_scale));
+				}
+
+			// X-Axis Name
+			} else if (y == GYDIM+2) {
+				if (x < (GXDIM)/2 + 11) {
 					cout << ' ';
+				} else {
+					printf("GENERATION");
+					break;
 				}
 			}
 		}
+		// Endline for Row Y
 		cout << endl;
 	}
 

@@ -19,11 +19,11 @@
 using namespace std; // namespace
 
 // ----- Parameter Definitions ----- //
-#define VERSION 0.75
-#define DIM 50 // Cell Array dimension
+#define VERSION 0.82
+#define DIM 16 // Cell Array dimension
 #define K 6 // Numbers of color represented in CA
 #define K_CUBE K*K*K // Predefined K^3 for legibility (Sorry...)
-#define GXDIM 100 // Fitness Graph X-Dimensions
+#define GXDIM 80 // Fitness Graph X-Dimensions
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 // Genetics Algorithm Parameter
 #define POP 200 // Population size
