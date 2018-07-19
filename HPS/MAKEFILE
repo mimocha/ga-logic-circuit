@@ -1,17 +1,18 @@
 #
 CC = arm-linux-gnueabihf-g++
 SOURCE = ga-main.cpp
-TARGET = ga-program.exe
+TARGET = ga-program
 HEADER = ga-main.h cellgen.h
-CFLAGS = -g -Wall -I../hwlib/include -I../hwlib/include/soc_cv_av/ -std=c++11
+CFLAGS = -g -Wall -std=c++11
+INCLUDE = -I../hwlib/include/ -I../hwlib/include/soc_cv_av/ -I../ref/
 
 # Cross Compile for ARM
-build :
-	$(CC) $(FLAGS) $(SOURCE) -o $(TARGET)
+arm :
+	$(CC) $(CFLAGS) $(INCLUDE) $(SOURCE) -o $(TARGET)
 
 # Complile for PC
-build-pc :
-	g++ $(FLAGS) $(SOURCE) -o $(TARGET)
+pc :
+	g++ $(CFLAGS) $(INCLUDE) $(SOURCE) -o $(TARGET).exe
 
 clean :
 	rm -f $(TARGET) *.a *.o *.exe

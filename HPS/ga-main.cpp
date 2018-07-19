@@ -8,6 +8,7 @@
 void init (int argc, char **argv);
 option_args handling (string const& inString);
 void Help ();
+void Msg ();
 void track_fitness (GeneticAlgorithm *pop, const uint16_t gen);
 void disp_fitness ();
 
@@ -19,7 +20,7 @@ int main (int argc, char **argv) {
 	// Create new population
 	GeneticAlgorithm pop[POP];
 
-	// ----- Loop Generation ----- //
+	// ----- Generation Loop ----- //
 	for (uint16_t gen=1; gen<=GEN_LIM; gen++) {
 		if (SHOW_T) time_gen = clock();
 		printf("\t --- Generation %3d --- \n", gen);
@@ -27,14 +28,12 @@ int main (int argc, char **argv) {
 		// 1: Genetic Algorithm Fuctions
 		ga.Selection(pop);
 
-		// ----- Loop Speciment ----- //
+		// ----- Speciment Loop ----- //
 		for (uint16_t idx=0; idx<POP; idx++) {
 			// 2: Cellular Automaton Generation
-			cellgen(seed, pop[idx].getdna());
-
 			// 3: Edit Memory of FPGA RAM
-
 			// 4: Evaluation
+			cellgen(seed, pop[idx].getdna());
 			pop[idx].Eval();
 		}
 		// ----- End Speciment Loop ----- //
@@ -75,8 +74,8 @@ int main (int argc, char **argv) {
 		}
 	}
 	// ----- End Generation Loop ----- //
-	printf("\n\n <----- %d Generations Simulated -----> \n", GEN_LIM);
-	printf(" %8d individuals lived and died\n", uid_counter);
+	printf("\n\n\t <----- %d Generations Simulated -----> \n", GEN_LIM);
+	printf("\t %8d individuals lived and died\n", uid_counter);
 	if (SHOW_F) {
 		disp_fitness();
 	}
@@ -121,7 +120,7 @@ void init (int argc, char **argv) {
 			}
 		}
 	} else {
-		Help();
+		Msg();
 	}
 
 	// Initializes RNG
@@ -149,18 +148,24 @@ option_args handling (std::string const& inString) {
 	return null;
 }
 
-void Help () {
+void Msg () {
 	// Displays help message
-	puts(" --- Genetics Algorithm Program Help Message --- ");
-	puts(" '-h' '--help' 'help' Help -> Shows this message");
-	puts(" '-c' CA Graph -> Graphs Cellular Automaton array");
-	puts(" '-f' Fitness Tracking -> Tracks fitness value of the population");
-	puts(" '-t' Timer -> Times the program execution and display the result");
-	puts(" '-r' Results -> Display the results of Genetic Algorithm");
-	puts(" '-d' Debug -> Display debug prints at various points");
-	printf("\n\n Please select atleast 1 option to run \n\n");
+	puts("\n\n Please select atleast 1 option to run \n");
+	puts(" 'Option' Name\t-> Short Explanation");
+	puts(" '-c' CA Graph\t-> Graphs Cellular Automaton");
+	puts(" '-d' Debug\t-> Display debug prints at various points");
+	puts(" '-f' Fitness Tracking\t-> Tracks fitness value of the population");
+	puts(" '-h' Help\t-> Shows in-depth help message");
+	puts(" '-r' Results\t-> Display the results of Genetic Algorithm");
+	puts(" '-t' Timer\t-> Times the program execution and display the result");
 
 	exit(EXIT_SUCCESS);
+}
+
+void Help () {
+	printf(" --- Genetics Algorithm Version %6.3f ---\n", VERSION);
+	// To bo added
+
 }
 
 void track_fitness (GeneticAlgorithm *pop, const uint16_t gen) {

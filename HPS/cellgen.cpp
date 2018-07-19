@@ -90,7 +90,7 @@ inline uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
 	return rule[idx];
 }
 
-inline void cellprint (uint8_t cell) {
+void cellprint (uint8_t cell) {
  /* CELLPRINT (uint8_t cell)
 	Prints a predetermined ASCII character to terminal, based on a cell's value. Seperated as a function for a cleaner code in CELLGEN().
 */

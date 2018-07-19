@@ -18,15 +18,27 @@
 #include <vector> // vectors
 using namespace std; // namespace
 
+// ----- Linux API Include ----- //
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
+// ----- Altera HWLIB Include ----- //
+#include "hwlib.h"
+#include "socal/socal.h"
+#include "socal/hps.h"
+#include "socal/alt_gpio.h"
+#include "hps_0.h"
+
 // ----- Parameter Definitions ----- //
-#define VERSION 0.82
-#define DIM 16 // Cell Array dimension
-#define K 6 // Numbers of color represented in CA
+#define VERSION 0.90
+#define DIM 4 // Cell Array dimension
+#define K 4 // Numbers of color represented in CA
 #define K_CUBE K*K*K // Predefined K^3 for legibility (Sorry...)
 #define GXDIM 80 // Fitness Graph X-Dimensions
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 // Genetics Algorithm Parameter
-#define POP 200 // Population size
+#define POP 100 // Population size
 #define GEN_LIM 100 // Generation limit
 #define PM 0.05 // Mutation Probability
 #define POOL 10 // Tournament Selection Poolsize
