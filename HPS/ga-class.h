@@ -9,13 +9,14 @@
 #define GACLASS_H_INCLUDED
 
 class GeneticAlgorithm {
+
 private:
 	uint32_t	uid; // Unique id for tracking an individual
 	uint16_t	rank; // Fitness Ranking of the individual
 	uint8_t		dna[K_CUBE]; // DNA sequence (Cellular Automaton Rule)
 	uint16_t	fitness; // Fitness score for an individual
 	uint16_t	age; // For how long an individual has been alive for
-	bool		elite_flag; // 0 for not-elite; 1 for elite
+	// bool		elite_flag; // 0 for not-elite; 1 for elite
 	bool		eval_flag; // 0 for not-yet-evaluated; 1 for evaluated
 
 	void Reset (); // Resets the individual
@@ -36,6 +37,7 @@ public:
 	uint16_t	getfit ();
 	uint16_t	getage ();
 	uint8_t*	getdna ();
+	bool		geteval ();
 	void		debug ();
 
 	// ----- Set Functions ----- //
@@ -56,7 +58,7 @@ void GeneticAlgorithm::Reset () {
 	fitness = 0;
 	rank = 0;
 	eval_flag = 0;
-	elite_flag = 0;
+	// elite_flag = 0;
 	age = 0;
 }
 
@@ -73,20 +75,13 @@ GeneticAlgorithm::GeneticAlgorithm () {
 	fitness = 0;
 	rank = 0;
 	eval_flag = 0;
-	elite_flag = 0;
+	// elite_flag = 0;
 	age = 0;
 }
 
 void GeneticAlgorithm::Eval () {
 	// Evaluates a single individual
-	if (eval_flag == 0) {
-		// --- Insert Evaluation Code Here --- //
-		fitness = 0;
-		for (int i=0; i<K_CUBE; i++)
-			fitness += dna[i];
-
-		eval_flag = 1;
-	}
+	eval_flag = 1;
 	age += 1;
 }
 
@@ -127,10 +122,10 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 	 We will be keeping track of the idx, because it allows easy access to the original population via array[idx] and its properties.
 	*/
 	for (idx=0; idx<POP; idx++) {
-		if ( array[idx].elite_flag == 1 ) { // Elite Selection
-			live.push_back(idx);
-			continue;
-		}
+		// if ( array[idx].elite_flag == 1 ) { // Elite Selection
+		// 	live.push_back(idx);
+		// 	continue;
+		// }
 		uint16_t rng = rand()%POP;
 		if ( rng >= idx ) { // 'Normal' selection
 			live.push_back(idx); // lives
@@ -303,6 +298,10 @@ uint16_t GeneticAlgorithm::getage () {
 
 uint8_t* GeneticAlgorithm::getdna () {
 	return dna;
+}
+
+bool GeneticAlgorithm::geteval () {
+	return eval_flag;
 }
 
 void GeneticAlgorithm::debug () {

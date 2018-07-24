@@ -26,13 +26,14 @@ int fd;
 #define INPUT_IO_BASE 0x00000200
 #define OUTPUT_IO_BASE 0x00000210
 #define GA_IO_BASE 0x00000220
+#define CTRL_IO_BASE 0x00000230
 
 unsigned long *led_addr = NULL;
 unsigned long *ram_addr = NULL;
 unsigned long *input_io_addr = NULL;
 unsigned long *output_io_addr = NULL;
 unsigned long *ga_io_addr = NULL;
-unsigned long *test = NULL;
+unsigned long *ctrl_io_addr = NULL;
 
 uint32_t grid_dim = 0; // Grid dimension
 uint32_t perm = 0; // input permutation == ( 2^(grid_dim*2) )
@@ -60,11 +61,28 @@ int main(int argc, char **argv) {
 		perm = expo(2,grid_dim*2);
 	}
 
-	// 4 Check Cases
-	// 0: All Zero
-	// 1: All Send A
-	// 2: All Send B
-	// 3: All NAND
+	// alt_write_word (ram_addr, 0x12345678);
+	//
+	// printf("CTRL: 0x1FC0\n");
+	// alt_write_hword (ctrl_io_addr, 0x1FC0);
+	// alt_write_byte (input_io_addr, 0xFF);
+	// printf("R:%08X I:%02X O:%02X\n"
+	// , alt_read_word(ram_addr), 0xFF, alt_read_byte(output_io_addr));
+	// alt_write_byte (input_io_addr, 0x00);
+	// printf("R:%08X I:%02X O:%02X\n"
+	// , alt_read_word(ram_addr), 0x00, alt_read_byte(output_io_addr));
+	//
+	//
+	// printf("CTRL: 0x0FC0\n");
+	// alt_write_hword (ctrl_io_addr, 0x0FC0);
+	// alt_write_byte (input_io_addr, 0xFF);
+	// printf("R:%08X I:%02X O:%02X\n"
+	// , alt_read_word(ram_addr), 0xFF, alt_read_byte(output_io_addr));
+	// alt_write_byte (input_io_addr, 0x00);
+	// printf("R:%08X I:%02X O:%02X\n"
+	// , alt_read_word(ram_addr), 0x00, alt_read_byte(output_io_addr));
+
+	alt_write_hword (ctrl_io_addr, 0x1FC0);
 	printf("Verifying 4 cases @ %d iterations each\n", perm);
 
 	for (uint8_t c=0; c<4; c++) {
@@ -73,22 +91,26 @@ int main(int argc, char **argv) {
 		switch (c) {
 			case 0:
 				printf("NULL Output... \n");
-				alt_write_word (ga_io_addr, 0x0);
+				// alt_write_word (ga_io_addr, 0x0);
+				alt_write_word (ram_addr, 0x0);
 				result = check_zero ();
 				break;
 			case 1:
 				printf("A Output... \n");
-				alt_write_word (ga_io_addr, 0x55555555);
+				// alt_write_word (ga_io_addr, 0x55555555);
+				alt_write_word (ram_addr, 0x55555555);
 				result = check_a ();
 				break;
 			case 2:
 				printf("B Output... \n");
-				alt_write_word (ga_io_addr, 0xAAAAAAAA);
+				// alt_write_word (ga_io_addr, 0xAAAAAAAA);
+				alt_write_word (ram_addr, 0xAAAAAAAA);
 				result = check_b ();
 				break;
 			case 3:
 				printf("NAND Output... \n");
-				alt_write_word (ga_io_addr, 0xFFFFFFFF);
+				// alt_write_word (ga_io_addr, 0xFFFFFFFF);
+				alt_write_word (ram_addr, 0xFFFFFFFF);
 				result = check_nand ();
 				break;
 		}
@@ -139,6 +161,8 @@ void init () {
 		+ ((ALT_LWFPGASLVS_OFST + OUTPUT_IO_BASE) & HW_REGS_MASK) );
 	ga_io_addr = (unsigned long *)( (char *)(virtual_base)
 		+ ((ALT_LWFPGASLVS_OFST + GA_IO_BASE) & HW_REGS_MASK) );
+	ctrl_io_addr = (unsigned long *)( (char *)(virtual_base)
+		+ ((ALT_LWFPGASLVS_OFST + CTRL_IO_BASE) & HW_REGS_MASK) );
 }
 
 uint32_t check_zero (void) {

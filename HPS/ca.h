@@ -1,20 +1,38 @@
-/* Main C++ file for Cellular Automaton Generation Function CELLGEN
-	Generates a grid of logic gates and connections based on given arguments.
+/* Header File for Cellular Automaton Function
 */
 
-inline uint16_t convert (const uint8_t *nb) {
-	/* inline uint16_t CONVERT (uint8_t nb[3])
-		Converts array nb[3] of base-K into a decimal value.
-		Assumes nb[3] is in LSB format.
-		Inline specifier helps make this more efficient for the compiler.
-	*/
-	uint16_t result = 0;
-	result += nb[0] + (nb[1]*K) + (nb[2]*K*K);
-	return result;
-}
+#ifndef CA_H_INCLUDED
+#define CA_H_INCLUDED
 
-inline uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
-/* Function CELLFUNC(uint8_t neighbor[3], uint8_t *rule)
+/* void cellgen (const uint8_t *input, const uint8_t *rule)
+	Takes in atleast 2 arguments, 3 if exists:
+	+ 1-D array of const unsigned char *input
+	+ 1-D array of const unsigned char *rule
+	+ 1-D array of unsigned char *output (optional)
+
+	+ Using the given rule array, generate Cellular Automaton (CA) grid from given seed input. Handles only 3 nearest-neighbors for now. Calculation done using custom Look-Up-Table (LUT), explained inside CELLFUNC() function, in cellgen.cpp.
+
+	  Base-K   | Index range == LUT length | LUT permutations
+	------------------------------------------
+	> Base-2   | 8   | 256
+	> Base-3   | 27  | 7 625 597 484 987
+	> Base-4   | 64  | 3.402 823 669 e38
+	... (LUT permutations grow exponentially) ...
+	> Base-8   | 512 | 2.410 312 426 e462
+	> Base-10  | 1000 | 10 e1000
+	... (Very-large-permutations) ...
+	> Base-16  | 4096 | ...
+	> Base-32  | 32768 | ...
+	> Base-40  | 64000 | ... << Max for 16-bit number
+	> Base-64  | 262144 | ...
+	> Base-128 | 2-million | ...
+	> Base-256 | 16-million | 1.196 e40 403 562
+	-------------------------------------------
+
+*/
+void cellgen (const uint8_t *input, const uint8_t *rule);
+
+/* uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule)
 	Takes in two inputs:
 	+ An array of unsigned char of length 3 - the neighbors
 	+ An array of unsigned char of length (K^3) - the rules;
@@ -74,93 +92,28 @@ inline uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
 	rule[64] == {... 0000 1233 3333}
 	rule_bit(57) == 2
 */
+uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule);
 
-	// Get index number
-	uint16_t idx = convert(nb);
+/* uint16_t convert (const uint8_t *nb)
+	Converts array nb[3] of base-K into a decimal value.
+	Assumes nb[3] is in LSB format.
 
-	// Out of Bound Error Catch
-	if (idx > K_CUBE) {
-		printf ("\nIDX: %d K_CUBE: %d\n", idx, K_CUBE);
-		printf ("NB: %d %d %d\n", nb[0], nb[1], nb[2]);
-		perror ("K_CUBE ERROR CATCH");
-		exit (EXIT_FAILURE);
-	}
+	uint16_t can handle upto 65535
+	-> Which means this function can handle upto 40 colors
+*/
+uint16_t convert (const uint8_t *nb);
 
-	// Access and return value from LUT
-	return rule[idx];
-}
-
-void cellprint (uint8_t cell) {
- /* CELLPRINT (uint8_t cell)
+/* void cellprint (const uint8_t cell)
 	Prints a predetermined ASCII character to terminal, based on a cell's value. Seperated as a function for a cleaner code in CELLGEN().
 */
-	switch (cell) {
-		case 0: // NULL
-			cout << (unsigned char)176;
-			break;
-		case 1: // LEFT
-			cout << (unsigned char)47;
-			break;
-		case 2: // RIGHT
-			cout << (unsigned char)92;
-			break;
-		case 3: // XOR
-			cout << (unsigned char)94;
-			break;
-		case 4: // FORWARD
-			cout << (unsigned char)179;
-			break;
-		case 5: // NAND
-			cout << (unsigned char)219;
-			break;
-		default: // Undefined
-			cout << 'X';
-	}
-}
+void cellprint (const uint8_t cell);
 
-void cellgen (const uint8_t *input, const uint8_t *rule, uint8_t *output=nullptr) {
-	// Define working variables
-	static uint8_t array[DIM][DIM], neighbor[3];
-	static uint8_t i, j;
+/* void ca_graph (GeneticAlgorithm *pop, const int count)
+	Prints the LGA of the top "count" individuals.
+*/
+void ca_graph (GeneticAlgorithm *pop, const int count);
 
-	// Calculate each cell
-	for (i=0; i<DIM; i++) {
-		for (j=0; j<DIM; j++) {
-			if (i==0) { // Loading first row as input
-				array[i][j] = input[j];
-			} else { // Calculate the rest
-				if (j==0) {
-					neighbor[0] = 0;
-					neighbor[1] = array[i-1][j];
-					neighbor[2] = array[i-1][j+1];
-				} else if (j<DIM-1) {
-					neighbor[0] = array[i-1][j-1];
-					neighbor[1] = array[i-1][j];
-					neighbor[2] = array[i-1][j+1];
-				} else {
-					neighbor[0] = array[i-1][j-1];
-					neighbor[1] = array[i-1][j];
-					neighbor[2] = 0;
-				}
-				array[i][j] = cellfunc(neighbor, rule);
-			}
-		}
-	}
+#include "ga-main.h"
+#include "ca.cpp"
 
-	// Print - Predefined ASCII Terminal output
-	if (SHOW_C) {
-		for (i=0; i<DIM; i++) {
-			for (j=0; j<DIM; j++) {
-				cellprint(array[i][j]);
-			}
-			cout << endl;
-		}
-		cout << endl;
-	}
-
-	// Returns output as the last row, if an output array was given
-	if (output != nullptr) {
-		for (j=0; j<DIM; j++)
-			output[j] = array[DIM-1][j];
-	}
-}
+#endif
