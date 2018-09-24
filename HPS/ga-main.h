@@ -31,15 +31,15 @@ using namespace std; // namespace
 #include "hps_0.h"
 
 // ----- Parameter Definitions ----- //
-#define VERSION 0.95
-#define DIM 30 // Cell Array dimension
+#define VERSION 0.97
+#define DIM 32 // Cell Array dimension
 #define K 6 // Numbers of color represented in CA
 #define K_CUBE K*K*K // Predefined K^3 (Sorry...)
 #define GXDIM 80 // Fitness Graph X-Dimensions
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 // Genetics Algorithm Parameter
 #define POP 100 // Population size
-#define GEN_LIM 50 // Generation limit
+#define GEN_LIM 25 // Generation limit
 #define PM 0.05 // Mutation Probability
 #define POOL 5 // Tournament Selection Poolsize
 
@@ -61,7 +61,5 @@ uint32_t maxfit[GEN_LIM], minfit[GEN_LIM], medfit[GEN_LIM], avgfit[GEN_LIM];
 uint8_t LGA[DIM][DIM] = {0};
 // CA Seed array (First Row of Generation)
 uint8_t seed[DIM] = {0};
-// CA Output array (Last Row of Generation)
-// uint8_t output[DIM] = {0};
 
 #endif

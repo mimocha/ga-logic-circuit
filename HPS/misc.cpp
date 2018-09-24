@@ -86,7 +86,7 @@ void init (int argc, char **argv) {
 	srand(time(NULL));
 
 	// Initializes Seed CA
-	seed[DIM/2] = K-1;
+	seed[DIM/2] = 1;
 
 	printf("COLOR = %d | POPULATION = %d | GENERATION LIMIT = %d\n"
 		"CA GRAPH = %d | FITNESS = %d | TIMER = %d | RESULTS = %d | DEBUG = %d\n",

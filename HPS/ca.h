@@ -4,6 +4,23 @@
 #ifndef CA_H_INCLUDED
 #define CA_H_INCLUDED
 
+// ----- Define Colors for Colored CA graph output ----- //
+#define ANSI_BLACK "\033[0;30m"
+#define ANSI_RED "\033[0;31m"
+#define ANSI_GREEN "\033[0;32m"
+#define ANSI_YELLOW "\033[0;33m"
+#define ANSI_BLUE "\033[0;34m"
+#define ANSI_PURPLE "\033[0;35m"
+#define ANSI_CYAN "\033[0;36m"
+
+#define ANSI_GRAY "\033[1;30m"
+#define ANSI_LRED "\033[1;31m"
+#define ANSI_LGREEN "\033[1;32m"
+#define ANSI_LBLUE "\033[1;34m"
+#define ANSI_LPURPLE "\033[1;35m"
+#define ANSI_LCYAN "\033[1;36m"
+#define ANSI_WHITE "\033[1;37m"
+
 /* void cellgen (const uint8_t *input, const uint8_t *rule)
 	Takes in atleast 2 arguments, 3 if exists:
 	+ 1-D array of const unsigned char *input

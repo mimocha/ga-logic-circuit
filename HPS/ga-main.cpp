@@ -57,9 +57,6 @@ int main (int argc, char **argv) {
 		ga.Sort(pop);
 
 		// 5: Optionals
-		if (SHOW_C) { // CA Graphing
-			ca_graph (pop, 1);
-		}
 		if (SHOW_T) { // Performance
 			disp_time (time_gen, 0);
 		}
@@ -68,6 +65,9 @@ int main (int argc, char **argv) {
 		}
 		if (SHOW_R) { // Results
 			disp_results (pop);
+		}
+		if (SHOW_C) { // CA Graphing
+			ca_graph (pop, 1);
 		}
 	}
 	// ----- End Generation Loop ----- //
