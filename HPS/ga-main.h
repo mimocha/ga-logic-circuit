@@ -2,64 +2,54 @@
 	Contains standard library includes, defines, and other parameters.
 */
 
-#ifndef GAMAIN_H_INCLUDED
-#define GAMAIN_H_INCLUDED
+#ifndef GAMAIN_H
+#define GAMAIN_H
 
 // ----- Standard Library Definition ----- //
 
-#include "stdio.h" // Standard library
-#include "stdlib.h" // String to integers
-#include "string.h" // String manipulation
-#include "stdint.h" // uint definitions
-#include "time.h" // Timing & performance
-#include "math.h" // rounding
-#include <iostream> // cin cout
-#include <algorithm> // sort for GeneticAlgorithm::Sort()
-#include <vector> // vectors
-using namespace std; // namespace
+#include <stdio.h>		/* Standard io */
+#include <stdlib.h>		/* String to integers */
+#include <string.h>		/* String manipulation */
+#include <stdint.h>		/* uint definitions */
+#include <time.h>		/* Timing & performance */
+#include <math.h>		/* floor round ceiling */
+#include <iostream>		/* cin cout */
+#include <algorithm>	/* sort and find */
+#include <vector>		/* vectors */
+// #include <ctype.h>		/* isdigit */
 
-// ----- Linux API Include ----- //
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
+// // ----- Linux API Include ----- //
+// #include <unistd.h>
+// #include <fcntl.h>
+// #include <sys/mman.h>
+//
+// // ----- Altera HWLIB Include ----- //
+// #include "hwlib.h"
+// #include "socal/socal.h"
+// #include "socal/hps.h"
+// #include "socal/alt_gpio.h"
+// #include "hps_0.h"
 
-// ----- Altera HWLIB Include ----- //
-#include "hwlib.h"
-#include "socal/socal.h"
-#include "socal/hps.h"
-#include "socal/alt_gpio.h"
-#include "hps_0.h"
+// ----- Function Prototypes && Documentation ----- //
 
-// ----- Parameter Definitions ----- //
-#define VERSION 0.97
-#define DIM 32 // Cell Array dimension
-#define K 6 // Numbers of color represented in CA
-#define K_CUBE K*K*K // Predefined K^3 (Sorry...)
-#define GXDIM 80 // Fitness Graph X-Dimensions
-#define GYDIM 40 // Fitness Graph Y-Dimensions
-// Genetics Algorithm Parameter
-#define POP 100 // Population size
-#define GEN_LIM 25 // Generation limit
-#define PM 0.05 // Mutation Probability
-#define POOL 5 // Tournament Selection Poolsize
+/* void input_argument (const int argc, char **argv)
+	This function handles input arguments.
+	Should have limited use, now that a main menu is being implemented.
+*/
+void input_argument (const int argc, char **argv);
 
-// ----- Global variables ----- // (Sue me)
-clock_t time_total, time_gen;
-uint32_t uid_counter = 0; // Unique ID for any individual created.
+/* unsigned int mainmenu (void)
+	Main Menu function.
+	Users select valid inputs here. Selections are single-digit unsigned decimal integers.
+	The selection is then returned to main() for calling other functions.
 
-// Stuff for input argument handling
-bool SHOW_C = 0; // Toggles Pretty CA Plots
-bool SHOW_F = 0; // Toggles Fitness Tracking
-bool SHOW_T = 0; // Toggles Performance Timing
-bool SHOW_R = 0; // Toggles Result Displays
-bool SHOW_D = 0; // Toggles Debug
+	The actual selection and function calling should not occur within this function,
+	but within the main() function to keep the code clean and easy to follow.
+*/
+unsigned int mainmenu (void);
 
-// Fitness tracking variables: Max, Min, Median, Mean per generation
-uint32_t maxfit[GEN_LIM], minfit[GEN_LIM], medfit[GEN_LIM], avgfit[GEN_LIM];
+int run_sim ();
 
-// Internal Model of Logic Gate Array
-uint8_t LGA[DIM][DIM] = {0};
-// CA Seed array (First Row of Generation)
-uint8_t seed[DIM] = {0};
+void settings ();
 
 #endif
