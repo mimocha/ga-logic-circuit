@@ -2,7 +2,6 @@
 CC = arm-linux-gnueabihf-g++
 SOURCE = ga-main.cpp
 TARGET = ga-program
-HEADER = ga-main.h cellgen.h
 CFLAGS = -g -Wall -std=c++11
 INCLUDE = -I../hwlib/include/ -I../hwlib/include/soc_cv_av/ -I../ref/
 

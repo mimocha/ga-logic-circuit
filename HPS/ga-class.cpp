@@ -1,53 +1,4 @@
-/* Class header file for Genetics Algorithm main program.
-	Contains all classes and methods definitions.
-
-	A single instance of class GeneticAlgorithm is referred to as an individual.
-	A collection of individuals is referred to as a population.
-*/
-
-#ifndef GACLASS_H_INCLUDED
-#define GACLASS_H_INCLUDED
-
-class GeneticAlgorithm {
-
-private:
-	uint32_t	uid; // Unique id for tracking an individual
-	uint16_t	rank; // Fitness Ranking of the individual
-	uint8_t		dna[K_CUBE]; // DNA sequence (Cellular Automaton Rule)
-	uint16_t	fitness; // Fitness score for an individual
-	uint16_t	age; // For how long an individual has been alive for
-	// bool		elite_flag; // 0 for not-elite; 1 for elite
-	bool		eval_flag; // 0 for not-yet-evaluated; 1 for evaluated
-
-	void Reset (); // Resets the individual
-
-public:
-	GeneticAlgorithm (); // Constructor
-	void Eval (); // Signle-Evaluation function
-	void Sort (GeneticAlgorithm *array); // Sorting function
-
-	// ----- Genetic Algorithm Functions ----- //
-	void Selection (GeneticAlgorithm *array);
-	void Crossover (const uint8_t *dna_a, const uint8_t *dna_b);
-	void Mutate ();
-
-	// ----- Get Functions ----- //
-	uint32_t	getuid ();
-	uint16_t	getrnk ();
-	uint16_t	getfit ();
-	uint16_t	getage ();
-	uint8_t*	getdna ();
-	bool		geteval ();
-	void		debug ();
-
-	// ----- Set Functions ----- //
-	void setuid (const uint32_t set);
-	void setrnk (const uint16_t set);
-	void setfit (const uint16_t set);
-	void setage (const uint16_t set);
-	void setdna (const uint8_t* set);
-
-} ga; // use ga.function() instead of the instance used, for certain functions.
+/* Genetics Algorithm function definitions file */
 
 void GeneticAlgorithm::Reset () {
 	// Assign new id
@@ -335,5 +286,3 @@ void GeneticAlgorithm::setdna (const uint8_t* set) {
 		}
 	}
 }
-
-#endif

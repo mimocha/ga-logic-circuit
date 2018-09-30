@@ -2,16 +2,16 @@
 	Contains standard library includes, defines, and other parameters.
 */
 
-#ifndef GAMAIN_H
-#define GAMAIN_H
+#ifndef GAMAIN_HPP
+#define GAMAIN_HPP
 
 // ----- Standard Library Definition ----- //
 
-#include <stdio.h>		/* Standard io */
-#include <stdlib.h>		/* String to integers */
-#include <string.h>		/* String manipulation */
+#include <stdio.h>		/* Standard I/O */
+#include <stdlib.h>		/* Dynamic Memory Management & Random Numbers */
 #include <stdint.h>		/* uint definitions */
-#include <time.h>		/* Timing & performance */
+// #include <string.h>		/* String manipulation */
+// #include <time.h>		/* Timing & performance */
 #include <math.h>		/* floor round ceiling */
 #include <iostream>		/* cin cout */
 #include <algorithm>	/* sort and find */
@@ -46,10 +46,21 @@ void input_argument (const int argc, char **argv);
 	The actual selection and function calling should not occur within this function,
 	but within the main() function to keep the code clean and easy to follow.
 */
-unsigned int mainmenu (void);
+unsigned int main_menu (void);
 
-int run_sim ();
+/* int run_sim (void)
+	Wrapper for running the simulation.
+*/
+int run_sim (void);
 
-void settings ();
+/* void settings (void)
+	Handles changing of global parameters.
+*/
+void settings (void);
+
+/* void results (const int run_check)
+	Displays results from a previous simulation.
+*/
+void results (const int run_check);
 
 #endif

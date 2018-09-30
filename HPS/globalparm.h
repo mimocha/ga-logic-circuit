@@ -14,7 +14,7 @@
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum length of a side of the square grid.
-	So the number of cells on a grid, would be MAX_CA_DIM squared.
+	Split into the X and Y axis respectively.
 */
 #define MAX_CA_DIMX 100
 #define MAX_CA_DIMY 100
@@ -58,7 +58,7 @@
 #define GXDIM 80 // Fitness Graph X-Dimensions
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 
-/* ----- Variable Global Parameters ----- */
+/* ----- Variable Global Parameters ----- */ // Sue me
 
 /* TODO: Make parameter linked list? *Low Priority*
 	Possibly more flexible handling of parameters
@@ -76,16 +76,37 @@
 struct param_ga {
 	unsigned int POP = 100;	/* Maximum Population */
 	unsigned int GEN = 100;	/* Maximum Generation */
-	float MUTP = 0.05;		/* Mutation Probability */
+	float MUTP = 0.05;		/* Mutation Probability in decimal, range [0.00, 1.00] */
 	unsigned int POOL = 5;	/* Tournament Selection Poolsize */
 };
 
+/* Cellular Automaton Parameters Struct */
 struct param_ca {
 	unsigned int DIMX = 10;	/* X-Axis Dimension */
 	unsigned int DIMY = 10;	/* Y-Axis Dimension */
 	unsigned int COLOR = 4;	/* CA Color Count */
 	unsigned int NB = 3;	/* CA Neighbor Count */
-}
+};
+
+/* Data Parameters Struct */
+struct param_data {
+	/* Fitness Data Tracking | Default = 1
+		Toggles whether or not to track the fitness data across the experiment.
+		Tracks Minimum, Maximum, Average, and Median fitness value from each generation.
+		Results are plotted automatically at the end of the experiment.
+	*/
+	bool FIT = 1;
+	/* Performance and Time Tracking | Default = 1
+		Tracks computation time required during the experiment.
+	*/
+	bool TIME = 0;
+	/* Cellular Automaton Grid Print | Default = 1
+		Prints the CA Grid of the fittest individual at the end of the experiment.
+	*/
+	bool CAPRINT = 0;
+	/* Export data from the experiment to file | (Off for now)*/
+	bool EXPORT = 0;
+};
 
 /*	Main Global Parameters Struct
 	Struct for containing all the different types of global variables we will need.
@@ -95,19 +116,14 @@ struct param_ca {
 */
 struct param_main {
 	param_ga GA;
+	param_ca CA;
+	param_data DATA;
 } global;
 
 
-// // ----- Global variables ----- // (Sue me)
+// // ----- Global variables ----- //
 // clock_t time_total, time_gen;
 // uint32_t uid_counter = 0; // Unique ID for any individual created.
-//
-// // Stuff for input argument handling
-// bool SHOW_C = 0; // Toggles Pretty CA Plots
-// bool SHOW_F = 0; // Toggles Fitness Tracking
-// bool SHOW_T = 0; // Toggles Performance Timing
-// bool SHOW_R = 0; // Toggles Result Displays
-// bool SHOW_D = 0; // Toggles Debug
 //
 // // Fitness tracking variables: Max, Min, Median, Mean per generation
 // uint32_t maxfit[GEN_LIM], minfit[GEN_LIM], medfit[GEN_LIM], avgfit[GEN_LIM];

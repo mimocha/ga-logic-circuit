@@ -1,14 +1,14 @@
 /* Header file for miscellaneous functions */
 
-#ifndef MISC_H
-#define MISC_H
+#ifndef MISC_HPP
+#define MISC_HPP
 
 /* void help_message (void)
 	Displays help message
 */
 void help_message (void);
 
-/* ----- Sanitized Scanf -----
+/* ----- Sanitized Scanf ----- //
 	Sanitized Scanf to parse input.
 	Takes in a pointer to a specified type of variable, ignores all but the first valid value.
 	Sanitizes the input, and sets the value at the specified location.
@@ -26,6 +26,9 @@ int *scan_int (int *dest);
 unsigned int *scan_uint (unsigned int *dest);
 
 float *scan_float (float *dest);
+
+/* This will throw a GCC warning on compile time. But this will have to do for now. */
+bool *scan_bool (bool *dest);
 
 #include "misc.cpp"
 
