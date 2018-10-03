@@ -8,99 +8,86 @@
 #ifndef GACLASS_H_INCLUDED
 #define GACLASS_H_INCLUDED
 
+using namespace std;
+
 class GeneticAlgorithm {
-	public:
-		unsigned int	uid;	/* Unique id for tracking the individual */
-		unsigned int	rank;	/* Fitness Ranking of the individual */
-		uint8_t			*dna;	/* DNA sequence (Cellular Automaton Rule) */
-		unsigned int	fit;	/* Fitness score of the individual */
-		unsigned int	age;	/* For how long the individual has been alive for */
-		bool			eval;	/* Evaluation Flag | 0 = not evaluated | 1 = evaluated */
 
-		/* ----- Constructors & Destructors ----- */
-	public:
-		/* Default Constructor
-			Constructs a single individual with default values of everything
-		*/
-		GeneticAlgorithm ();
-		/* Single Object Constructor
-			Constructs a single individual, given a uid number and a DNA length
-		*/
-		GeneticAlgorithm (unsigned int curr_uid, unsigned int dna_length);
-		/* Multi-Object Constructor
-			Constructs an array of individuals (a population), given:
-			a starting UID number to count from
-			a DNA length
-			a desired array size (how many individuals to construct)
-		*/
-		GeneticAlgorithm (unsigned int curr_uid, unsigned int dna_length, unsigned int count);
-		/* Destructor */
-		~GeneticAlgorithm ();
-	// 	void Reset (); // Resets the individual
-	//
-	// public:
-	// 	GeneticAlgorithm (); // Constructor
-	// 	void Eval (); // Signle-Evaluation function
-	// 	void Sort (GeneticAlgorithm *array); // Sorting function
-	//
-	// 	// ----- Genetic Algorithm Functions ----- //
-	// 	void Selection (GeneticAlgorithm *array);
-	// 	void Crossover (const uint8_t *dna_a, const uint8_t *dna_b);
-	// 	void Mutate ();
-	//
-	// 	// ----- Get Functions ----- //
-	// 	uint32_t	getuid ();
-	// 	uint16_t	getrnk ();
-	// 	uint16_t	getfit ();
-	// 	uint16_t	getage ();
-	// 	uint8_t*	getdna ();
-	// 	bool		geteval ();
-	// 	void		debug ();
-	//
-	// 	// ----- Set Functions ----- //
-	// 	void setuid (const uint32_t set);
-	// 	void setrnk (const uint16_t set);
-	// 	void setfit (const uint16_t set);
-	// 	void setage (const uint16_t set);
-	// 	void setdna (const uint8_t* set);
+public:
+	uint32_t uid;	/* Unique id for tracking the individual */
+	uint8_t *dna;	/* DNA sequence (Cellular Automaton Rule) */
+	int fit;		/* Fitness score of the individual */
+	uint32_t rank;	/* Fitness Ranking of the individual */
+	uint32_t age;	/* For how long the individual has been alive for */
+	bool eval;		/* Evaluation Flag | 0 = not evaluated | 1 = evaluated */
 
-} ga; // use ga.function() instead of the instance used, for certain functions.
+public:
+	/* ----- Constructors & Destructors ----- */
 
-/* Constructor */
+	/* Default Constructor */
+	GeneticAlgorithm (void) {}
+	/* Single Object Constructor //
+		Initializes a single individual, given a uid number and a DNA length
+	*/
+	GeneticAlgorithm (const uint32_t curr_uid, const uint32_t dna_length);
 
-GeneticAlgorithm::GeneticAlgorithm () {
-	uid = 0;
-	rank = 0;
-	fit = 0;
-	age = 0;
-	eval = 0;
-}
+	/* ----- Genetic ALgorithm Operations ----- */
 
-GeneticAlgorithm::GeneticAlgorithm (unsigned int curr_uid, unsigned int dna_length) {
-	uid = curr_uid;
+	/* RESET (void)
+		TODO: Fix UID & Add documentation
+	*/
+	void Reset (void);
+	/* SORT (GeneticAlgorithm *array)
+		Sorts the entire population by fitness value, in decreasing order
+	*/
+	void Sort (GeneticAlgorithm *array);
+	/* SELECTION (GeneticAlgorithm *array)
+		The likelyhood of any individual being selected, and living on, passing their genes onto the next generation, is inversely-proportional to its rank in the population. The higher the rank, the less likely they'll survive.
 
-	dna = (uint8_t*) malloc (dna_length);
-	if (dna == NULL) {
-		perror ("Not Enough Memory for MALLOC\n");
-		exit (EXIT_FAILURE);
-	} else {
-		for (unsigned int i=0; i<dna_length; i++) {
-			dna[i] = i;
-		}
-	}
+		Using the ( rand()%POP ), we get a random number in the range of [0, POP). We then compare this result with the rank of any given individual. If its rank is smaller than or equal to the resulting number, it survives. Thus the higher ranking individual - 1,2,3... - will have a higher chance of surviving than those of lower ranks - 70,80,90...
 
-	curr_uid++;
-}
+		Selection of who live or dies is kept in vectors "live" and "dead" respectively. Using vector instead of arrays, because the numbers for how many live or dies is undetermined (random).
 
-GeneticAlgorithm::GeneticAlgorithm (
-	unsigned int curr_uid, unsigned int dna_length, unsigned int count) {
+		[ <----- ----- Actual Population ----- -----> ]
+			VVV   VVV   VVV  (IDX)  VVV   VVV   VVV
+		[ <----- LIVE -----> ]  [ <----- DEAD -----> ]
+			VV (IDX) VV
+		[ <- POOL 1 -> ] ---> Parents A & B ---> Offspring 1
+		[ <- POOL 2 -> ] ---> Parents A & B ---> Offspring 2
+		[ <- POOL 3 -> ] ---> Parents A & B ---> Offspring 3
 
-}
+		TODO: Apply aging to the calculation; older individuals are more likely to die off.
+			Purpose: to avoid getting trapped in local optimas?
+	*/
+	void Selection (GeneticAlgorithm *array);
+	/* CROSSOVER (const uint8_t *DNA_A, const uint8_t DNA_B)
+		Homogeneously crossesover two parents' dna string.
+		Equal likelyhood any certain dna character will be chosen.
+		Equal split between two parents is not guaranteed.
+	*/
+	void Crossover (const uint8_t *dna_a, const uint8_t *dna_b);
+	/* MUTATE (void)
+		TODO: Refactor & Add documentation
+	*/
+	void Mutate (void);
 
-GeneticAlgorithm::~GeneticAlgorithm () {
-	free (dna);
-}
+private:
+	/* DNA dynamic memory allocation //
+		Allocates memory for the DNA sequence, for a given DNA length.
 
-// #include "ga-class.cpp"
+		Takes in constant unsigned 32-bit integer DNA length,
+
+		Allocates and zero-initializes an array of unsigned characters, of length (dna_length).
+
+		Checks whether or not memory was successfully allocated,
+			throws exception if failed
+			else fills the array with random number, modulo CA Color count.
+
+		Returns the pointer to an array of unsigned chars.
+	*/
+	uint8_t *dna_calloc (const uint32_t dna_length);
+
+} ga;
+
+#include "ga-class.cpp"
 
 #endif

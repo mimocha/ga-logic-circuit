@@ -108,6 +108,11 @@ struct param_data {
 	bool EXPORT = 0;
 };
 
+/* Simulation Results Struct */
+struct param_rslt {
+	int status = 0;	/* Status of simulation */
+};
+
 /*	Main Global Parameters Struct
 	Struct for containing all the different types of global variables we will need.
 	Sub-types of global variables are defined within other structs, and declared within this struct.

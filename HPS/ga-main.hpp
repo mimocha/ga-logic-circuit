@@ -8,21 +8,20 @@
 // ----- Standard Library Definition ----- //
 
 #include <stdio.h>		/* Standard I/O */
-#include <stdlib.h>		/* Dynamic Memory Management & Random Numbers */
+#include <stdlib.h>		/* calloc, free, rand, srand */
 #include <stdint.h>		/* uint definitions */
-// #include <string.h>		/* String manipulation */
-// #include <time.h>		/* Timing & performance */
-#include <math.h>		/* floor round ceiling */
-#include <iostream>		/* cin cout */
-#include <algorithm>	/* sort and find */
+#include <time.h>		/* time */
+#include <math.h>		/* pow, round, ceiling */
+#include <iostream>		/* cin, cout */
+#include <algorithm>	/* sort, find */
 #include <vector>		/* vectors */
-// #include <ctype.h>		/* isdigit */
+#include <array>		/* arrays */
 
-// // ----- Linux API Include ----- //
-// #include <unistd.h>
-// #include <fcntl.h>
-// #include <sys/mman.h>
-//
+// ----- Linux API Include ----- //
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
 // // ----- Altera HWLIB Include ----- //
 // #include "hwlib.h"
 // #include "socal/socal.h"
@@ -47,11 +46,6 @@ void input_argument (const int argc, char **argv);
 	but within the main() function to keep the code clean and easy to follow.
 */
 unsigned int main_menu (void);
-
-/* int run_sim (void)
-	Wrapper for running the simulation.
-*/
-int run_sim (void);
 
 /* void settings (void)
 	Handles changing of global parameters.

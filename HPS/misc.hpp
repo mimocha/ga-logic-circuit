@@ -27,7 +27,7 @@ unsigned int *scan_uint (unsigned int *dest);
 
 float *scan_float (float *dest);
 
-/* This will throw a GCC warning on compile time. But this will have to do for now. */
+/* This will throw a GCC warning on compile time. */
 bool *scan_bool (bool *dest);
 
 #include "misc.cpp"

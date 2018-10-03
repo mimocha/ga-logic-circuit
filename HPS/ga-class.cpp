@@ -1,70 +1,75 @@
 /* Genetics Algorithm function definitions file */
 
-void GeneticAlgorithm::Reset () {
+/* Single Object Constructor //
+	Initializes a single individual, given a uid number and a DNA length
+*/
+GeneticAlgorithm::GeneticAlgorithm (const uint32_t curr_uid, const uint32_t dna_length) {
+	uid = curr_uid;
+	dna = GeneticAlgorithm::dna_calloc (dna_length);
+	fit = 0;
+	rank = 0;
+	age = 0;
+	eval = 0;
+}
+
+/* uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t dna_length)
+	DNA dynamic memory allocation
+	Allocates memory for the DNA sequence, for a given DNA length.
+
+	Takes in constant unsigned 32-bit integer DNA length,
+
+	Allocates and zero-initializes an array of unsigned characters, of length (dna_length).
+
+	Checks whether or not memory was successfully allocated,
+		throws exception if failed
+		else fills the array with random number, modulo CA Color count.
+
+	Returns the pointer to an array of unsigned chars.
+*/
+uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t dna_length) {
+	uint8_t *dna = (uint8_t*) calloc (dna_length, sizeof (uint8_t) );
+	if (dna == NULL) {
+		perror ("Not Enough Memory for MALLOC\n");
+		exit (EXIT_FAILURE);
+	}
+	for (uint32_t i=0; i<dna_length; i++) {
+		dna[i] = rand () % global.CA.COLOR;
+	}
+	return dna;
+}
+
+
+void GeneticAlgorithm::Reset (void) {
 	// Assign new id
-	uid = uid_counter;
-	uid_counter++;
+	// uid = uid_counter;
+	// uid_counter++;
 
 	// Zero initialize the rest
-	fitness = 0;
+	fit = 0;
 	rank = 0;
-	eval_flag = 0;
-	// elite_flag = 0;
 	age = 0;
+	eval = 0;
 }
 
-GeneticAlgorithm::GeneticAlgorithm () {
-	// Assign new id
-	uid = uid_counter;
-	uid_counter++;
-
-	// Randomly generate dna
-	for (int i=0; i<K_CUBE; i++)
-		dna[i] = rand() % K;
-
-	// Zero initialize the rest
-	fitness = 0;
-	rank = 0;
-	eval_flag = 0;
-	// elite_flag = 0;
-	age = 0;
-}
-
-void GeneticAlgorithm::Eval () {
-	// Evaluates a single individual
-	eval_flag = 1;
-	age += 1;
-}
+// void GeneticAlgorithm::Eval () {
+// 	// Evaluates a single individual
+// 	eval_flag = 1;
+// 	age += 1;
+// }
 
 void GeneticAlgorithm::Sort (GeneticAlgorithm *array) {
-	// Sorts the entire population by fitness value, in decreasing order
-	sort(array, array + POP,
+	sort(array, array + global.GA.POP,
 		[](GeneticAlgorithm const & a, GeneticAlgorithm const & b) -> bool
-		{ return a.fitness > b.fitness; }); // Swap sign to reverse sorting
+		{ return a.fit > b.fit; }); // Swap sign to reverse sorting
 
 	// Assign new rank by index
-	for (int i=0; i<POP; i++)
-		array[i].rank = i;
+	for (unsigned int idx=0; idx<global.GA.POP; idx++)
+		array[idx].rank = idx;
 }
 
-// ----- Genetic Algorithm Functions ----- //
+// ----- Genetic Algorithm Operations ----- //
+
 void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
-	/* SELECTION (GeneticAlgorithm *array)
-	The likelyhood of any individual being selected, and living on, passing their genes onto the next generation, is inversely-proportional to its rank in the population. The higher the rank, the less likely they'll survive.
-
-	Using the ( rand()%POP ), we get a random number in the range of [0, POP). We then compare this result with the rank of any given individual. If its rank is smaller than or equal to the resulting number, it survives. Thus the higher ranking individual - 1,2,3... - will have a higher chance of surviving than those of lower ranks - 70,80,90...
-
-	Selection of who live or dies is kept in vectors "live" and "dead" respectively. Using vector instead of arrays, because the numbers for how many live or dies is undetermined (random).
-
-	[ <----- ----- Actual Population ----- -----> ]
-		VVV   VVV   VVV  (IDX)  VVV   VVV   VVV
-	[ <----- LIVE -----> ]  [ <----- DEAD -----> ]
-		VV (IDX) VV
-	[ <- POOL 1 -> ] ---> Parents A & B ---> Offspring 1
-	[ <- POOL 2 -> ] ---> Parents A & B ---> Offspring 2
-	[ <- POOL 3 -> ] ---> Parents A & B ---> Offspring 3
-
-	*/
 	// Vector of who live or dies - contains uid
 	unsigned int idx, i, counter;
 	vector<uint16_t> live, dead;
@@ -72,12 +77,8 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 	/* Note: idx is equivalent to the rank, because array is pre-sorted.
 	 We will be keeping track of the idx, because it allows easy access to the original population via array[idx] and its properties.
 	*/
-	for (idx=0; idx<POP; idx++) {
-		// if ( array[idx].elite_flag == 1 ) { // Elite Selection
-		// 	live.push_back(idx);
-		// 	continue;
-		// }
-		uint16_t rng = rand()%POP;
+	for (idx=0; idx<global.GA.POP; idx++) {
+		uint16_t rng = rand () % global.GA.POP;
 		if ( rng >= idx ) { // 'Normal' selection
 			live.push_back(idx); // lives
 		} else {
@@ -92,7 +93,8 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 		// Tournament selection pool - Vector because size is random
 		vector<uint16_t> pool_a, pool_b;
 		vector<uint16_t> debug_a, debug_b;
-		for (i=0; i<POOL; i++) {
+
+		for (i=0; i<global.GA.POOL; i++) {
 			/* Randomly selects POOL number of individuals from the "live" list.
 			This does not guarantee POOL number of *unique* individuals; individuals may appear more than once in any pool, or even fill the entire pool with themselves (very unlikely, but possible).
 
@@ -100,81 +102,53 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 			> Smaller index = Higher rank.
 			> Selection favors higher ranking individuals.
 			*/
-			pool_a.push_back( live[ rand()%live.size() ]);
-			pool_b.push_back( live[ rand()%live.size() ]);
-		}
-
-		// Debug print
-		if (SHOW_D) {
-			debug_a = pool_a;
-			debug_b = pool_b;
+			pool_a.push_back (live[rand()%live.size()]);
+			pool_b.push_back (live[rand()%live.size()]);
 		}
 
 		// Unique Parents - contains the idx for each individual
 		uint16_t parent_a, parent_b;
 		// Selects the fittest from each pool to be the parents
-		parent_a = *min_element(pool_a.begin(), pool_a.end());
-		parent_b = *min_element(pool_b.begin(), pool_b.end());
+		parent_a = *min_element (pool_a.begin(), pool_a.end());
+		parent_b = *min_element (pool_b.begin(), pool_b.end());
 		// Removes the chosen individual from the pool
-		pool_a.erase( min_element(pool_a.begin(), pool_a.end()) );
-		pool_b.erase( min_element(pool_b.begin(), pool_b.end()) );
+		pool_a.erase (min_element (pool_a.begin(), pool_a.end()));
+		pool_b.erase (min_element (pool_b.begin(), pool_b.end()));
 
 		// Ensure two unique parents
 		counter = 0;
 		while (parent_a == parent_b) {
-			if (!pool_b.empty()) { // if pool_b is not empty
-				parent_b = *min_element(pool_b.begin(), pool_b.end());
-				pool_b.erase( min_element(pool_b.begin(), pool_b.end()) );
-			} else if (!pool_a.empty()) { // if pool_a is not empty
-				parent_a = *min_element(pool_a.begin(), pool_a.end());
-				pool_a.erase( min_element(pool_a.begin(), pool_a.end()) );
-			} else { // if both pools are empty
-				// (two entire pool was made of the same individual)
-				// Get entirely random individual from main population
-				parent_b = live[ rand()%live.size() ];
+			if (!pool_b.empty()) {
+				/* if pool_b is not empty */
+				parent_b = *min_element (pool_b.begin(), pool_b.end());
+				pool_b.erase (min_element (pool_b.begin(), pool_b.end()));
+			} else if (!pool_a.empty()) {
+				/* if pool_a is not empty */
+				parent_a = *min_element (pool_a.begin(), pool_a.end());
+				pool_a.erase (min_element (pool_a.begin(), pool_a.end()));
+			} else {
+				/* if both pools are empty //
+					(two entire pool was made of the same individual)
+					Get entirely random individual from main population
+				*/
+				parent_b = live[ rand () % live.size() ];
 			}
+
+			/* Infinite Loop catch - just in case */
 			counter++;
-			if (counter >= 100) { // Infinite Loop catch - just in case
-				puts("Unique selection failed");
+			if (counter >= 100) {
+				perror ("Unique selection failed");
 				break;
 			}
 		}
 
-		// Debug print
-		if (SHOW_D) {
-			puts ("POOL A");
-			puts ("RANK | UID | FITNESS");
-			for (i=0; i<debug_a.size(); i++) {
-				printf("%4d | %3d | %7d",
-					debug_a[i], array[debug_a[i]].uid, array[debug_a[i]].fitness);
-				if (debug_a[i] == parent_a) cout << " -> A";
-				if (debug_a[i] == parent_b) cout << " -> B";
-				cout << endl;
-			}
-			puts ("POOL B");
-			puts ("RANK | UID | FITNESS");
-			for (i=0; i<debug_b.size(); i++) {
-				printf("%4d | %3d | %7d",
-					debug_b[i], array[debug_b[i]].uid, array[debug_b[i]].fitness);
-				if (debug_b[i] == parent_a) cout << " -> A";
-				if (debug_b[i] == parent_b) cout << " -> B";
-				cout << endl;
-			}
-			printf("%4d | %3d | %7d -> Replaced\n",
-			dead.back(), array[dead.back()].uid, array[dead.back()].fitness);
-		}
+		array[dead.back()].Reset ();
+		array[dead.back()].Crossover (array[parent_a].dna, array[parent_b].dna);
+		array[dead.back()].Mutate ();
+		dead.pop_back ();
 
-		array[dead.back()].Reset();
-		array[dead.back()].Crossover(array[parent_a].dna, array[parent_b].dna);
-		array[dead.back()].Mutate();
-		dead.pop_back();
-
-		pool_a.clear();
-		pool_b.clear();
-		if (SHOW_D) {
-			debug_a.clear();
-			debug_b.clear();
-		}
+		pool_a.clear ();
+		pool_b.clear ();
 	}
 
 	live.clear();
@@ -182,12 +156,9 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 }
 
 void GeneticAlgorithm::Crossover (const uint8_t *dna_a, const uint8_t *dna_b) {
-	/* CROSSOVER (const uint8_t *DNA_A, const uint8_t DNA_B)
-	Homogeneously crossesover two parents' dna string.
-	Equal likelyhood any certain dna character will be chosen.
-	Equal split between two parents is not guaranteed.
-	*/
-	for (uint16_t i=0; i<K_CUBE; i++) {
+	uint32_t dna_length = pow(global.CA.COLOR, global.CA.NB);
+
+	for (uint16_t i=0; i<dna_length; i++) {
 		if ( rand()%1 )
 			dna[i] = dna_a[i];
 		else
@@ -195,21 +166,23 @@ void GeneticAlgorithm::Crossover (const uint8_t *dna_a, const uint8_t *dna_b) {
 	}
 }
 
-void GeneticAlgorithm::Mutate () {
-	for (uint16_t i=0; i<K_CUBE; i++) {
-		if ( (rand()%10000) < (PM*10000) ) {
+void GeneticAlgorithm::Mutate (void) {
+	uint32_t dna_length = pow(global.CA.COLOR, global.CA.NB);
+
+	for (uint16_t i=0; i<dna_length; i++) {
+		if ( (rand()%10000) < (global.GA.MUTP*10000) ) {
 			// Uses another random number to decrease chance of major mutations
 			uint8_t rng = rand()%50;
 			switch ( rng ) {
 				case 0: { // Swap (swaps this gene with another random gene)
 					uint8_t tmp = dna[i];
-					uint16_t swap = rand()%K_CUBE;
+					uint16_t swap = rand()%dna_length;
 					dna[i] = dna[swap];
 					dna[swap] = tmp;
 					break;
 				}
 				case 1: { // Scramble (scramble genes in a random range)
-					uint16_t range = (rand()%K_CUBE)/2;
+					uint16_t range = (rand()%dna_length)/2;
 					if (i > range) {
 						random_shuffle (&dna[range], &dna[i]);
 					} else if (range > i) {
@@ -221,8 +194,8 @@ void GeneticAlgorithm::Mutate () {
 				default: { // Single-gene mutations
 					uint8_t p = rand() % 3;
 					if (p==0) 	dna[i] = 0;
-					if (p==1) 	dna[i] = K-1;
-					if (p==2)	dna[i] = rand()%K;
+					if (p==1) 	dna[i] = global.CA.COLOR-1;
+					if (p==2)	dna[i] = rand()%global.CA.COLOR;
 					break;
 				}
 			}
@@ -230,59 +203,59 @@ void GeneticAlgorithm::Mutate () {
 	}
 }
 
-// ----- Get Functions ----- //
-uint32_t GeneticAlgorithm::getuid () {
-	return uid;
-}
-
-uint16_t GeneticAlgorithm::getrnk () {
-	return rank;
-}
-
-uint16_t GeneticAlgorithm::getfit () {
-	return fitness;
-}
-
-uint16_t GeneticAlgorithm::getage () {
-	return age;
-}
-
-uint8_t* GeneticAlgorithm::getdna () {
-	return dna;
-}
-
-bool GeneticAlgorithm::geteval () {
-	return eval_flag;
-}
-
-void GeneticAlgorithm::debug () {
-	// Prints debug information for the individual
-	printf("UID: %u RANK: %u FITNESS: %u AGE: %u\n", uid, rank, fitness, age);
-}
-
-// ----- Set Function ----- //
-void GeneticAlgorithm::setuid (const uint32_t set) {
-	uid = set;
-}
-
-void GeneticAlgorithm::setrnk (const uint16_t set) {
-	rank = set;
-}
-
-void GeneticAlgorithm::setfit (const uint16_t set) {
-	fitness = set;
-}
-
-void GeneticAlgorithm::setage (const uint16_t set) {
-	age = set;
-}
-
-void GeneticAlgorithm::setdna (const uint8_t* set) {
-	for (int i=0; i<K_CUBE; i++) {
-		if (set[i] >= K) { // Out of bound catch
-			perror ("Set value out of bound for method GeneticAlgorithm::setdna");
-		} else {
-			dna[i] = set[i];
-		}
-	}
-}
+// // ----- Get Functions ----- //
+// uint32_t GeneticAlgorithm::getuid () {
+// 	return uid;
+// }
+//
+// uint16_t GeneticAlgorithm::getrnk () {
+// 	return rank;
+// }
+//
+// uint16_t GeneticAlgorithm::getfit () {
+// 	return fitness;
+// }
+//
+// uint16_t GeneticAlgorithm::getage () {
+// 	return age;
+// }
+//
+// uint8_t* GeneticAlgorithm::getdna () {
+// 	return dna;
+// }
+//
+// bool GeneticAlgorithm::geteval () {
+// 	return eval_flag;
+// }
+//
+// void GeneticAlgorithm::debug () {
+// 	// Prints debug information for the individual
+// 	printf("UID: %u RANK: %u FITNESS: %u AGE: %u\n", uid, rank, fitness, age);
+// }
+//
+// // ----- Set Function ----- //
+// void GeneticAlgorithm::setuid (const uint32_t set) {
+// 	uid = set;
+// }
+//
+// void GeneticAlgorithm::setrnk (const uint32_t set) {
+// 	rank = set;
+// }
+//
+// void GeneticAlgorithm::setfit (const int set) {
+// 	fit = set;
+// }
+//
+// void GeneticAlgorithm::setage (const uint32_t set) {
+// 	age = set;
+// }
+//
+// void GeneticAlgorithm::setdna (const uint8_t* set) {
+// 	for (int i=0; i<; i++) {
+// 		if (set[i] >= K) { // Out of bound catch
+// 			perror ("Set value out of bound for method GeneticAlgorithm::setdna");
+// 		} else {
+// 			dna[i] = set[i];
+// 		}
+// 	}
+// }

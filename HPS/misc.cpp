@@ -28,10 +28,14 @@ float *scan_float (float *dest) {
 	return dest;
 }
 
-/* This will throw a GCC warning on compile time; but this will have to do for now. */
+/* This normally throws a GCC warning on compile time.
+	Due to there not being a bool* type for scanf,
+	so the (unsigned int*) cast is used to silence the warning.
+	Ugly, but will have to do.
+*/
 bool *scan_bool (bool *dest) {
 	scanf ("%*[^0-1]");
-	scanf ("%1u[0-1]", dest);
+	scanf ("%1u[0-1]", (unsigned int*)dest);
 	scanf ("%*[^\n]");
 	return dest;
 }

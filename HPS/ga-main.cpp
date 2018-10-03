@@ -4,14 +4,16 @@
 #include "globalparm.h"	/* Global Parameters */
 #include "misc.hpp"		/* Miscellaneous Functions */
 #include "ga-class.hpp"	/* Genetics Algorithm Class */
+#include "sim.hpp"		/* Simulation Function Wrapper */
 
 using namespace std;
 
 int main (int argc, char **argv) {
 	input_argument (argc, argv);
 
-	static unsigned int sel; /* Variable for selecing */
-	/* static int run_check
+	/* Variable for selecing */
+	static unsigned int sel;
+	/* static int run_check //
 		Variable for checking whether or not a simulation has been ran.
 		Also for checking the status of any simulation ran.
 
@@ -78,34 +80,6 @@ unsigned int main_menu (void) {
 	}
 
 	return var;
-}
-
-int run_sim (void) {
-	#define SUCCESS 1
-	#define FAILED -1
-
-	/* Prints Parameter List */
-	printf (
-		"\n\t>>>-- Beginning Simulation --<<<\n"
-		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
-		"\tDIMX = %3u | DIMY = %3u | COLOR = %3u | NEIGHBOR = %2u\n"
-		"\tFIT = %1u | TIME = %1u | CAPRINT = %1u | EXPORT = %1u\n",
-		global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
-		global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
-		global.DATA.FIT, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT
-	);
-
-	// wrapper for calling all the other functions
-
-	GeneticAlgorithm test (10, 10);
-
-	printf ("Single Object: %u ", test.uid);
-	for (int i=0; i<10; i++) {
-		printf ("%u", test.dna[i]);
-	}
-	cout << endl;
-
-	return SUCCESS;
 }
 
 void settings (void) {
@@ -203,6 +177,9 @@ void settings (void) {
 }
 
 void results (const int run_check) {
+
+	// Get results through another function, with static variables and such?
+	// Instead of global parameters and return values from sim function
 
 	if (run_check == 0) {
 		printf ("No simulation has been ran.\n");
