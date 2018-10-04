@@ -15,6 +15,14 @@ using namespace std;
 */
 int run_sim (void);
 
+/* void status (const unsigned int gen)
+	Status indicator function.
+	Indicates current progress of simulation, at minimal cpu cost.
+
+	TODO: Add ETA and variable intervals
+*/
+void status (const unsigned int gen);
+
 #include "sim.cpp"
 
 #endif

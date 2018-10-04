@@ -11,7 +11,10 @@
 using namespace std;
 
 class GeneticAlgorithm {
-
+/* Everything is public
+	Although bad form, this must do for now. Finishing my dissertation comes first.
+	If time permits, reintroduce Get() and Set(), along with private controls.
+*/
 public:
 	uint32_t uid;	/* Unique id for tracking the individual */
 	uint8_t *dna;	/* DNA sequence (Cellular Automaton Rule) */
@@ -20,7 +23,6 @@ public:
 	uint32_t age;	/* For how long the individual has been alive for */
 	bool eval;		/* Evaluation Flag | 0 = not evaluated | 1 = evaluated */
 
-public:
 	/* ----- Constructors & Destructors ----- */
 
 	/* Default Constructor */
@@ -29,17 +31,18 @@ public:
 		Initializes a single individual, given a uid number and a DNA length
 	*/
 	GeneticAlgorithm (const uint32_t curr_uid, const uint32_t dna_length);
+	/* Destructor //
+		A custom destructor will cause bugs, and segmentation faults.
+		Probably due to the destructor being called automatically by the compiler at some point,
+		this breaks the program and will likely cause a segmentation fault.
+
+		Thus, memory is freed manually at the end of run_sim(), in "sim.cpp".
+		This destructor is left here for future references.
+	*/
+	// ~GeneticAlgorithm (void);
 
 	/* ----- Genetic ALgorithm Operations ----- */
 
-	/* RESET (void)
-		TODO: Fix UID & Add documentation
-	*/
-	void Reset (void);
-	/* SORT (GeneticAlgorithm *array)
-		Sorts the entire population by fitness value, in decreasing order
-	*/
-	void Sort (GeneticAlgorithm *array);
 	/* SELECTION (GeneticAlgorithm *array)
 		The likelyhood of any individual being selected, and living on, passing their genes onto the next generation, is inversely-proportional to its rank in the population. The higher the rank, the less likely they'll survive.
 
@@ -66,11 +69,32 @@ public:
 	*/
 	void Crossover (const uint8_t *dna_a, const uint8_t *dna_b);
 	/* MUTATE (void)
-		TODO: Refactor & Add documentation
+		Mutates the dna of a given individual.
+		Iterates over every dna chunk, and compares a random number to a set probability.
 	*/
 	void Mutate (void);
 
-private:
+	/* ----- Other Miscellany Operations ----- */
+
+	/* RESET (void)
+		Resets an individual, and assigns new UID.
+		For after an individual 'dies', and is being replaced by a new individual.
+
+		TODO: DNA REALLOC - If DNA length has changed, reallocate *dna
+	*/
+	void Reset (void);
+	/* SORT (GeneticAlgorithm *array)
+		Sorts the entire population by fitness value, in decreasing order
+	*/
+	void Sort (GeneticAlgorithm *array);
+	/* EVAL (void) *Deprecated*
+		Evaluate an individual.
+		This is a wrapper for setting (eval = 1, age += 1)
+		Actual evaluation functions should be coded in "sim.cpp".
+		Hopefully this will keep codes from being confusing.
+	*/
+	// void Eval (void);
+
 	/* DNA dynamic memory allocation //
 		Allocates memory for the DNA sequence, for a given DNA length.
 

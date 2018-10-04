@@ -75,7 +75,7 @@
 /* Genetics Algorithm Parameters Struct */
 struct param_ga {
 	unsigned int POP = 100;	/* Maximum Population */
-	unsigned int GEN = 100;	/* Maximum Generation */
+	unsigned int GEN = 1;	/* Maximum Generation */
 	float MUTP = 0.05;		/* Mutation Probability in decimal, range [0.00, 1.00] */
 	unsigned int POOL = 5;	/* Tournament Selection Poolsize */
 };
@@ -83,9 +83,10 @@ struct param_ga {
 /* Cellular Automaton Parameters Struct */
 struct param_ca {
 	unsigned int DIMX = 10;	/* X-Axis Dimension */
-	unsigned int DIMY = 10;	/* Y-Axis Dimension */
-	unsigned int COLOR = 4;	/* CA Color Count */
+	unsigned int DIMY = 4;	/* Y-Axis Dimension */
+	unsigned int COLOR = 2;	/* CA Color Count */
 	unsigned int NB = 3;	/* CA Neighbor Count */
+	uint8_t *SEED;			/* CA Grid Seed Array */
 };
 
 /* Data Parameters Struct */
@@ -108,11 +109,6 @@ struct param_data {
 	bool EXPORT = 0;
 };
 
-/* Simulation Results Struct */
-struct param_rslt {
-	int status = 0;	/* Status of simulation */
-};
-
 /*	Main Global Parameters Struct
 	Struct for containing all the different types of global variables we will need.
 	Sub-types of global variables are defined within other structs, and declared within this struct.
@@ -123,6 +119,8 @@ struct param_main {
 	param_ga GA;
 	param_ca CA;
 	param_data DATA;
+
+	uint32_t UID = 0;
 } global;
 
 

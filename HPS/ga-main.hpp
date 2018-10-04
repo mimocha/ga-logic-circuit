@@ -22,12 +22,12 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-// // ----- Altera HWLIB Include ----- //
-// #include "hwlib.h"
-// #include "socal/socal.h"
-// #include "socal/hps.h"
-// #include "socal/alt_gpio.h"
-// #include "hps_0.h"
+// ----- Altera HWLIB Include ----- //
+#include "hwlib.h"
+#include "socal/socal.h"
+#include "socal/hps.h"
+#include "socal/alt_gpio.h"
+#include "hps_0.h"
 
 // ----- Function Prototypes && Documentation ----- //
 

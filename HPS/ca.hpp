@@ -1,55 +1,30 @@
 /* Header File for Cellular Automaton Function
 */
 
-#ifndef CA_H_INCLUDED
-#define CA_H_INCLUDED
+#ifndef CA_HPP
+#define CA_HPP
 
 // ----- Define Colors for Colored CA graph output ----- //
-#define ANSI_BLACK "\033[0;30m"
-#define ANSI_RED "\033[0;31m"
-#define ANSI_GREEN "\033[0;32m"
-#define ANSI_YELLOW "\033[0;33m"
-#define ANSI_BLUE "\033[0;34m"
-#define ANSI_PURPLE "\033[0;35m"
-#define ANSI_CYAN "\033[0;36m"
+#define ANSI_BLACK	"\033[0;30m"
+#define ANSI_RED	"\033[0;31m"
+#define ANSI_GREEN	"\033[0;32m"
+#define ANSI_YELLOW	"\033[0;33m"
+#define ANSI_BLUE	"\033[0;34m"
+#define ANSI_PURPLE	"\033[0;35m"
+#define ANSI_CYAN	"\033[0;36m"
 
-#define ANSI_GRAY "\033[1;30m"
-#define ANSI_LRED "\033[1;31m"
-#define ANSI_LGREEN "\033[1;32m"
-#define ANSI_LBLUE "\033[1;34m"
-#define ANSI_LPURPLE "\033[1;35m"
-#define ANSI_LCYAN "\033[1;36m"
-#define ANSI_WHITE "\033[1;37m"
+#define ANSI_GRAY	"\033[1;30m"
+#define ANSI_LRED	"\033[1;31m"
+#define ANSI_LGREEN	"\033[1;32m"
+#define ANSI_LBLUE	"\033[1;34m"
+#define ANSI_LPURPLE	"\033[1;35m"
+#define ANSI_LCYAN	"\033[1;36m"
+#define ANSI_WHITE	"\033[1;37m"
 
-/* void cellgen (const uint8_t *input, const uint8_t *rule)
-	Takes in atleast 2 arguments, 3 if exists:
-	+ 1-D array of const unsigned char *input
-	+ 1-D array of const unsigned char *rule
-	+ 1-D array of unsigned char *output (optional)
+/* CONVERT NAME && DESCRIPTOR */
+uint16_t convert (const uint8_t *nb);
 
-	+ Using the given rule array, generate Cellular Automaton (CA) grid from given seed input. Handles only 3 nearest-neighbors for now. Calculation done using custom Look-Up-Table (LUT), explained inside CELLFUNC() function, in cellgen.cpp.
-
-	  Base-K   | Index range == LUT length | LUT permutations
-	------------------------------------------
-	> Base-2   | 8   | 256
-	> Base-3   | 27  | 7 625 597 484 987
-	> Base-4   | 64  | 3.402 823 669 e38
-	... (LUT permutations grow exponentially) ...
-	> Base-8   | 512 | 2.410 312 426 e462
-	> Base-10  | 1000 | 10 e1000
-	... (Very-large-permutations) ...
-	> Base-16  | 4096 | ...
-	> Base-32  | 32768 | ...
-	> Base-40  | 64000 | ... << Max for 16-bit number
-	> Base-64  | 262144 | ...
-	> Base-128 | 2-million | ...
-	> Base-256 | 16-million | 1.196 e40 403 562
-	-------------------------------------------
-
-*/
-void cellgen (const uint8_t *input, const uint8_t *rule);
-
-/* uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule)
+/* CELLFUNC NAME && DESCRIPTOR
 	Takes in two inputs:
 	+ An array of unsigned char of length 3 - the neighbors
 	+ An array of unsigned char of length (K^3) - the rules;
@@ -82,22 +57,6 @@ void cellgen (const uint8_t *input, const uint8_t *rule);
 	+ We can think of "rule" as a Look-Up-Table (LUT), of size K^3, value range [0, K-1]. The permutation of each neighbor determines which array in this LUT to use as output. If we consider only 3 neighbors at a time, there will be a total of K^3 permutations, thus the LUT size.
 	+ We can then convert each permutation into some decimal value, so we can access each array on the LUT easily in C programming.
 
-	  Base-K   | Index range == LUT length | LUT permutations
-	------------------------------------------
-	> Base-2   | 8   | 256
-	> Base-3   | 27  | 7 625 597 484 987
-	> Base-4   | 64  | 3.402 823 669 e38
-	... (LUT permutations grow exponentially) ...
-	> Base-8   | 512 | 2.410 312 426 e462
-	> Base-10  | 1000 | 10 e1000
-	... (Impossibly-large-permutations) ...
-	> Base-16  | 4096 | ...
-	> Base-32  | 32768 | ...
-	> Base-64  | 262144 | ...
-	> Base-128 | 2-million | ...
-	> Base-256 | 16-million | 1.196 e40 403 562
-	-------------------------------------------
-
 	> More Examples:
 	K == 3
 	nb[3] == {2, 1, 0} -> base-3 LSB (210) -> decimal (5)
@@ -111,26 +70,40 @@ void cellgen (const uint8_t *input, const uint8_t *rule);
 */
 uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule);
 
-/* uint16_t convert (const uint8_t *nb)
-	Converts array nb[3] of base-K into a decimal value.
-	Assumes nb[3] is in LSB format.
+/* CELLGEN NAME && DESCRIPTOR
+	Takes in 2 arguments:
+	+ 1-D array of const unsigned char *input
+	+ 1-D array of const unsigned char *rule
 
-	uint16_t can handle upto 65535
-	-> Which means this function can handle upto 40 colors
+	+ Using the given rule array, generate Cellular Automaton (CA) grid from given seed input. Handles only 3 nearest-neighbors for now. Calculation done using custom Look-Up-Table (LUT), explained inside CELLFUNC() function, in cellgen.cpp.
+
+	  Base-K   | Index range == LUT length | LUT permutations
+	------------------------------------------
+	> Base-2   | 8   | 256
+	> Base-3   | 27  | 7 625 597 484 987
+	> Base-4   | 64  | 3.402 823 669 e38
+	... (LUT permutations grow exponentially) ...
+	> Base-8   | 512 | 2.410 312 426 e462
+	> Base-10  | 1000 | 10 e1000
+	... (Very-large-permutations) ...
+	> Base-16  | 4096 | ...
+	> Base-32  | 32768 | ...
+	> Base-40  | 64000 | ... << Max for 16-bit number
+	> Base-64  | 262144 | ...
+	> Base-128 | 2-million | ...
+	> Base-256 | 16-million | 1.196 e40 403 562
+	-------------------------------------------
 */
-uint16_t convert (const uint8_t *nb);
+void cellgen (uint8_t *input, uint8_t *output, const uint8_t *rule);
 
 /* void cellprint (const uint8_t cell)
 	Prints a predetermined ASCII character to terminal, based on a cell's value. Seperated as a function for a cleaner code in CELLGEN().
 */
 void cellprint (const uint8_t cell);
 
-/* void ca_graph (GeneticAlgorithm *pop, const int count)
-	Prints the LGA of the top "count" individuals.
-*/
-void ca_graph (GeneticAlgorithm *pop, const int count);
+/* FUNCTION NAME && DESCRIPTOR */
+void ca_graph (const uint8_t *array, const unsigned int length);
 
-#include "ga-main.h"
 #include "ca.cpp"
 
 #endif

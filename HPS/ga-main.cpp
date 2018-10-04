@@ -4,6 +4,7 @@
 #include "globalparm.h"	/* Global Parameters */
 #include "misc.hpp"		/* Miscellaneous Functions */
 #include "ga-class.hpp"	/* Genetics Algorithm Class */
+#include "ca.hpp"		/* Cellular Automaton Functions */
 #include "sim.hpp"		/* Simulation Function Wrapper */
 
 using namespace std;

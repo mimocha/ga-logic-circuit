@@ -2,37 +2,10 @@
 	Generates a grid of logic gates and connections based on given arguments.
 */
 
-void cellgen (const uint8_t *input, const uint8_t *rule) {
-	// Define working variables
-	uint8_t neighbor[3], i, j;
-
-	// Calculate each cell
-	for (i=0; i<DIM; i++) {
-		for (j=0; j<DIM; j++) {
-
-			if (i==0) { // Loading first row as input (Seed)
-				LGA[i][j] = input[j];
-
-			} else { // Calculate the rest
-				if (j==0) {
-					neighbor[0] = 0;
-					neighbor[1] = LGA[i-1][j];
-					neighbor[2] = LGA[i-1][j+1];
-				} else if (j<DIM-1) {
-					neighbor[0] = LGA[i-1][j-1];
-					neighbor[1] = LGA[i-1][j];
-					neighbor[2] = LGA[i-1][j+1];
-				} else {
-					neighbor[0] = LGA[i-1][j-1];
-					neighbor[1] = LGA[i-1][j];
-					neighbor[2] = 0;
-				}
-
-				LGA[i][j] = cellfunc(neighbor, rule);
-			}
-
-		}
-	}
+uint16_t convert (const uint8_t *nb) {
+	// uint16_t can handle upto 65535
+	// -> Which means this function can handle upto 40 colors
+	return nb[0] + (nb[1]*global.CA.COLOR) + (nb[2]*global.CA.COLOR*global.CA.COLOR);
 }
 
 uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
@@ -40,104 +13,136 @@ uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
 	return rule[ convert(nb) ];
 }
 
-uint16_t convert (const uint8_t *nb) {
-	// uint16_t can handle upto 65535
-	// -> Which means this function can handle upto 40 colors
-	return nb[0] + (nb[1]*K) + (nb[2]*K*K);
+// uint8_t cellfunc (const uint8_t *first, const uint32_t offset, const uint8_t *LUT) {
+// 	/* LUT index number */
+// 	uint32_t idx = 0;
+// 	/* Iterates through given pointer range, then calculate value for each digit */
+// 	for (uint32_t i=0; i<offset; i++) {
+// 		idx += *(first + i) * pow (global.CA.COLOR, i);
+// 	}
+// 	/* Return value at given LUT index */
+// 	return LUT[idx];
+// }
+
+void cellgen (uint8_t *input, uint8_t *output, const uint8_t *LUT) {
+	uint8_t *neighbor = (uint8_t *) calloc (global.CA.NB, sizeof(uint8_t));
+
+	neighbor [0] = 0;
+	neighbor [1] = input [0];
+	neighbor [2] = input [1];
+	output [0] = cellfunc (neighbor, LUT);
+
+	for (unsigned int x = 1; x < global.CA.DIMX - 1; x++) {
+		neighbor [0] = input [x - 1];
+		neighbor [1] = input [x];
+		neighbor [2] = input [x + 1];
+		output [x] = cellfunc (neighbor, LUT);
+	}
+
+	neighbor [0] = input [global.CA.DIMX - 2];
+	neighbor [1] = input [global.CA.DIMX - 1];
+	neighbor [2] = 0;
+	output [global.CA.DIMX - 1] = cellfunc (neighbor, LUT);
+
+	free (neighbor);
+
+
+	// uint32_t idx, x;
+	//
+	// /* Left Edge Special Case */
+	// idx = input[0]*pow (global.CA.COLOR, 1) + input[1]*pow (global.CA.COLOR, 2);
+	// printf ("LIDX: %u\n", idx);
+	// output[0] = LUT[idx];
+	//
+	// /* Normal Cases */
+	// for (x=1; x<global.CA.DIMX-1; x++) {
+	// 	output[x] = cellfunc (&input[x-1], global.CA.NB, LUT);
+	// }
+	//
+	// /* Right Edge Special Case */
+	// idx = input[x] + input[x+1]*pow (global.CA.COLOR, 1);
+	// printf ("RIDX: %u\n", idx);
+	// output[x+1] = LUT[idx];
 }
 
 void cellprint (const uint8_t cell) {
 	// Colored ANSI codes
 	switch (cell) {
-		case 0:
-			cout << ANSI_GRAY;
+		case 0: // NULL
+			std::cout << ANSI_GRAY;
+			// std::cout << '.';
 			break;
-		case 1:
+		case 1: // LEFT
 			cout << ANSI_RED;
+			// std::cout << 'L';
 			break;
-		case 2:
+		case 2: // RIGHT
 			cout << ANSI_YELLOW;
+			// std::cout << 'R';
 			break;
-		case 3:
+		case 3: // NAND
 			cout << ANSI_LGREEN;
+			// std::cout << 'N';
 			break;
-		case 4:
-			cout << ANSI_LCYAN;
+		case 4: // FORWARD
+			std::cout << ANSI_LCYAN;
+			// std::cout << 'F';
 			break;
-		case 5:
-			cout << ANSI_LPURPLE;
+		case 5: // XOR
+			std::cout << ANSI_LPURPLE;
+			// std::cout << 'X';
 			break;
-		default:
-			cout << ANSI_WHITE;
+		default: // Undefined
+			std::cout << ANSI_WHITE;
+			// std::cout << 'U';
 			break;
 	}
 
-	printf("%d",cell);
-	cout << ANSI_WHITE;
-	// switch (cell) {
-	// 	case 0: // NULL
-	// 		// cout << (unsigned char)176;
-	// 		cout << '.';
-	// 		break;
-	// 	case 1: // LEFT
-	// 		// cout << (unsigned char)47;
-	// 		cout << 'L';
-	// 		break;
-	// 	case 2: // RIGHT
-	// 		// cout << (unsigned char)92;
-	// 		cout << 'R';
-	// 		break;
-	// 	case 3: // NAND
-	// 		// cout << (unsigned char)219;
-	// 		cout << 'N';
-	// 		break;
-	// 	case 4: // FORWARD
-	// 		// cout << (unsigned char)179;
-	// 		cout << 'F';
-	// 		break;
-	// 	case 5: // XOR
-	// 		// cout << (unsigned char)94;
-	// 		cout << 'X'
-	// 		break;
-	// 	default: // Undefined
-	// 		cout << 'U';
-	// }
+	printf("%X",cell);
+	std::cout << ANSI_WHITE;
 }
 
-void ca_graph (GeneticAlgorithm *pop, const int count) {
-	printf("Array of the top %d individuals:\n", count);
-
-	for (int i=0; i<count; i++) {
-		printf("RANK: %4d | UID: %7d | FITNESS: %7d\n\n",
-			pop[i].getrnk(), pop[i].getuid(), pop[i].getfit());
-
-		cellgen (seed, pop[i].getdna());
-
-		for (int y=0; y<DIM; y++) {
-			for (int x=0; x<DIM; x++) {
-				cellprint (LGA[y][x]);
-			}
-			cout << endl;
-		}
-
-		cellgen (LGA[DIM-1], pop[i].getdna());
-
-		// for (int y=1; y<DIM; y++) {
-		// 	for (int x=0; x<DIM; x++) {
-		// 		cellprint (LGA[y][x]);
-		// 	}
-		// 	cout << endl;
-		// }
-		cout << endl;
-
-		for (int y=0; y<DIM; y++) {
-			for (int x=0; x<DIM; x++) {
-				cellprint (LGA[y][x]);
-			}
-			cout << endl;
-		}
-		cout << endl;
-
+void ca_graph (const uint8_t *array, const unsigned int length) {
+	for (unsigned int x=0; x<length; x++) {
+		cellprint (array[x]);
 	}
-
+	std::cout << std::endl;
 }
+
+// void ca_graph (GeneticAlgorithm *pop, const int count) {
+// 	printf("Array of the top %d individuals:\n", count);
+//
+// 	for (int i=0; i<count; i++) {
+// 		printf("RANK: %4d | UID: %7d | FITNESS: %7d\n\n",
+// 			pop[i].getrnk(), pop[i].getuid(), pop[i].getfit());
+//
+// 		cellgen (seed, pop[i].getdna());
+//
+// 		for (int y=0; y<DIM; y++) {
+// 			for (int x=0; x<DIM; x++) {
+// 				cellprint (LGA[y][x]);
+// 			}
+// 			cout << endl;
+// 		}
+//
+// 		cellgen (LGA[DIM-1], pop[i].getdna());
+//
+// 		// for (int y=1; y<DIM; y++) {
+// 		// 	for (int x=0; x<DIM; x++) {
+// 		// 		cellprint (LGA[y][x]);
+// 		// 	}
+// 		// 	cout << endl;
+// 		// }
+// 		cout << endl;
+//
+// 		for (int y=0; y<DIM; y++) {
+// 			for (int x=0; x<DIM; x++) {
+// 				cellprint (LGA[y][x]);
+// 			}
+// 			cout << endl;
+// 		}
+// 		cout << endl;
+//
+// 	}
+//
+// }
