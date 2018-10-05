@@ -1,7 +1,10 @@
 /* Genetics Algorithm function definitions file */
 
-GeneticAlgorithm::GeneticAlgorithm (const uint32_t curr_uid, const uint32_t dna_length) {
-	uid = curr_uid;
+/* ----- Constructor & Destructor ----- */
+
+GeneticAlgorithm::GeneticAlgorithm (const uint32_t dna_length) {
+	uid = object_count;
+	object_count++;
 	dna = GeneticAlgorithm::dna_calloc (dna_length);
 	fit = 0;
 	rank = 0;
@@ -10,7 +13,7 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t curr_uid, const uint32_t dna_
 }
 
 /* Destructor //
-	A custom destructor will cause bugs, and segmentation faults.
+	A custom destructor causes bugs, and segmentation faults.
 	Probably due to the destructor being called automatically by the compiler at some point,
 	this breaks the program and will likely cause a segmentation fault.
 
@@ -23,45 +26,7 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t curr_uid, const uint32_t dna_
 // 	}
 // }
 
-uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t dna_length) {
-	uint8_t *dna = (uint8_t*) calloc (dna_length, sizeof (uint8_t) );
-	if (dna == NULL) {
-		perror ("Not Enough Memory for MALLOC\n");
-		exit (EXIT_FAILURE);
-	}
-	for (uint32_t i=0; i<dna_length; i++) {
-		dna[i] = rand () % global.CA.COLOR;
-	}
-	return dna;
-}
-
-void GeneticAlgorithm::Reset (void) {
-	/* TODO: DNA REALLOC - If DNA length has changed, reallocate *dna */
-	uid = global.UID;
-	global.UID++;
-	fit = 0;
-	rank = 0;
-	age = 0;
-	eval = 0;
-}
-
-/* void GeneticAlgorithm::Eval (void) *Deprecated* */
-// void GeneticAlgorithm::Eval (void) {
-// 	eval = 1;
-// 	age += 1;
-// }
-
-void GeneticAlgorithm::Sort (GeneticAlgorithm *array) {
-	sort(array, array + global.GA.POP,
-		[](GeneticAlgorithm const & a, GeneticAlgorithm const & b) -> bool
-		{ return a.fit > b.fit; }); // Swap sign to reverse sorting
-
-	// Assign new rank by index
-	for (unsigned int idx=0; idx<global.GA.POP; idx++)
-		array[idx].rank = idx;
-}
-
-// ----- Genetic Algorithm Operations ----- //
+/* ----- Genetic Algorithm Operations ----- */
 
 void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 	// Vector of who live or dies - contains uid
@@ -214,4 +179,49 @@ void GeneticAlgorithm::Mutate (void) {
 			random_shuffle (&dna[i], &dna[range]);
 		}
 	}
+}
+
+/* ----- Other Miscellany Operations ----- */
+
+void GeneticAlgorithm::Reset (void) {
+	/* TODO: DNA REALLOC - If DNA length has changed, reallocate *dna */
+	uid = object_count;
+	object_count++;
+	fit = 0;
+	rank = 0;
+	age = 0;
+	eval = 0;
+}
+
+void GeneticAlgorithm::Sort (GeneticAlgorithm *array) {
+	sort(array, array + global.GA.POP,
+		[](GeneticAlgorithm const & a, GeneticAlgorithm const & b) -> bool
+		{ return a.fit > b.fit; }); // Swap sign to reverse sorting
+
+	// Assign new rank by index
+	for (unsigned int idx=0; idx<global.GA.POP; idx++)
+		array[idx].rank = idx;
+}
+
+uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t dna_length) {
+	uint8_t *dna = (uint8_t*) calloc (dna_length, sizeof (uint8_t) );
+	if (dna == NULL) {
+		perror ("DNA CALLOC\n");
+		exit (EXIT_FAILURE);
+	}
+	for (uint32_t i=0; i<dna_length; i++) {
+		dna[i] = rand () % global.CA.COLOR;
+	}
+	return dna;
+}
+
+/* ----- Set Functions ----- */
+
+void GeneticAlgorithm::setdna (unsigned int arg_count, ...) {
+	va_list valist;
+	va_start (valist, arg_count);
+		for (unsigned int i=0; i<arg_count; i++) {
+			dna[i] = va_arg (valist, unsigned int);
+		}
+	va_end (valist);
 }

@@ -22,7 +22,7 @@
 #define ANSI_WHITE	"\033[1;37m"
 
 /* CONVERT NAME && DESCRIPTOR */
-uint16_t convert (const uint8_t *nb);
+// uint16_t convert (const uint8_t *nb);
 
 /* CELLFUNC NAME && DESCRIPTOR
 	Takes in two inputs:

@@ -2,15 +2,15 @@
 	Generates a grid of logic gates and connections based on given arguments.
 */
 
-uint16_t convert (const uint8_t *nb) {
-	// uint16_t can handle upto 65535
-	// -> Which means this function can handle upto 40 colors
-	return nb[0] + (nb[1]*global.CA.COLOR) + (nb[2]*global.CA.COLOR*global.CA.COLOR);
-}
+// uint16_t convert (const uint8_t *nb) {
+// 	// uint16_t can handle upto 65535
+// 	// -> Which means this function can handle upto 40 colors
+// 	return nb[0] + (nb[1]*global.CA.COLOR) + (nb[2]*global.CA.COLOR*global.CA.COLOR);
+// }
 
 uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
-	// Access and return value from LUT
-	return rule[ convert(nb) ];
+	uint32_t idx = nb[0] + (nb[1]*global.CA.COLOR) + (nb[2]*global.CA.COLOR*global.CA.COLOR);
+	return rule [idx];
 }
 
 // uint8_t cellfunc (const uint8_t *first, const uint32_t offset, const uint8_t *LUT) {
@@ -45,7 +45,6 @@ void cellgen (uint8_t *input, uint8_t *output, const uint8_t *LUT) {
 	output [global.CA.DIMX - 1] = cellfunc (neighbor, LUT);
 
 	free (neighbor);
-
 
 	// uint32_t idx, x;
 	//

@@ -10,6 +10,7 @@
 #include <stdio.h>		/* Standard I/O */
 #include <stdlib.h>		/* calloc, free, rand, srand */
 #include <stdint.h>		/* uint definitions */
+#include <stdarg.h>		/* va_list vastart vaend */
 #include <time.h>		/* time */
 #include <math.h>		/* pow, round, ceiling */
 #include <iostream>		/* cin, cout */
@@ -18,16 +19,16 @@
 #include <array>		/* arrays */
 
 // ----- Linux API Include ----- //
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
+// #include <unistd.h>
+// #include <fcntl.h>
+// #include <sys/mman.h>
 
 // ----- Altera HWLIB Include ----- //
-#include "hwlib.h"
-#include "socal/socal.h"
-#include "socal/hps.h"
-#include "socal/alt_gpio.h"
-#include "hps_0.h"
+// #include "hwlib.h"
+// #include "socal/socal.h"
+// #include "socal/hps.h"
+// #include "socal/alt_gpio.h"
+// #include "hps_0.h"
 
 // ----- Function Prototypes && Documentation ----- //
 

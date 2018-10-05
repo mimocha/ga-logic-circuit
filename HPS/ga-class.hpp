@@ -11,11 +11,13 @@
 using namespace std;
 
 class GeneticAlgorithm {
-/* Everything is public
-	Although bad form, this must do for now. Finishing my dissertation comes first.
-	If time permits, reintroduce Get() and Set(), along with private controls.
+/* Everything is public //
+	Bad form, but this must do for now. Finishing the dissertation comes first.
+	If time permits, reintroduce Get() and Set(), along with privacy controls.
 */
 public:
+	static uint32_t object_count;
+
 	uint32_t uid;	/* Unique id for tracking the individual */
 	uint8_t *dna;	/* DNA sequence (Cellular Automaton Rule) */
 	int fit;		/* Fitness score of the individual */
@@ -28,9 +30,9 @@ public:
 	/* Default Constructor */
 	GeneticAlgorithm (void) {}
 	/* Single Object Constructor //
-		Initializes a single individual, given a uid number and a DNA length
+		Initializes a single individual, given a DNA length
 	*/
-	GeneticAlgorithm (const uint32_t curr_uid, const uint32_t dna_length);
+	GeneticAlgorithm (const uint32_t dna_length);
 	/* Destructor //
 		A custom destructor will cause bugs, and segmentation faults.
 		Probably due to the destructor being called automatically by the compiler at some point,
@@ -60,8 +62,10 @@ public:
 
 		TODO: Apply aging to the calculation; older individuals are more likely to die off.
 			Purpose: to avoid getting trapped in local optimas?
+
+		Static allows this method to be called, even with no objects.
 	*/
-	void Selection (GeneticAlgorithm *array);
+	static void Selection (GeneticAlgorithm *array);
 	/* CROSSOVER (const uint8_t *DNA_A, const uint8_t DNA_B)
 		Homogeneously crossesover two parents' dna string.
 		Equal likelyhood any certain dna character will be chosen.
@@ -84,17 +88,10 @@ public:
 	*/
 	void Reset (void);
 	/* SORT (GeneticAlgorithm *array)
-		Sorts the entire population by fitness value, in decreasing order
+		Sorts the entire population by fitness value, in decreasing order.
+		Static allows this method to be called, even with no objects.
 	*/
-	void Sort (GeneticAlgorithm *array);
-	/* EVAL (void) *Deprecated*
-		Evaluate an individual.
-		This is a wrapper for setting (eval = 1, age += 1)
-		Actual evaluation functions should be coded in "sim.cpp".
-		Hopefully this will keep codes from being confusing.
-	*/
-	// void Eval (void);
-
+	static void Sort (GeneticAlgorithm *array);
 	/* DNA dynamic memory allocation //
 		Allocates memory for the DNA sequence, for a given DNA length.
 
@@ -110,7 +107,16 @@ public:
 	*/
 	uint8_t *dna_calloc (const uint32_t dna_length);
 
-} ga;
+	/* ----- Set Functions ----- */
+
+	/* SETDNA (unsigned int arg_count, ...)
+		Takes an unsigned int of number of arguments to consider,
+		and a comma seperated list of uint8_t to set as the DNA.
+		Requires <stdarg.h>
+	*/
+	void setdna (unsigned int arg_count, ...);
+
+};
 
 #include "ga-class.cpp"
 

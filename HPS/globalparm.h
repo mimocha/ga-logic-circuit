@@ -10,8 +10,6 @@
 */
 #define VERSION 0.98
 
-/* TODO: Implement upper / lower bounds for global variables? */
-
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum length of a side of the square grid.
 	Split into the X and Y axis respectively.
@@ -75,16 +73,16 @@
 /* Genetics Algorithm Parameters Struct */
 struct param_ga {
 	unsigned int POP = 100;	/* Maximum Population */
-	unsigned int GEN = 1;	/* Maximum Generation */
+	unsigned int GEN = 100;	/* Maximum Generation */
 	float MUTP = 0.05;		/* Mutation Probability in decimal, range [0.00, 1.00] */
 	unsigned int POOL = 5;	/* Tournament Selection Poolsize */
 };
 
 /* Cellular Automaton Parameters Struct */
 struct param_ca {
-	unsigned int DIMX = 10;	/* X-Axis Dimension */
-	unsigned int DIMY = 4;	/* Y-Axis Dimension */
-	unsigned int COLOR = 2;	/* CA Color Count */
+	unsigned int DIMX = 20;	/* X-Axis Dimension */
+	unsigned int DIMY = 20;	/* Y-Axis Dimension */
+	unsigned int COLOR = 4;	/* CA Color Count */
 	unsigned int NB = 3;	/* CA Neighbor Count */
 	uint8_t *SEED;			/* CA Grid Seed Array */
 };
@@ -100,7 +98,7 @@ struct param_data {
 	/* Performance and Time Tracking | Default = 1
 		Tracks computation time required during the experiment.
 	*/
-	bool TIME = 0;
+	bool TIME = 1;
 	/* Cellular Automaton Grid Print | Default = 1
 		Prints the CA Grid of the fittest individual at the end of the experiment.
 	*/
@@ -119,8 +117,6 @@ struct param_main {
 	param_ga GA;
 	param_ca CA;
 	param_data DATA;
-
-	uint32_t UID = 0;
 } global;
 
 

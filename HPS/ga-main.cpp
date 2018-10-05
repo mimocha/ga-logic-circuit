@@ -9,6 +9,9 @@
 
 using namespace std;
 
+/* Initializes Global UID Counter */
+uint32_t GeneticAlgorithm::object_count = 0;
+
 int main (int argc, char **argv) {
 	input_argument (argc, argv);
 
@@ -128,10 +131,18 @@ void settings (void) {
 			case 1: /* global.GA.POP */
 				printf ("Input New Value: ");
 				scan_uint (&global.GA.POP);
+				if (global.GA.POP > MAX_GA_POP) {
+					global.GA.POP = MAX_GA_POP;
+					printf ("Value capped at: %u\n", global.GA.POP);
+				}
 				break;
 			case 2: /* global.GA.GEN */
 				printf ("Input New Value: ");
 				scan_uint (&global.GA.GEN);
+				if (global.GA.GEN > MAX_GA_GEN) {
+					global.GA.GEN = MAX_GA_GEN;
+					printf ("Value capped at: %u\n", global.GA.GEN);
+				}
 				break;
 			case 3: /* global.GA.MUTP */
 				printf ("Input New Value: ");
@@ -144,18 +155,30 @@ void settings (void) {
 			case 5: /* global.CA.DIMX */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.DIMX);
+				if (global.CA.DIMX > MAX_CA_DIMX) {
+					global.CA.DIMX = MAX_CA_DIMX;
+					printf ("Value capped at: %u\n", global.CA.DIMX);
+				}
 				break;
 			case 6: /* global.CA.DIMY */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.DIMY);
+				if (global.CA.DIMY > MAX_CA_DIMY) {
+					global.CA.DIMY = MAX_CA_DIMY;
+					printf ("Value capped at: %u\n", global.CA.DIMY);
+				}
 				break;
 			case 7: /* global.CA.COLOR */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.COLOR);
+				if (global.CA.COLOR > MAX_CA_COLOR) {
+					global.CA.COLOR = MAX_CA_COLOR;
+					printf ("Value capped at: %u\n", global.CA.COLOR);
+				}
 				break;
 			case 8: /* global.CA.Nb */
-				printf ("Input New Value: ");
-				scan_uint (&global.CA.NB);
+				printf ("Change Unavailable\n");
+				// scan_uint (&global.CA.NB);
 				break;
 			case 9: /* global.DATA.FIT */
 				printf ("Input New Value: ");
