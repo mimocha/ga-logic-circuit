@@ -17,6 +17,7 @@
 #include <algorithm>	/* sort, find */
 #include <vector>		/* vectors */
 #include <array>		/* arrays */
+#include <bitset>
 
 // ----- Linux API Include ----- //
 // #include <unistd.h>

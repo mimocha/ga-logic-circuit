@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 0.98
+#define VERSION 0.99
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum length of a side of the square grid.
@@ -16,7 +16,7 @@
 */
 #define MAX_CA_DIMX 100
 #define MAX_CA_DIMY 100
-/*	Max Cellular Automaton Color (State) Count
+/*	Max Cellular Automaton Color Count
 	This should be defined based on memory and index integer for a CA rule set.
 
 	For a given CA of K Colors and N neighbors, there would be K^N rules for a rule set.
@@ -42,7 +42,9 @@
 	Refer to the above comment for more info on memory and index integer limit.
 */
 #define MAX_CA_NB 10
+/* Max Genetic Algorithm Population Size */
 #define MAX_GA_POP 10000
+/* Max Genetic Algorithm Generations */
 #define MAX_GA_GEN 10000
 
 /*	Fitness Graph Dimension
@@ -72,8 +74,8 @@
 
 /* Genetics Algorithm Parameters Struct */
 struct param_ga {
-	unsigned int POP = 100;	/* Maximum Population */
-	unsigned int GEN = 100;	/* Maximum Generation */
+	unsigned int POP = 20;	/* Maximum Population */
+	unsigned int GEN = 1;	/* Maximum Generation */
 	float MUTP = 0.05;		/* Mutation Probability in decimal, range [0.00, 1.00] */
 	unsigned int POOL = 5;	/* Tournament Selection Poolsize */
 };
@@ -102,7 +104,7 @@ struct param_data {
 	/* Cellular Automaton Grid Print | Default = 1
 		Prints the CA Grid of the fittest individual at the end of the experiment.
 	*/
-	bool CAPRINT = 0;
+	bool CAPRINT = 1;
 	/* Export data from the experiment to file | (Off for now)*/
 	bool EXPORT = 0;
 };

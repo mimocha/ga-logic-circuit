@@ -2,103 +2,68 @@
 	Generates a grid of logic gates and connections based on given arguments.
 */
 
-// uint16_t convert (const uint8_t *nb) {
-// 	// uint16_t can handle upto 65535
-// 	// -> Which means this function can handle upto 40 colors
-// 	return nb[0] + (nb[1]*global.CA.COLOR) + (nb[2]*global.CA.COLOR*global.CA.COLOR);
-// }
-
-uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule) {
-	uint32_t idx = nb[0] + (nb[1]*global.CA.COLOR) + (nb[2]*global.CA.COLOR*global.CA.COLOR);
-	return rule [idx];
+uint8_t cellfunc (uint8_t *nb, const uint8_t *DNA) {
+	uint32_t idx = 0;
+	for (unsigned int c = 0; c < global.CA.NB; c++) {
+		idx += nb [c] * pow (global.CA.COLOR, c);
+	}
+	return DNA [idx];
 }
 
-// uint8_t cellfunc (const uint8_t *first, const uint32_t offset, const uint8_t *LUT) {
-// 	/* LUT index number */
-// 	uint32_t idx = 0;
-// 	/* Iterates through given pointer range, then calculate value for each digit */
-// 	for (uint32_t i=0; i<offset; i++) {
-// 		idx += *(first + i) * pow (global.CA.COLOR, i);
-// 	}
-// 	/* Return value at given LUT index */
-// 	return LUT[idx];
-// }
-
-void cellgen (uint8_t *input, uint8_t *output, const uint8_t *LUT) {
+void cellgen (const uint8_t *input, uint8_t *output, const uint8_t *DNA) {
+	/* Allocate memory for neighbor array. */
 	uint8_t *neighbor = (uint8_t *) calloc (global.CA.NB, sizeof(uint8_t));
+	/* Calculate index offset for neighboring cells. Only work with odd-numbers */
+	static int offset = ((global.CA.NB - 1) / 2);
 
-	neighbor [0] = 0;
-	neighbor [1] = input [0];
-	neighbor [2] = input [1];
-	output [0] = cellfunc (neighbor, LUT);
-
-	for (unsigned int x = 1; x < global.CA.DIMX - 1; x++) {
-		neighbor [0] = input [x - 1];
-		neighbor [1] = input [x];
-		neighbor [2] = input [x + 1];
-		output [x] = cellfunc (neighbor, LUT);
+	/* Iterate over entire row */
+	for (unsigned int x = 0; x < global.CA.DIMX; x++) {
+		/* Load Neighbor Array && Check Out Of Bound */
+		for (unsigned int n = 0; n < global.CA.NB; n++) {
+			/* Calculate the index location */
+			int idx = x - offset + n;
+			/* If index location is out of bound, set to 0, otherwise return normal values */
+			if (idx < 0 || idx >= (int) global.CA.DIMX) {
+				neighbor [n] = 0;
+			} else {
+				neighbor [n] = input [idx];
+			}
+		}
+		/* Call function cellfunc() to access values from the DNA string. */
+		output [x] = cellfunc (neighbor, DNA);
 	}
 
-	neighbor [0] = input [global.CA.DIMX - 2];
-	neighbor [1] = input [global.CA.DIMX - 1];
-	neighbor [2] = 0;
-	output [global.CA.DIMX - 1] = cellfunc (neighbor, LUT);
-
+	/* Free allocated memory before returning. */
 	free (neighbor);
-
-	// uint32_t idx, x;
-	//
-	// /* Left Edge Special Case */
-	// idx = input[0]*pow (global.CA.COLOR, 1) + input[1]*pow (global.CA.COLOR, 2);
-	// printf ("LIDX: %u\n", idx);
-	// output[0] = LUT[idx];
-	//
-	// /* Normal Cases */
-	// for (x=1; x<global.CA.DIMX-1; x++) {
-	// 	output[x] = cellfunc (&input[x-1], global.CA.NB, LUT);
-	// }
-	//
-	// /* Right Edge Special Case */
-	// idx = input[x] + input[x+1]*pow (global.CA.COLOR, 1);
-	// printf ("RIDX: %u\n", idx);
-	// output[x+1] = LUT[idx];
 }
 
 void cellprint (const uint8_t cell) {
-	// Colored ANSI codes
 	switch (cell) {
-		case 0: // NULL
-			std::cout << ANSI_GRAY;
-			// std::cout << '.';
+		case 0:
+			cout << ANSI_GRAY;
 			break;
-		case 1: // LEFT
+		case 1:
 			cout << ANSI_RED;
-			// std::cout << 'L';
 			break;
-		case 2: // RIGHT
+		case 2:
 			cout << ANSI_YELLOW;
-			// std::cout << 'R';
 			break;
-		case 3: // NAND
+		case 3:
 			cout << ANSI_LGREEN;
-			// std::cout << 'N';
 			break;
-		case 4: // FORWARD
-			std::cout << ANSI_LCYAN;
-			// std::cout << 'F';
+		case 4:
+			cout << ANSI_LCYAN;
 			break;
-		case 5: // XOR
-			std::cout << ANSI_LPURPLE;
-			// std::cout << 'X';
+		case 5:
+			cout << ANSI_LPURPLE;
 			break;
 		default: // Undefined
-			std::cout << ANSI_WHITE;
-			// std::cout << 'U';
+			cout << ANSI_WHITE;
 			break;
 	}
 
 	printf("%X",cell);
-	std::cout << ANSI_WHITE;
+	cout << DEFAULT;
 }
 
 void ca_graph (const uint8_t *array, const unsigned int length) {

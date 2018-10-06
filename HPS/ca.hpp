@@ -5,6 +5,10 @@
 #define CA_HPP
 
 // ----- Define Colors for Colored CA graph output ----- //
+// https://misc.flogisoft.com/bash/tip_colors_and_formatting
+#define DEFAULT	"\033[39m"
+#define RESET	"\033[0m"
+
 #define ANSI_BLACK	"\033[0;30m"
 #define ANSI_RED	"\033[0;31m"
 #define ANSI_GREEN	"\033[0;32m"
@@ -21,61 +25,28 @@
 #define ANSI_LCYAN	"\033[1;36m"
 #define ANSI_WHITE	"\033[1;37m"
 
-/* CONVERT NAME && DESCRIPTOR */
-// uint16_t convert (const uint8_t *nb);
+/* uint8_t cellfunc (uint8_t *neighbors, const uint8_t *DNA) //
+	This function takes in a given neighboring cell array, and converts it into an index number.
+	The conversion is done automatically with respect to the CA Color and Neighbor count.
+	This algorithm can handle any arbitrary number of Neighbor and Color. (Theoretically)
 
-/* CELLFUNC NAME && DESCRIPTOR
-	Takes in two inputs:
-	+ An array of unsigned char of length 3 - the neighbors
-	+ An array of unsigned char of length (K^3) - the rules;
-		++ where K is the number of colors, the possible states each cell can be in.
-
-	> Main definition:
-	+ "The Neighbors" refer to the 3 cells from the previous row, nearest the currently considered cell. The three cells can be viewed as a sequence of 3 integers, of base-k; where k is the number of possible states each cell can be in.
-		** Neighbors are also now in LSB format. See below, under "The Rule" section for an explanation of why.
-	+ "The Rule" is a string of length (K^3), of base-k, in **LSB format**.
-		++ Each char in this string is referred to as a "rule-bit".
-		++ Each "rule-bit" can be any value in the range of [0, (K^3)-1]
-		** "rule_bit" is in Least-Significant-Bit format, meaning the smallest digit is on the left-most bit of the string. This is changed to allow easier handling in C-arrays.
-
-	> Example:
-	K == 2 -> 2 possible states on each cell.
-	nb[3] == {1, 0, 0} -> base-2 LSB (100) -> decimal value (1)
-	rule[8] == {0, 1, 1, 0, 0, 0, 0, 1} -> base-2 (0110 0001)
-	rule_bit(0) == 0, rule_bit(1) == 1, rule_bit(2) == 1, rule_bit(6) == 0
-
-	> Least-Significant-Bit format
-	rule_bit --> 0110 0001
-	             ^^^^ ^^^^
-	index    --> 0123 4567
-
-	> How this works:
-	1. The array nb[3] is converted from base-k to some decimal value as index.
-	2. This index number is used to access the string at position index.
-	3. The value inside array(index) is the output value.
-
-	+ We can think of "rule" as a Look-Up-Table (LUT), of size K^3, value range [0, K-1]. The permutation of each neighbor determines which array in this LUT to use as output. If we consider only 3 neighbors at a time, there will be a total of K^3 permutations, thus the LUT size.
-	+ We can then convert each permutation into some decimal value, so we can access each array on the LUT easily in C programming.
-
-	> More Examples:
-	K == 3
-	nb[3] == {2, 1, 0} -> base-3 LSB (210) -> decimal (5)
-	rule[27] == {0000 0122 ...}
-	rule_bit(5) == 1
-
-	K == 4
-	nb[3] == {1, 2, 3} -> base-4 LSB (321) -> decimal (57)
-	rule[64] == {... 0000 1233 3333}
-	rule_bit(57) == 2
+	How this works:
+	The neighbor array is handled as a string of numbers in base 'global.CA.COLOR'.
+	The number string is provided to this function in LSB format.
+		ie, nb[0] < nb[1] < nb[2] ...
+	The decimal value of this number string is calculated and stored in 'uint32_t idx'.
+		uint32_t holds up to 2^32 or ~4.29 billion.
+	This index number is used to access, and return the value of the given LUT.
 */
-uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule);
+uint8_t cellfunc (uint8_t *nb, const uint8_t *DNA);
 
-/* CELLGEN NAME && DESCRIPTOR
-	Takes in 2 arguments:
-	+ 1-D array of const unsigned char *input
-	+ 1-D array of const unsigned char *rule
+/* void cellgen (uint8_t *input, uint8_t *output, const uint8_t *DNA) //
+	This function applies the rules of a 1D Cellular Automaton.
+	Working row by row, this function takes the previous CA row to generate the next CA row,
+	given a CA rule set - in this case, a DNA string.
 
-	+ Using the given rule array, generate Cellular Automaton (CA) grid from given seed input. Handles only 3 nearest-neighbors for now. Calculation done using custom Look-Up-Table (LUT), explained inside CELLFUNC() function, in cellgen.cpp.
+	This function can only handle odd-numbered neighbor counts.
+	Out-of-bound neighbor cells are replaced with zeroes.
 
 	  Base-K   | Index range == LUT length | LUT permutations
 	------------------------------------------
@@ -94,14 +65,16 @@ uint8_t cellfunc (const uint8_t *nb, const uint8_t *rule);
 	> Base-256 | 16-million | 1.196 e40 403 562
 	-------------------------------------------
 */
-void cellgen (uint8_t *input, uint8_t *output, const uint8_t *rule);
+void cellgen (const uint8_t *input, uint8_t *output, const uint8_t *DNA);
 
-/* void cellprint (const uint8_t cell)
-	Prints a predetermined ASCII character to terminal, based on a cell's value. Seperated as a function for a cleaner code in CELLGEN().
+/* void cellprint (const uint8_t cell) //
+	Prints a predetermined colored-ASCII character to terminal, based on a cell's value.
 */
 void cellprint (const uint8_t cell);
 
-/* FUNCTION NAME && DESCRIPTOR */
+/* void ca_graph (const uint8_t *array, const unsigned int length) //
+	Prints a single line of CA Grid, of given length.
+*/
 void ca_graph (const uint8_t *array, const unsigned int length);
 
 #include "ca.cpp"

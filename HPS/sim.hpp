@@ -26,10 +26,10 @@ void status (const unsigned int gen);
 */
 void eta (const unsigned int gen, const time_t timer);
 
-/* void print_grid (const uint8_t **grid)
+/* void print_grid (uint8_t **grid)
 	Prints the working array grid onto terminal.
 */
-void print_grid (const uint8_t **grid);
+void print_grid (uint8_t **grid);
 
 #include "sim.cpp"
 

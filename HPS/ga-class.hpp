@@ -5,8 +5,8 @@
 	A collection of individuals is referred to as a population.
 */
 
-#ifndef GACLASS_H_INCLUDED
-#define GACLASS_H_INCLUDED
+#ifndef GACLASS_HPP
+#define GACLASS_HPP
 
 using namespace std;
 

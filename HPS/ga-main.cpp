@@ -134,6 +134,9 @@ void settings (void) {
 				if (global.GA.POP > MAX_GA_POP) {
 					global.GA.POP = MAX_GA_POP;
 					printf ("Value capped at: %u\n", global.GA.POP);
+				} else if (global.GA.POP == 0) {
+					global.GA.POP = 1;
+					printf ("Minimum value: %u\n", global.GA.POP);
 				}
 				break;
 			case 2: /* global.GA.GEN */
@@ -142,6 +145,9 @@ void settings (void) {
 				if (global.GA.GEN > MAX_GA_GEN) {
 					global.GA.GEN = MAX_GA_GEN;
 					printf ("Value capped at: %u\n", global.GA.GEN);
+				} else if (global.GA.GEN == 0) {
+					global.GA.GEN = 1;
+					printf ("Minimum value: %u\n", global.GA.GEN);
 				}
 				break;
 			case 3: /* global.GA.MUTP */
@@ -158,6 +164,9 @@ void settings (void) {
 				if (global.CA.DIMX > MAX_CA_DIMX) {
 					global.CA.DIMX = MAX_CA_DIMX;
 					printf ("Value capped at: %u\n", global.CA.DIMX);
+				} else if (global.CA.DIMX == 0) {
+					global.CA.DIMX = 1;
+					printf ("Minimum value: %u\n", global.CA.DIMX);
 				}
 				break;
 			case 6: /* global.CA.DIMY */
@@ -166,6 +175,9 @@ void settings (void) {
 				if (global.CA.DIMY > MAX_CA_DIMY) {
 					global.CA.DIMY = MAX_CA_DIMY;
 					printf ("Value capped at: %u\n", global.CA.DIMY);
+				} else if (global.CA.DIMY == 0) {
+					global.CA.DIMY = 1;
+					printf ("Minimum value: %u\n", global.CA.DIMY);
 				}
 				break;
 			case 7: /* global.CA.COLOR */
@@ -174,11 +186,21 @@ void settings (void) {
 				if (global.CA.COLOR > MAX_CA_COLOR) {
 					global.CA.COLOR = MAX_CA_COLOR;
 					printf ("Value capped at: %u\n", global.CA.COLOR);
+				} else if (global.CA.COLOR <= 1) {
+					global.CA.COLOR = 2;
+					printf ("Minimum value: %u\n", global.CA.COLOR);
 				}
 				break;
 			case 8: /* global.CA.Nb */
-				printf ("Change Unavailable\n");
-				// scan_uint (&global.CA.NB);
+				printf ("Input New Value: ");
+				scan_uint (&global.CA.NB);
+				if (global.CA.NB == 0) {
+					global.CA.NB = 1;
+					printf ("Minimal value: %u\n", global.CA.NB);
+				} else if (global.CA.NB % 2 == 0) {
+					global.CA.NB -= 1;
+					printf ("Even values not accepted. Set to %u\n", global.CA.NB);
+				}
 				break;
 			case 9: /* global.DATA.FIT */
 				printf ("Input New Value: ");

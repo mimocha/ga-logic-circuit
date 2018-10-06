@@ -69,6 +69,9 @@ int run_sim (void) {
 			/* Skips evaluation, if already done for this individual */
 			if (indv[idx].eval == 1) continue;
 
+			/* Optional Print */
+			if (global.DATA.CAPRINT == 1) ca_graph (global.CA.SEED, global.CA.DIMX);
+
 			/* Generate CA Array //
 			1. Generate first row, with SEED
 			2. Iterate over entire grid once; generate current row with previous row.
@@ -80,18 +83,29 @@ int run_sim (void) {
 			for (unsigned int y=1; y<dimy; y++) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
 			}
+
+			/* Optional Print */
+			if (global.DATA.CAPRINT == 1) print_grid (grid);
+
 			cellgen (grid[dimy-1], grid[0], indv[idx].dna);
 			for (unsigned int y=1; y<dimy; y++) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
 			}
 
+			/* Optional Print */
+			if (global.DATA.CAPRINT == 1) print_grid (grid);
+
 			/* Edit FPGA RAM */
 			/* Evaluate Circuit */
 			indv[idx].eval = 1;
+
+			/* Optional Print */
+			if (global.DATA.CAPRINT == 1) cout << endl;
 		}
 
 		GeneticAlgorithm::Sort (indv);
 
+		/* Status Report */
 		if (gen % 10 == 0) {
 			status (gen);
 			if ((gen % 50 == 0) && (global.DATA.TIME == 1)) {
@@ -157,11 +171,7 @@ void eta (const unsigned int gen, const time_t timer) {
 	printf ("ETA %5.1f s ", eta);
 }
 
-// void generate_ca (uint8_t **grid, GeneticAlgorithm indv) {
-//
-// }
-
-void print_grid (const uint8_t **grid) {
+void print_grid (uint8_t **grid) {
 	for (unsigned int i=0; i<global.CA.DIMY; i++) {
 		ca_graph (grid [i], global.CA.DIMX);
 	}
