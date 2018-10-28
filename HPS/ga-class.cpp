@@ -225,3 +225,10 @@ void GeneticAlgorithm::setdna (unsigned int arg_count, ...) {
 		}
 	va_end (valist);
 }
+
+void GeneticAlgorithm::print_dna (void) {
+	uint32_t dna_length = pow (global.CA.COLOR, global.CA.NB);
+	for (uint32_t i = 0; i < dna_length; i++) {
+		std::cout << (unsigned int) dna [i];
+	}
+}

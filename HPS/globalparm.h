@@ -8,16 +8,18 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 0.99
+#define VERSION 1.02
 
 /*	Max Cellular Automaton Grid Size
-	This defines the maximum length of a side of the square grid.
+	This defines the maximum available length of a side of the square grid.
+	Determined by the FPGA file at compile time.
 	Split into the X and Y axis respectively.
 */
-#define MAX_CA_DIMX 100
-#define MAX_CA_DIMY 100
+#define MAX_CA_DIMX 64
+#define MAX_CA_DIMY 64
 /*	Max Cellular Automaton Color Count
-	This should be defined based on memory and index integer for a CA rule set.
+	This should be defined based on the actual FPGA cell's state count.
+	This should also be limited based on memory and index integer for a CA rule set.
 
 	For a given CA of K Colors and N neighbors, there would be K^N rules for a rule set.
 	EG. a 4-color, 3-neighbor CA would have 64 rules. This rule set would have a range of [0,63]
@@ -32,7 +34,7 @@
 	unsigned 32-bit int: [0,4294967295]
 	unsigned 64-bit int: [0,18446744073709551615]
 */
-#define MAX_CA_COLOR 40
+#define MAX_CA_COLOR 4
 /*	Max Cellular Automaton Neighbor Cell Count
 	Similarly to the the above variable, this should be defined based on memory and index integer.
 
@@ -58,19 +60,12 @@
 #define GXDIM 80 // Fitness Graph X-Dimensions
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 
-/* ----- Variable Global Parameters ----- */ // Sue me
+/* ----- Global Variable Parameters ----- */ // Sue me
 
 /* TODO: Make parameter linked list? *Low Priority*
 	Possibly more flexible handling of parameters
 	ie. Automatically numbered parameter list, automatically managed
 */
-// typedef struct param {
-// 	unsigned int idx;
-//
-//
-// 	struct param *next;
-// 	struct param *prev;
-// } global;
 
 /* Genetics Algorithm Parameters Struct */
 struct param_ga {
@@ -82,11 +77,11 @@ struct param_ga {
 
 /* Cellular Automaton Parameters Struct */
 struct param_ca {
-	unsigned int DIMX = 20;	/* X-Axis Dimension */
-	unsigned int DIMY = 20;	/* Y-Axis Dimension */
-	unsigned int COLOR = 4;	/* CA Color Count */
-	unsigned int NB = 3;	/* CA Neighbor Count */
-	uint8_t *SEED;			/* CA Grid Seed Array */
+	unsigned int DIMX = MAX_CA_DIMX;	/* X-Axis Dimension */
+	unsigned int DIMY = MAX_CA_DIMY;	/* Y-Axis Dimension */
+	unsigned int COLOR = MAX_CA_COLOR;	/* CA Color Count */
+	unsigned int NB = MAX_CA_NB;		/* CA Neighbor Count */
+	uint8_t *SEED;						/* CA Grid Seed Array */
 };
 
 /* Data Parameters Struct */
@@ -104,7 +99,7 @@ struct param_data {
 	/* Cellular Automaton Grid Print | Default = 1
 		Prints the CA Grid of the fittest individual at the end of the experiment.
 	*/
-	bool CAPRINT = 1;
+	bool CAPRINT = 0;
 	/* Export data from the experiment to file | (Off for now)*/
 	bool EXPORT = 0;
 };
@@ -119,19 +114,14 @@ struct param_main {
 	param_ga GA;
 	param_ca CA;
 	param_data DATA;
+
+	/* Variable for FPGA initialization status */
+	bool fpga_init = 0;
 } global;
 
 
 // // ----- Global variables ----- //
-// clock_t time_total, time_gen;
-// uint32_t uid_counter = 0; // Unique ID for any individual created.
-//
 // // Fitness tracking variables: Max, Min, Median, Mean per generation
 // uint32_t maxfit[GEN_LIM], minfit[GEN_LIM], medfit[GEN_LIM], avgfit[GEN_LIM];
-//
-// // Internal Model of Logic Gate Array
-// uint8_t LGA[DIM][DIM] = {0};
-// // CA Seed array (First Row of Generation)
-// uint8_t seed[DIM] = {0};
 
 #endif

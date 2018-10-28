@@ -1,17 +1,17 @@
 #
 CC = arm-linux-gnueabihf-g++
-SOURCE = ga-main.cpp
-TARGET = ga-program
+MAIN = ga-main.cpp
+OUTPUT = ga
 CFLAGS = -g -Wall -std=c++11
 INCLUDE = -I../hwlib/include/ -I../hwlib/include/soc_cv_av/ -I../ref/
 
 # Cross Compile for ARM
 arm :
-	$(CC) $(CFLAGS) $(INCLUDE) $(SOURCE) -o $(TARGET)
+	$(CC) $(CFLAGS) $(INCLUDE) $(MAIN) -o $(OUTPUT).o
 
 # Complile for PC
 pc :
-	g++ $(CFLAGS) $(INCLUDE) $(SOURCE) -o $(TARGET).exe
+	g++ $(CFLAGS) $(INCLUDE) $(MAIN) -o $(OUTPUT).exe
 
 clean :
 	rm -f $(TARGET) *.a *.o *.exe

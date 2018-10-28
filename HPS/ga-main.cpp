@@ -5,6 +5,7 @@
 #include "misc.hpp"		/* Miscellaneous Functions */
 #include "ga-class.hpp"	/* Genetics Algorithm Class */
 #include "ca.hpp"		/* Cellular Automaton Functions */
+#include "fpga.hpp"		/* FPGA Related Functions */
 #include "sim.hpp"		/* Simulation Function Wrapper */
 
 using namespace std;
@@ -15,7 +16,7 @@ uint32_t GeneticAlgorithm::object_count = 0;
 int main (int argc, char **argv) {
 	input_argument (argc, argv);
 
-	/* Variable for selecing */
+	/* Variable for selecting menu option */
 	static unsigned int sel;
 	/* static int run_check //
 		Variable for checking whether or not a simulation has been ran.
@@ -23,30 +24,42 @@ int main (int argc, char **argv) {
 
 		 0 = No simulation has been ran
 		 1 = Simulation ran successfully
-		-1 = Simulation failed or aborted
 	*/
-	static int run_check = 0;
+	static bool run_check = 0;
+
+	global.fpga_init = fpga_init ();
 
 	/* Main Menu */
 	while (1) {
-		sel = main_menu ();
+		cout << "\033[0m";
+		sel = main_menu (run_check);
 
 		switch (sel) {
-			case 0: /* About */
+			case 0: /* Exit */
+				printf ("Exiting Program.\n");
+				if (global.fpga_init == 1) close (fd);
+				return EXIT_SUCCESS;
+			case 1: /* About */
 				help_message ();
-				break;
-			case 1: /* Run Simulation */
-				run_check = run_sim ();
 				break;
 			case 2: /* Settings */
 				settings ();
 				break;
-			case 3: /* Display Previous Results */
+			case 3: /* Initialize FPGA */
+				global.fpga_init = fpga_init ();
+				break;
+			case 4: /* Run Simulation */
+				run_check = run_sim ();
+				break;
+			case 5: /* Display Previous Results */
 				results (run_check);
 				break;
-			case 4: /* Exit */
-				printf ("Exiting Program.\n");
-				return EXIT_SUCCESS;
+			case 6: /* FPGA Verification */
+				// Automated testing and verification of CA grid
+				fpga_verify ();
+				break;
+			case 7: /* Test One Individual DNA */
+			case 8: /* Set CA */
 			default: /* Invalid Input */
 				printf ("Invalid input: %d\n", sel);
 		}
@@ -63,25 +76,24 @@ void input_argument (const int argc, char **argv) {
 		printf ("argv[%d] : %s\n", counter, argv[counter]);
 }
 
-unsigned int main_menu (void) {
+unsigned int main_menu (const bool run_check) {
 	unsigned int var;
 
 	/* Prints option list */
 	printf ("\n\t>---- Main Menu ----<\n"
-			"\t0. About / Help\n"
-			"\t1. Begin Simulation\n"
+			"\t0. Exit Program\n"
+			"\t1. About\n"
 			"\t2. Settings\n"
-			"\t3. Display Results\n"
-			"\t4. Exit Program\n\n"
-			"Waiting for Input: ");
+			"\t3. Initialize FPGA | %d\n"
+			"\t4. Run Simulation\n"
+			"\t5. View Results | %d\n"
+			"\t6. Verify FPGA\n"
+			"\n"
+			"Waiting for Input: ",
+		(int)global.fpga_init, (int)run_check);
 
 	/* Sanitized Scan */
 	scan_uint (&var);
-
-	/* Prints message if input not valid */
-	if (var > 5) {
-		printf ("Invalid input: %d\n", var);
-	}
 
 	return var;
 }
@@ -222,22 +234,16 @@ void settings (void) {
 	}
 }
 
-void results (const int run_check) {
+void results (const bool run_check) {
 
 	// Get results through another function, with static variables and such?
 	// Instead of global parameters and return values from sim function
-
 	if (run_check == 0) {
 		printf ("No simulation has been ran.\n");
+		return;
 	}
 
-	if (run_check == 1) {
-		printf ("Simulation results.\n");
-	}
-
-	if (run_check == -1) {
-		printf ("Simulation was aborted or failed. Showing partial results.\n");
-	}
+	printf ("\n\t>>--- Simulation Results ---<<\n");
 
 	return;
 }

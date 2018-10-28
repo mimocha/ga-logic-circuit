@@ -63,7 +63,7 @@ void cellprint (const uint8_t cell) {
 	}
 
 	printf("%X",cell);
-	cout << DEFAULT;
+	cout << RESET;
 }
 
 void ca_graph (const uint8_t *array, const unsigned int length) {

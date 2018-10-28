@@ -1,6 +1,6 @@
 /* Simulation Wrapper File */
 
-int run_sim (void) {
+bool run_sim (void) {
 
 	/* ===== ELABORATION PHASE ===== */
 
@@ -9,10 +9,11 @@ int run_sim (void) {
 		"\n\t>>>-- Initializing Simulation --<<<\n"
 		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
 		"\tDIMX = %3u | DIMY = %3u | COLOR = %3u | NEIGHBOR = %2u\n"
-		"\tFIT = %1u | TIME = %1u | CAPRINT = %1u | EXPORT = %1u\n\n",
+		"\tFIT = %1u | TIME = %1u | CAPRINT = %1u | EXPORT = %1u | FPGA INIT = %1u\n\n",
 		global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
 		global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
-		global.DATA.FIT, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT
+		global.DATA.FIT, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
+		global.fpga_init
 	);
 
 	/* Initializes Random Number Generator */
@@ -69,9 +70,6 @@ int run_sim (void) {
 			/* Skips evaluation, if already done for this individual */
 			if (indv[idx].eval == 1) continue;
 
-			/* Optional Print */
-			if (global.DATA.CAPRINT == 1) ca_graph (global.CA.SEED, global.CA.DIMX);
-
 			/* Generate CA Array //
 			1. Generate first row, with SEED
 			2. Iterate over entire grid once; generate current row with previous row.
@@ -85,7 +83,10 @@ int run_sim (void) {
 			}
 
 			/* Optional Print */
-			if (global.DATA.CAPRINT == 1) print_grid (grid);
+			// if (global.DATA.CAPRINT == 1) {
+			// 	ca_graph (global.CA.SEED, global.CA.DIMX);
+			// 	print_grid (grid);
+			// }
 
 			cellgen (grid[dimy-1], grid[0], indv[idx].dna);
 			for (unsigned int y=1; y<dimy; y++) {
@@ -93,14 +94,22 @@ int run_sim (void) {
 			}
 
 			/* Optional Print */
-			if (global.DATA.CAPRINT == 1) print_grid (grid);
+			if (global.DATA.CAPRINT == 1) {
+				printf ("UID: %u | FIT: %u | DNA: ", indv[idx].uid, indv[idx].fit);
+				indv[idx].print_dna();
+				cout << endl;
 
-			/* Edit FPGA RAM */
+				print_grid (grid);
+				cout << endl;
+			}
+
+			/* Edit FPGA RAM - Only if FPGA array initialized - Assumes correct setting */
+			if (global.fpga_init == 1) {
+
+			}
+
 			/* Evaluate Circuit */
 			indv[idx].eval = 1;
-
-			/* Optional Print */
-			if (global.DATA.CAPRINT == 1) cout << endl;
 		}
 
 		GeneticAlgorithm::Sort (indv);
@@ -108,7 +117,7 @@ int run_sim (void) {
 		/* Status Report */
 		if (gen % 10 == 0) {
 			status (gen);
-			if ((gen % 50 == 0) && (global.DATA.TIME == 1)) {
+			if (global.DATA.TIME == 1) {
 				cout << "| ";
 				eta (gen, timer);
 				timer = clock ();

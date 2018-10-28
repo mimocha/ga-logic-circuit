@@ -20,7 +20,7 @@ public:
 
 	uint32_t uid;	/* Unique id for tracking the individual */
 	uint8_t *dna;	/* DNA sequence (Cellular Automaton Rule) */
-	int fit;		/* Fitness score of the individual */
+	uint32_t fit;	/* Fitness score of the individual */
 	uint32_t rank;	/* Fitness Ranking of the individual */
 	uint32_t age;	/* For how long the individual has been alive for */
 	bool eval;		/* Evaluation Flag | 0 = not evaluated | 1 = evaluated */
@@ -45,7 +45,7 @@ public:
 
 	/* ----- Genetic ALgorithm Operations ----- */
 
-	/* SELECTION (GeneticAlgorithm *array)
+	/* Selection (GeneticAlgorithm *array)
 		The likelyhood of any individual being selected, and living on, passing their genes onto the next generation, is inversely-proportional to its rank in the population. The higher the rank, the less likely they'll survive.
 
 		Using the ( rand()%POP ), we get a random number in the range of [0, POP). We then compare this result with the rank of any given individual. If its rank is smaller than or equal to the resulting number, it survives. Thus the higher ranking individual - 1,2,3... - will have a higher chance of surviving than those of lower ranks - 70,80,90...
@@ -66,13 +66,13 @@ public:
 		Static allows this method to be called, even with no objects.
 	*/
 	static void Selection (GeneticAlgorithm *array);
-	/* CROSSOVER (const uint8_t *DNA_A, const uint8_t DNA_B)
+	/* Crossover (const uint8_t *DNA_A, const uint8_t DNA_B)
 		Homogeneously crossesover two parents' dna string.
 		Equal likelyhood any certain dna character will be chosen.
 		Equal split between two parents is not guaranteed.
 	*/
 	void Crossover (const uint8_t *dna_a, const uint8_t *dna_b);
-	/* MUTATE (void)
+	/* Mutate (void)
 		Mutates the dna of a given individual.
 		Iterates over every dna chunk, and compares a random number to a set probability.
 	*/
@@ -80,14 +80,14 @@ public:
 
 	/* ----- Other Miscellany Operations ----- */
 
-	/* RESET (void)
+	/* Reset (void)
 		Resets an individual, and assigns new UID.
 		For after an individual 'dies', and is being replaced by a new individual.
 
 		TODO: DNA REALLOC - If DNA length has changed, reallocate *dna
 	*/
 	void Reset (void);
-	/* SORT (GeneticAlgorithm *array)
+	/* Sort (GeneticAlgorithm *array)
 		Sorts the entire population by fitness value, in decreasing order.
 		Static allows this method to be called, even with no objects.
 	*/
@@ -107,14 +107,18 @@ public:
 	*/
 	uint8_t *dna_calloc (const uint32_t dna_length);
 
-	/* ----- Set Functions ----- */
+	/* ----- Set & Get Functions ----- */
 
-	/* SETDNA (unsigned int arg_count, ...)
+	/* setdna (unsigned int arg_count, ...)
 		Takes an unsigned int of number of arguments to consider,
 		and a comma seperated list of uint8_t to set as the DNA.
 		Requires <stdarg.h>
 	*/
 	void setdna (unsigned int arg_count, ...);
+	/* print_dna (void)
+		Prints the DNA string of the individual
+	*/
+	void print_dna (void);
 
 };
 

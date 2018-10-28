@@ -17,19 +17,7 @@
 #include <algorithm>	/* sort, find */
 #include <vector>		/* vectors */
 #include <array>		/* arrays */
-#include <bitset>
-
-// ----- Linux API Include ----- //
-// #include <unistd.h>
-// #include <fcntl.h>
-// #include <sys/mman.h>
-
-// ----- Altera HWLIB Include ----- //
-// #include "hwlib.h"
-// #include "socal/socal.h"
-// #include "socal/hps.h"
-// #include "socal/alt_gpio.h"
-// #include "hps_0.h"
+// #include <bitset>		/* bitset is unavailable in DE0-Nano-SoC */
 
 // ----- Function Prototypes && Documentation ----- //
 
@@ -39,7 +27,7 @@
 */
 void input_argument (const int argc, char **argv);
 
-/* unsigned int mainmenu (void)
+/* unsigned int main_menu (const bool run_check)
 	Main Menu function.
 	Users select valid inputs here. Selections are single-digit unsigned decimal integers.
 	The selection is then returned to main() for calling other functions.
@@ -47,16 +35,16 @@ void input_argument (const int argc, char **argv);
 	The actual selection and function calling should not occur within this function,
 	but within the main() function to keep the code clean and easy to follow.
 */
-unsigned int main_menu (void);
+unsigned int main_menu (const bool run_check);
 
 /* void settings (void)
 	Handles changing of global parameters.
 */
 void settings (void);
 
-/* void results (const int run_check)
+/* void results (const bool run_check)
 	Displays results from a previous simulation.
 */
-void results (const int run_check);
+void results (const bool run_check);
 
 #endif

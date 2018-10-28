@@ -6,14 +6,13 @@
 
 using namespace std;
 
-/* int run_sim (void)
+/* bool run_sim (void)
 	Wrapper for running the simulation.
-	Returns int to indicate sim results.
+	Returns bool to indicate sim results.
 
-	 1 = SUCCESS
-	-1 = FAILED or Aborted attempts
+	1 = SUCCESS
 */
-int run_sim (void);
+bool run_sim (void);
 
 /* void status (const unsigned int gen)
 	Status indicator function.
