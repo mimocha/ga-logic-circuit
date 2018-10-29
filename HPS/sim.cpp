@@ -55,6 +55,9 @@ bool run_sim (void) {
 	/* ===== END ELABORATION ===== */
 
 	printf ("\tBeginning Simulation\n");
+	fpga_set_input (0xDEADBEEFABCDEF12);
+	uint64_t output = 0;
+	uint64_t desired = 0xDEADBEEFABCDEF12;
 
 	/* ===== SIMULATION LOOP ===== */
 
@@ -82,12 +85,6 @@ bool run_sim (void) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
 			}
 
-			/* Optional Print */
-			// if (global.DATA.CAPRINT == 1) {
-			// 	ca_graph (global.CA.SEED, global.CA.DIMX);
-			// 	print_grid (grid);
-			// }
-
 			cellgen (grid[dimy-1], grid[0], indv[idx].dna);
 			for (unsigned int y=1; y<dimy; y++) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
@@ -105,14 +102,24 @@ bool run_sim (void) {
 
 			/* Edit FPGA RAM - Only if FPGA array initialized - Assumes correct setting */
 			if (global.fpga_init == 1) {
-
+				fpga_set_grid (grid);
+				output = fpga_get_output ();
 			}
 
 			/* Evaluate Circuit */
+			indv[idx].fit = popcount64 (desired & output);
 			indv[idx].eval = 1;
 		}
 
 		GeneticAlgorithm::Sort (indv);
+
+		printf (" UID | RANK | FIT | DNA\n");
+		for (unsigned int idx=0; idx<pop_lim; idx++) {
+			printf ("%4d | %4d | %3d | ",
+			indv[idx].uid, indv[idx].rank, indv[idx].fit);
+			indv[idx].print_dna();
+			cout << endl;
+		}
 
 		/* Status Report */
 		if (gen % 10 == 0) {
@@ -176,7 +183,7 @@ void status (const unsigned int gen) {
 
 void eta (const unsigned int gen, const time_t timer) {
 	time_t time_diff = clock () - timer;
-	float eta = ((global.GA.GEN - gen) / 50) * ((float) time_diff / CLOCKS_PER_SEC);
+	float eta = ((float)(global.GA.GEN - gen) / 10) * ((float) time_diff / CLOCKS_PER_SEC);
 	printf ("ETA %5.1f s ", eta);
 }
 
@@ -184,4 +191,18 @@ void print_grid (uint8_t **grid) {
 	for (unsigned int i=0; i<global.CA.DIMY; i++) {
 		ca_graph (grid [i], global.CA.DIMX);
 	}
+}
+
+uint64_t popcount64 (uint64_t x) {
+	const uint64_t m1  = 0x5555555555555555;
+	const uint64_t m2  = 0x3333333333333333;
+	const uint64_t m4  = 0x0f0f0f0f0f0f0f0f;
+
+	x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
+	x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits
+	x = (x + (x >> 4)) & m4;        //put count of each 8 bits into those 8 bits
+	x += x >>  8;	//put count of each 16 bits into their lowest 8 bits
+	x += x >> 16;	//put count of each 32 bits into their lowest 8 bits
+	x += x >> 32;	//put count of each 64 bits into their lowest 8 bits
+	return x & 0x7f;
 }

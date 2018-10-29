@@ -101,28 +101,99 @@ Using this module:
 */
 bool fpga_init (void);
 
+/* void fpga_verify (void)
+	Hard-coded code for manually verifying FPGA Cell Array functions.
+	Verification data not proven to be correct.
+	TODO: Automate and verify this.
+*/
 void fpga_verify (void);
 
 /* ----- Level 1 ----- */
 
+/* void fpga_clear (void)
+	Clears FPGA Cell Array, set all RAM to zero.
+	Set Cell Array input to zero
+*/
 void fpga_clear (void);
 
+/* void fpga_set_grid (uint8_t **grid)
+	Sets the FPGA Cell Array according to the given grid data.
+	Writes from the bottom-most row up, from LSB to MSB, offset 511 to 0.
+
+	Uses bitwise operations to set 4-bits at a time to the data buffer.
+	At every 8 cell (32-bits), write once to the given address offset,
+	then decrement the offset by one.
+
+	Repeat this step over all rows and column.
+	This ensures precisely (MAX_CA_DIMX * MAX_CA_DIMY / 8) writes. (512)
+*/
 void fpga_set_grid (uint8_t **grid);
 
+/* void fpga_set_input (const uint64_t data)
+	Sets input for FPGA Cell Array.
+
+	As the slave port only allows 32-bit reads, this function will have to do multiple writes.
+	Number of writes required is MAX_CA_DIMX / AVALON_PORT_WIDTH
+
+	Be sure to handle Endianness properly. Cell Array Circuit takes data in MSB format.
+*/
 void fpga_set_input (const uint64_t data);
 
+/* uint64_t fpga_get_output (void)
+	Returns output from FPGA Cell Array.
+
+	As the slave port only allows 32-bit reads, this function will have to do multiple reads.
+	Number of reads required is MAX_CA_DIMX / AVALON_PORT_WIDTH
+
+	Be sure to handle Endianness properly. Cell Array Circuit takes data in MSB format.
+*/
 uint64_t fpga_get_output (void);
 
 /* ----- Level 2 -----
-	FPGA only functions
-	These functions are limited to within FPGA files.
-	Users should not use them outside.
+	FPGA only functions. Declared as static.
+	These functions may only be used within the "fpga.cpp" translation unit.
+
+	Users should instead, use the "Level 1" hierachy functions.
+
+	Altera Definitions for reference:
+	 *!
+	 * \addtogroup ALT_SOCAL_UTIL_RW_FUNC SoCAL Memory Read/Write Utilities
+	 *
+	 * This section implements read and write functionality for various
+	 * memory untis. The memory unit terms used for these functions are
+	 * consistent with those used in the ARM Architecture Reference Manual
+	 * ARMv7-A and ARMv7-R edition manual. The terms used for units of memory are:
+	 *
+	 *  Unit of Memory | Abbreviation | Size in Bits
+	 * :---------------|:-------------|:------------:
+	 *  Byte           | byte         |       8
+	 *  Half Word      | hword        |      16
+	 *  Word           | word         |      32
+	 *  Double Word    | dword        |      64
+	 *
+	 * @{
+	 *
 */
 
+/* static uint32_t fpga_s1_read (const uint32_t offset)
+	Read 32-bit unsigned int from selected address offset.
+	For S1 Avalon Slave Port
+*/
 static uint32_t fpga_s1_read (const uint32_t offset);
 
+/* static void fpga_s1_write (const uint32_t offset, const uint32_t data)
+	Writes 32-bit unsigned int to selected address offset.
+	For S1 Avalon Slave Port
+*/
 static void fpga_s1_write (const uint32_t offset, const uint32_t data);
 
+/* static void fpga_s2_write (const uint32_t offset, const uint32_t data)
+	Write 32-bit unsigned int to selected address offset.
+	For S2 Avalon Slave Port
+
+	Originally writes twice to the same address, due to FPGA circuit's setup.
+	Was done to reset WREN signal properly, but has since been proven unnecessary.
+*/
 static void fpga_s2_write (const uint32_t offset, const uint32_t data);
 
 #include "fpga.cpp"

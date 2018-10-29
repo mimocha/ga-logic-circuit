@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.02
+#define VERSION 1.03
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.
@@ -43,7 +43,7 @@
 	A length of a CA rule set is given by K^N; where K = color count, N = neighbor count
 	Refer to the above comment for more info on memory and index integer limit.
 */
-#define MAX_CA_NB 10
+#define MAX_CA_NB 3
 /* Max Genetic Algorithm Population Size */
 #define MAX_GA_POP 10000
 /* Max Genetic Algorithm Generations */
@@ -69,8 +69,8 @@
 
 /* Genetics Algorithm Parameters Struct */
 struct param_ga {
-	unsigned int POP = 20;	/* Maximum Population */
-	unsigned int GEN = 1;	/* Maximum Generation */
+	unsigned int POP = 100;	/* Maximum Population */
+	unsigned int GEN = 100;	/* Maximum Generation */
 	float MUTP = 0.05;		/* Mutation Probability in decimal, range [0.00, 1.00] */
 	unsigned int POOL = 5;	/* Tournament Selection Poolsize */
 };

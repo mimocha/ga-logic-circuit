@@ -30,6 +30,12 @@ void eta (const unsigned int gen, const time_t timer);
 */
 void print_grid (uint8_t **grid);
 
+/* uint64_t popcount64 (uint64_t x)
+	64-bit Hamming Weight Counting Algorithm
+	https://en.wikipedia.org/wiki/Hamming_weight
+*/
+uint64_t popcount64 (uint64_t x);
+
 #include "sim.cpp"
 
 #endif
