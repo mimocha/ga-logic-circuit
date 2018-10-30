@@ -5,6 +5,14 @@ void help_message (void) {
 	/* TODO: Add comprehensive explanation / help message */
 }
 
+void input_argument (const int argc, char **argv) {
+	int counter;
+
+	printf ("%d input argument(s) given:\n", argc);
+	for (counter=0; counter<argc; counter++)
+		printf ("argv[%d] : %s\n", counter, argv[counter]);
+}
+
 /* ----- Sanitized Scanf ----- */
 
 int *scan_int (int *dest) {

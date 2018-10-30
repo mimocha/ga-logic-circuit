@@ -66,131 +66,93 @@ void fpga_verify (void) {
 			global.CA.DIMX, global.CA.DIMY,
 			global.CA.DIMX * global.CA.DIMY);
 
+	if (global.CA.DIMX != MAX_CA_DIMX || global.CA.DIMY != MAX_CA_DIMY)
+		std::cout << "\n\033[0;33m Custom Dimension Detected. Results May Be Incorrect \033[0m\n";
+
+	// Grid array is always of max physical size. Only data on the array changes.
 	uint8_t **grid;
-	grid = (uint8_t **) calloc (64, sizeof (uint8_t *));
-	for (unsigned int i=0; i<64; i++) {
-		grid[i] = (uint8_t *) calloc (64, sizeof (uint8_t));
+	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
+	for (unsigned int i=0; i<MAX_CA_DIMX; i++) {
+		grid[i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
 	}
 
 	// ===== Pass A =====
-	puts ("\nSet A");
-	for (int y=0; y<64; y++) {
-		if (y==63) {
-			for (int x=0; x<64; x++) {
+	for (unsigned int y=0; y<global.CA.DIMY; y++) {
+		if (y==(global.CA.DIMY-1)) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = 0x9;
 			}
 		} else {
-			for (int x=0; x<64; x++) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = 0x1;
 			}
 		}
 	}
 	fpga_set_grid (grid);
-
-	printf (" Input: 0000000000000000 \n");
-	fpga_set_input (0x0);
-	printf ("Expect: 0000000000000000 \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: FFFFFFFFFFFFFFFF \n");
-	fpga_set_input (0xFFFFFFFFFFFFFFFF);
-	printf ("Expect: FFFFFFFFFFFFFFFF \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: DEADBEEFABCDEF12 \n");
-	fpga_set_input (0xDEADBEEFABCDEF12);
-	printf ("Expect: DEADBEEFABCDEF12 \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
+	fpga_check (1);
 
 	// ===== Pass B =====
-	puts ("\nSet B");
-	for (int y=0; y<64; y++) {
-		if (y==63) {
-			for (int x=0; x<64; x++) {
+	for (unsigned int y=0; y<global.CA.DIMY; y++) {
+		if (y==(global.CA.DIMY-1)) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = 0xA;
 			}
 		} else {
-			for (int x=0; x<64; x++) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = 0x2;
 			}
 		}
 	}
 	fpga_set_grid (grid);
-
-	printf (" Input: 0000000000000000 \n");
-	fpga_set_input (0x0);
-	printf ("Expect: 0000000000000000 \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: FFFFFFFFFFFFFFFF \n");
-	fpga_set_input (0xFFFFFFFFFFFFFFFF);
-	printf ("Expect: 0000000000000000 \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: DEADBEEFABCDEF12 \n");
-	fpga_set_input (0xDEADBEEFABCDEF12);
-	printf ("Expect: 0000000000000000 \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
+	fpga_check (2);
 
 	// ===== NAND =====
-	puts ("\nSet NAND");
-	for (int y=0; y<64; y++) {
-		if (y==63) {
-			for (int x=0; x<64; x++) {
+	for (unsigned int y=0; y<global.CA.DIMY; y++) {
+		if (y==(global.CA.DIMY-1)) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = 0xB;
 			}
 		} else {
-			for (int x=0; x<64; x++) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = 3;
 			}
 		}
 	}
 	fpga_set_grid (grid);
-
-	printf (" Input: 0000000000000000 \n");
-	fpga_set_input (0x0);
-	printf ("Expect: 8000000000000000 \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: FFFFFFFFFFFFFFFF \n");
-	fpga_set_input (0xFFFFFFFFFFFFFFFF);
-	printf ("Expect: FFFFFFFFFFFFFFFF \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: DEADBEEFABCDEF12 \n");
-	fpga_set_input (0xDEADBEEFABCDEF12);
-	printf ("Expect: FFFFFFFFDE0DBEEF \n");
-	printf ("Output: %016llX\n", fpga_get_output ());
+	fpga_check (3);
 
 	// ===== RAND =====
-	puts ("\nSet RAND");
-	for (int y=0; y<64; y++) {
-		if (y==63) {
-			for (int x=0; x<64; x++) {
+	for (unsigned int y=0; y<global.CA.DIMY; y++) {
+		if (y==(global.CA.DIMY-1)) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = rand () % 4 + 0x8;
 			}
 		} else {
-			for (int x=0; x<64; x++) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
 				grid [y][x] = rand () % 4;
 			}
 		}
 	}
 	fpga_set_grid (grid);
+	fpga_check (4);
 
-	printf (" Input: 0000000000000000 \n");
-	fpga_set_input (0x0);
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: FFFFFFFFFFFFFFFF \n");
-	fpga_set_input (0xFFFFFFFFFFFFFFFF);
-	printf ("Output: %016llX\n", fpga_get_output ());
-
-	printf (" Input: DEADBEEFABCDEF12 \n");
-	fpga_set_input (0xDEADBEEFABCDEF12);
-	printf ("Output: %016llX\n", fpga_get_output ());
+	// ===== NULL =====
+	for (unsigned int y=0; y<global.CA.DIMY; y++) {
+		if (y==(global.CA.DIMY-1)) {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
+				grid [y][x] = 0x8;
+			}
+		} else {
+			for (unsigned int x=0; x<global.CA.DIMX; x++) {
+				grid [y][x] = 0;
+			}
+		}
+	}
+	fpga_set_grid (grid);
+	fpga_check (0);
 
 	// ===== Cleanup =====
-	for (unsigned int y=0; y<64; y++) {
+	for (unsigned int y=0; y<global.CA.DIMY; y++) {
 		free (grid[y]);
 	}
 	free (grid);
@@ -246,6 +208,72 @@ uint64_t fpga_get_output (void) {
 	}
 
 	return results;
+}
+
+void fpga_check (int mode) {
+	const uint64_t input[3] = {0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12};
+
+	uint64_t expected [3];
+	uint64_t observed;
+
+	switch (mode) {
+		case 0: // Null
+			puts ("\nSet NULL");
+			expected [0] = 0x0;
+			expected [1] = 0x0;
+			expected [2] = 0x0;
+			break;
+		case 1: // Pass A
+			puts ("\nSet A");
+			expected [0] = 0x0;
+			expected [1] = 0xFFFFFFFFFFFFFFFF;
+			expected [2] = 0xDEADBEEFABCDEF12;
+			break;
+		case 2: // Pass B
+			puts ("\nSet B");
+			expected [0] = 0x0;
+			expected [1] = 0x0;
+			expected [2] = 0x0;
+			break;
+		case 3: // NAND
+			puts ("\nSet NAND");
+			expected [0] = 0x8000000000000000;
+			expected [1] = 0xFFFFFFFFFFFFFFFF;
+			expected [2] = 0xFFFFFFFFDE0DBEEF;
+			break;
+		default: // Unknown
+			puts ("\nSet RAND");
+			expected [0] = 0x0;
+			expected [1] = 0x0;
+			expected [2] = 0x0;
+			break;
+	}
+
+	// For NULL, PASS A, PASS B, NAND
+	if (mode <= 3) {
+		for (int i=0; i<3; i++) {
+			fpga_set_input (input [i]);
+			printf (" Input: %016llX\nExpect: %016llX\n", input[i], expected[i]);
+			observed = fpga_get_output ();
+
+			printf ("Output: %016llX | ", observed);
+			if (observed == expected [i])  {
+				std::cout << "\033[0;32m OK \033[0m\n";
+			} else {
+				std::cout <<  "\033[0;33m WARN \033[0m\n";
+			}
+		}
+
+	// RAND and others
+	} else {
+		for (int i=0; i<3; i++) {
+			fpga_set_input (input [i]);
+			printf (" Input: %016llX\n", input[i]);
+			printf ("Output: %016llX\n", fpga_get_output ());
+		}
+	}
+
+	return;
 }
 
 /* ----- Level 2 ----- */

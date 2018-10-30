@@ -28,46 +28,9 @@ int fd; // something for mmap
 #define HW_REGS_MASK ( HW_REGS_SPAN - 1 )
 
 /* Avalon Slave Ports
-The module contains 4 different Avalon Slave Ports.
-
-Port S1 -- Linux IO
-	Set and forget
-	Could be set once and read after every settings,
-	but it is best to reset this to zero, and set to desired values for every new individual.
-	This would prevent any unknown / unexpected resets.
-
-Port S2 -- RAM
-	Update for every row
-	Has to be updated before setting the write enable signal.
-
-Port S3 -- State
-	Set and forget
-	Could be set once, and forgotten for the entire simulation as it doesn't change much.
-	But it would be best to set to desired values for every new individual.
-	This would prevent any unknown / unexpected resets.
-
-Port S4 -- Write Enable
-	Update for every row -- This is a trickier one.
-
-	! Must be set to 0 while writing other ports, or data will change. !
-	Can also be set to multiple rows, for identical rows.
-	This possibly could save some time off.
-
-
-Using this module:
-
-	> Repeat for all Individuals
-		1. Set State
-		> Repeat for all rows
-			2. Set RAM for current row
-			3. Set Write Enable for current row
-			4. Clear Write Enable
-		5. Set Linux_in
-		6. Read Linux_out
-		> Reset
-			7. Clear Linux_in, State, RAM
-			8. Set All Write Enable
-			9. Clear Write Enable
+	The module contains 2 different Avalon Slave Ports.
+	Port S1 -- Linux IO
+	Port S2 -- RAM
 */
 
 // Linux In / Out
@@ -136,6 +99,10 @@ void fpga_set_grid (uint8_t **grid);
 	Number of writes required is MAX_CA_DIMX / AVALON_PORT_WIDTH
 
 	Be sure to handle Endianness properly. Cell Array Circuit takes data in MSB format.
+
+	WARNING: Be sure to seperate fpga_get_output() from fpga_set_input().
+	FPGA Cell Array updates with clock, and needs a few clock cycle to update completely.
+	Using the two functions back-to-back is shown to cause invalid outputs.
 */
 void fpga_set_input (const uint64_t data);
 
@@ -146,8 +113,18 @@ void fpga_set_input (const uint64_t data);
 	Number of reads required is MAX_CA_DIMX / AVALON_PORT_WIDTH
 
 	Be sure to handle Endianness properly. Cell Array Circuit takes data in MSB format.
+
+	WARNING: Be sure to seperate fpga_get_output() from fpga_set_input().
+	FPGA Cell Array updates with clock, and needs a few clock cycle to update completely.
+	Using the two functions back-to-back is shown to cause invalid outputs.
 */
 uint64_t fpga_get_output (void);
+
+/* static void fpga_check (int mode)
+	Wrapper for checking 3 inputs / outputs.
+	Makes function fpga_verify() cleaner.
+*/
+static void fpga_check (int mode);
 
 /* ----- Level 2 -----
 	FPGA only functions. Declared as static.

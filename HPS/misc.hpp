@@ -8,6 +8,12 @@
 */
 void help_message (void);
 
+/* void input_argument (const int argc, char **argv)
+	This function handles input arguments.
+	Should have limited use, now that a main menu is being implemented.
+*/
+void input_argument (const int argc, char **argv);
+
 /* ----- Sanitized Scanf ----- //
 	Sanitized Scanf to parse input.
 	Takes in a pointer to a specified type of variable, ignores all but the first valid value.

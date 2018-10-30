@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.03
+#define VERSION 1.04
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.
@@ -43,7 +43,7 @@
 	A length of a CA rule set is given by K^N; where K = color count, N = neighbor count
 	Refer to the above comment for more info on memory and index integer limit.
 */
-#define MAX_CA_NB 3
+#define MAX_CA_NB 10
 /* Max Genetic Algorithm Population Size */
 #define MAX_GA_POP 10000
 /* Max Genetic Algorithm Generations */
@@ -77,11 +77,16 @@ struct param_ga {
 
 /* Cellular Automaton Parameters Struct */
 struct param_ca {
-	unsigned int DIMX = MAX_CA_DIMX;	/* X-Axis Dimension */
-	unsigned int DIMY = MAX_CA_DIMY;	/* Y-Axis Dimension */
-	unsigned int COLOR = MAX_CA_COLOR;	/* CA Color Count */
-	unsigned int NB = MAX_CA_NB;		/* CA Neighbor Count */
-	uint8_t *SEED;						/* CA Grid Seed Array */
+	/* X-Axis Dimension */
+	unsigned int DIMX = MAX_CA_DIMX;
+	/* Y-Axis Dimension */
+	unsigned int DIMY = MAX_CA_DIMY;
+	/* CA Color Count */
+	unsigned int COLOR = MAX_CA_COLOR;
+	/* CA Neighbor Count */
+	unsigned int NB = MAX_CA_NB;
+	/* CA Grid Seed Array */
+	uint8_t *SEED;
 };
 
 /* Data Parameters Struct */
@@ -91,7 +96,7 @@ struct param_data {
 		Tracks Minimum, Maximum, Average, and Median fitness value from each generation.
 		Results are plotted automatically at the end of the experiment.
 	*/
-	bool FIT = 1;
+	bool TRACK = 1;
 	/* Performance and Time Tracking | Default = 1
 		Tracks computation time required during the experiment.
 	*/
@@ -102,6 +107,55 @@ struct param_data {
 	bool CAPRINT = 0;
 	/* Export data from the experiment to file | (Off for now)*/
 	bool EXPORT = 0;
+};
+
+/* Simulation Statistics Struct
+	This struct keeps some settings and results of the most recent simulation.
+	Keeps a copy, so even if the settings are changed after one simulation,
+	the data could be used to replicate and export results.
+*/
+struct stats_var {
+	/* Simulation Generation Limit */
+	unsigned int gen;
+	/* Simulation Population Size */
+	unsigned int pop;
+	/* X-Axis Dimension */
+	unsigned int dimx;
+	/* Y-Axis Dimension */
+	unsigned int dimy;
+	/* CA Color Count */
+	unsigned int color;
+	/* CA Neighbor Count */
+	unsigned int nb;
+
+	/* Array of stats across each generations */
+	float *avg;
+	float *med;
+	unsigned int *max;
+	unsigned int *min;
+};
+
+/* Target Truth Table Struct
+	Contains the desired truth table for evaluating circuits.
+
+	Definition  | Variable 1 | Variable 2 | Variable 3 ...
+	------------+------------+------------+------------
+	Config 1	| Input    1 | Output A 1 | Output B 1
+	Config 2	| Input    2 | Output A 2 | Output B 2
+	Config 3	| Input    3 | Output A 3 | Output B 3
+
+	Note that each variable can be set to anything. It is not limited that Input must be variable 1, or to have only a single input, etc.
+	Same goes for the number of configurations. A complete truth table is not required.
+
+	Should be set in main-menu, before simulations.
+*/
+struct truth_table {
+	/* Number of variables to check */
+	unsigned int var = 2;
+	/* Number of configurations to check */
+	unsigned int config = 2;
+	/* Truth Table Array -- value [var][config] */
+	uint64_t **table;
 };
 
 /*	Main Global Parameters Struct
@@ -115,13 +169,19 @@ struct param_main {
 	param_ca CA;
 	param_data DATA;
 
-	/* Variable for FPGA initialization status */
+	stats_var stats;
+	truth_table truth;
+
+	/* FPGA Initialization Flag */
 	bool fpga_init = 0;
+	/* Simulation Run Checking Flag
+		Variable for checking whether or not a simulation has been ran.
+		0 = No simulation has been ran
+		1 = Simulation ran successfully
+*/
+	bool run_check = 0;
+	/* Truth Table Initialization Flag */
+	bool tt_init = 0;
 } global;
-
-
-// // ----- Global variables ----- //
-// // Fitness tracking variables: Max, Min, Median, Mean per generation
-// uint32_t maxfit[GEN_LIM], minfit[GEN_LIM], medfit[GEN_LIM], avgfit[GEN_LIM];
 
 #endif

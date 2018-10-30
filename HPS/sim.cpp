@@ -1,9 +1,6 @@
 /* Simulation Wrapper File */
 
-bool run_sim (void) {
-
-	/* ===== ELABORATION PHASE ===== */
-
+void sim_init (void) {
 	/* Prints Parameter List */
 	printf (
 		"\n\t>>>-- Initializing Simulation --<<<\n"
@@ -12,18 +9,45 @@ bool run_sim (void) {
 		"\tFIT = %1u | TIME = %1u | CAPRINT = %1u | EXPORT = %1u | FPGA INIT = %1u\n\n",
 		global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
 		global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
-		global.DATA.FIT, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
+		global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
 		global.fpga_init
 	);
 
 	/* Initializes Random Number Generator */
 	srand (time (NULL));
+
+	/* Initializes Statistics Variables*/
+	if (global.DATA.TRACK == 1) {
+		/* Stores current setting */
+		global.stats.gen = global.GA.GEN;
+		global.stats.pop = global.GA.POP;
+		global.stats.dimx = global.CA.DIMX;
+		global.stats.dimy = global.CA.DIMY;
+		global.stats.color = global.CA.COLOR;
+		global.stats.nb = global.CA.NB;
+
+		// For data arrays, check if NULL. If not null, free()
+		if (global.stats.avg != NULL) free (global.stats.avg);
+		global.stats.avg = (float *) calloc (global.GA.GEN, sizeof (float));
+		if (global.stats.med != NULL) free (global.stats.med);
+		global.stats.med = (float *) calloc (global.GA.GEN, sizeof (float));
+		if (global.stats.max != NULL) free (global.stats.max);
+		global.stats.max = (unsigned int *) calloc (global.GA.GEN, sizeof (unsigned int));
+		if (global.stats.min != NULL) free (global.stats.min);
+		global.stats.min = (unsigned int *) calloc (global.GA.GEN, sizeof (unsigned int));
+	}
+}
+
+bool run_sim (void) {
+	/* ===== ELABORATION PHASE ===== */
+	sim_init ();
+
 	/* Temporary variables, for easier reference */
 	const unsigned int dimx = global.CA.DIMX;
 	const unsigned int dimy = global.CA.DIMY;
 	const unsigned int gen_lim = global.GA.GEN;
 	const unsigned int pop_lim = global.GA.POP;
-	/* Computes DNA length, the number of CA rules; Calculated by -> Color^Neighbor */
+	/* Computes DNA length, the number of CA rules; Calculated by -> Color^Neighbor (exponent, not XOR) */
 	uint32_t dna_length = pow (global.CA.COLOR, global.CA.NB);
 	/* If TIME is enabled, initialize time_t */
 	time_t timer;
@@ -57,7 +81,7 @@ bool run_sim (void) {
 	printf ("\tBeginning Simulation\n");
 	fpga_set_input (0xDEADBEEFABCDEF12);
 	uint64_t output = 0;
-	uint64_t desired = 0xDEADBEEFABCDEF12;
+	const uint64_t desired = 0x0F0E0D0C0B0A0908;
 
 	/* ===== SIMULATION LOOP ===== */
 
@@ -107,19 +131,13 @@ bool run_sim (void) {
 			}
 
 			/* Evaluate Circuit */
-			indv[idx].fit = popcount64 (desired & output);
+			// A XNOR B | aka. A == B
+			indv[idx].fit = bitcount64 ( ~(desired^output) );
 			indv[idx].eval = 1;
 		}
 
 		GeneticAlgorithm::Sort (indv);
-
-		printf (" UID | RANK | FIT | DNA\n");
-		for (unsigned int idx=0; idx<pop_lim; idx++) {
-			printf ("%4d | %4d | %3d | ",
-			indv[idx].uid, indv[idx].rank, indv[idx].fit);
-			indv[idx].print_dna();
-			cout << endl;
-		}
+		statistics (indv, gen);
 
 		/* Status Report */
 		if (gen % 10 == 0) {
@@ -137,8 +155,8 @@ bool run_sim (void) {
 
 	printf ("\tDONE\n");
 
-	/* ===== CLEANUP ===== */
-	/* Manually Memory Management Memo //
+	/* ===== CLEANUP =====
+	Manually Memory Management Memo //
 		> Note 1:
 		A custom destructor for GA Class causes a bug, throwing SEGFAULT when freeing indv.dna
 		Likely due to bad memory management at some point.
@@ -193,7 +211,8 @@ void print_grid (uint8_t **grid) {
 	}
 }
 
-uint64_t popcount64 (uint64_t x) {
+uint64_t bitcount64 (uint64_t x) {
+	// Code shamelessly copied from https://en.wikipedia.org/wiki/Hamming_weight
 	const uint64_t m1  = 0x5555555555555555;
 	const uint64_t m2  = 0x3333333333333333;
 	const uint64_t m4  = 0x0f0f0f0f0f0f0f0f;
@@ -205,4 +224,31 @@ uint64_t popcount64 (uint64_t x) {
 	x += x >> 16;	//put count of each 32 bits into their lowest 8 bits
 	x += x >> 32;	//put count of each 64 bits into their lowest 8 bits
 	return x & 0x7f;
+}
+
+void statistics (GeneticAlgorithm *array, const unsigned int gen) {
+	const uint32_t pop = global.GA.POP;
+	float average = 0.0;
+	float median = 0;
+
+	/* Get average value */
+	for (uint32_t i=0; i<pop; i++) {
+		average += array[i].fit;
+	}
+	average /= pop;
+	global.stats.avg [gen] = average;
+
+	/* Get median value (list is presorted) */
+	if (global.GA.POP % 2 == 0) {
+		median = array[pop/2].fit + array[(pop/2)-1].fit;
+		global.stats.med [gen] = median/2;
+	} else {
+		global.stats.med [gen] = array[pop/2].fit;
+	}
+
+	/* Get max value (list is presorted) */
+	global.stats.max [gen] = array[0].fit;
+
+	/* Get min value (list is presorted) */
+	global.stats.min [gen] = array[pop-1].fit;
 }

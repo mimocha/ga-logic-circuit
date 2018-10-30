@@ -18,26 +18,18 @@ int main (int argc, char **argv) {
 
 	/* Variable for selecting menu option */
 	static unsigned int sel;
-	/* static int run_check //
-		Variable for checking whether or not a simulation has been ran.
-		Also for checking the status of any simulation ran.
-
-		 0 = No simulation has been ran
-		 1 = Simulation ran successfully
-	*/
-	static bool run_check = 0;
 
 	global.fpga_init = fpga_init ();
 
 	/* Main Menu */
 	while (1) {
 		cout << "\033[0m";
-		sel = main_menu (run_check);
+		sel = main_menu ();
 
 		switch (sel) {
 			case 0: /* Exit */
 				printf ("Exiting Program.\n");
-				if (global.fpga_init == 1) close (fd);
+				cleanup ();
 				return EXIT_SUCCESS;
 			case 1: /* About */
 				help_message ();
@@ -49,13 +41,12 @@ int main (int argc, char **argv) {
 				global.fpga_init = fpga_init ();
 				break;
 			case 4: /* Run Simulation */
-				run_check = run_sim ();
+				global.run_check = run_sim ();
 				break;
 			case 5: /* Display Previous Results */
-				results (run_check);
+				results ();
 				break;
-			case 6: /* FPGA Verification */
-				// Automated testing and verification of CA grid
+			case 6: /* FPGA Circuit Verification */
 				fpga_verify ();
 				break;
 			case 7: /* Test One Individual DNA */
@@ -68,15 +59,7 @@ int main (int argc, char **argv) {
 
 /* ----- Other Handling Functions ----- */
 
-void input_argument (const int argc, char **argv) {
-	int counter;
-
-	printf ("%d input argument(s) given:\n", argc);
-	for (counter=0; counter<argc; counter++)
-		printf ("argv[%d] : %s\n", counter, argv[counter]);
-}
-
-unsigned int main_menu (const bool run_check) {
+unsigned int main_menu (void) {
 	unsigned int var;
 
 	/* Prints option list */
@@ -90,7 +73,7 @@ unsigned int main_menu (const bool run_check) {
 			"\t6. Verify FPGA\n"
 			"\n"
 			"Waiting for Input: ",
-		(int)global.fpga_init, (int)run_check);
+		(int)global.fpga_init, (int)global.run_check);
 
 	/* Sanitized Scan */
 	scan_uint (&var);
@@ -121,16 +104,11 @@ void settings (void) {
 			"Waiting for Input: ",
 			global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
 			global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
-			global.DATA.FIT, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT
+			global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT
 		);
 
 		/* Sanitized Scan */
 		scan_uint (&var);
-
-		/* Prints message if input not valid */
-		if (var > 12) {
-			printf ("Invalid input: %d\n", var);
-		}
 
 		/* Changing from a simple struct of global parameters to a linked list could fix this.
 			Displaying lists and rearranging could be done more flexibly.
@@ -214,9 +192,9 @@ void settings (void) {
 					printf ("Even values not accepted. Set to %u\n", global.CA.NB);
 				}
 				break;
-			case 9: /* global.DATA.FIT */
+			case 9: /* global.DATA.TRACK */
 				printf ("Input New Value: ");
-				scan_bool (&global.DATA.FIT);
+				scan_bool (&global.DATA.TRACK);
 				break;
 			case 10: /* global.DATA.TIME */
 				printf ("Input New Value: ");
@@ -230,20 +208,40 @@ void settings (void) {
 				printf ("Input New Value: ");
 				scan_bool (&global.DATA.EXPORT);
 				break;
+			default:
+				printf ("Invalid input: %d\n", var);
+				break;
 		}
 	}
 }
 
-void results (const bool run_check) {
-
-	// Get results through another function, with static variables and such?
-	// Instead of global parameters and return values from sim function
-	if (run_check == 0) {
-		printf ("No simulation has been ran.\n");
+void results (void) {
+	if (global.run_check == 0) {
+		printf ("No simulation results.\n");
 		return;
 	}
 
-	printf ("\n\t>>--- Simulation Results ---<<\n");
+	puts ("\n\t>>--- Simulation Results ---<<");
+	puts ("  Gen | Maximum | Minimum | Median | Average");
+	puts ("--------------------------------------------");
+	for (uint32_t i=0; i<global.stats.gen; i++) {
+		printf(" %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
+		global.stats.max [i], global.stats.min [i],
+		global.stats.med [i], global.stats.avg [i]);
+	}
 
 	return;
+}
+
+void cleanup (void) {
+	if (global.fpga_init == 1) close (fd);
+
+	if (global.run_check == 1) {
+		if (global.stats.avg != NULL) free (global.stats.avg);
+		if (global.stats.med != NULL) free (global.stats.med);
+		if (global.stats.max != NULL) free (global.stats.max);
+		if (global.stats.min != NULL) free (global.stats.min);
+	}
+
+
 }

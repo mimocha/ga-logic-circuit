@@ -21,13 +21,7 @@
 
 // ----- Function Prototypes && Documentation ----- //
 
-/* void input_argument (const int argc, char **argv)
-	This function handles input arguments.
-	Should have limited use, now that a main menu is being implemented.
-*/
-void input_argument (const int argc, char **argv);
-
-/* unsigned int main_menu (const bool run_check)
+/* unsigned int main_menu (void)
 	Main Menu function.
 	Users select valid inputs here. Selections are single-digit unsigned decimal integers.
 	The selection is then returned to main() for calling other functions.
@@ -35,16 +29,21 @@ void input_argument (const int argc, char **argv);
 	The actual selection and function calling should not occur within this function,
 	but within the main() function to keep the code clean and easy to follow.
 */
-unsigned int main_menu (const bool run_check);
+unsigned int main_menu (void);
 
 /* void settings (void)
 	Handles changing of global parameters.
 */
 void settings (void);
 
-/* void results (const bool run_check)
+/* void results (void)
 	Displays results from a previous simulation.
 */
-void results (const bool run_check);
+void results (void);
+
+/* void cleanup (void)
+	Cleanup global variable memory before exiting program.
+*/
+void cleanup (void);
 
 #endif
