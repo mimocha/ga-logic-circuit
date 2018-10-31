@@ -5,11 +5,13 @@ bool fpga_init (void) {
 		close (fd);
 	}
 
+	std::cout << "Initializing FPGA... ";
+
 	/* Read Device Memory */
 	fd = open("/dev/mem", (O_RDWR | O_SYNC));
 	/* If failed to open /dev/mem */
 	if (fd == -1) {
-		perror ("COULD NOT OPEN /dev/mem");
+		std::cout << ANSI_RED << "COULD NOT OPEN /dev/mem\n" << ANSI_RESET;
 		return (0);
 	}
 
@@ -18,7 +20,7 @@ bool fpga_init (void) {
 	(NULL, HW_REGS_SPAN, (PROT_READ | PROT_WRITE), MAP_SHARED, fd, HW_REGS_BASE);
 	/* If failed to map memory */
 	if (virtual_base == MAP_FAILED) {
-		perror ("MMAP FAIL");
+		std::cout << ANSI_RED << "MMAP FAIL\n" << ANSI_RESET;
 		close (fd);
 		return (0);
 	}
@@ -47,10 +49,11 @@ bool fpga_init (void) {
 
 	fpga_clear ();
 
+	std::cout << ANSI_GREEN << "OK\n" << ANSI_RESET;
+
 	return 1;
 }
 
-/* Verifies the FPGA logic circuitry */
 void fpga_verify (void) {
 	/* Check FPGA Initialization */
 	if (global.fpga_init == 0) {
@@ -243,9 +246,6 @@ void fpga_check (int mode) {
 			break;
 		default: // Unknown
 			puts ("\nSet RAND");
-			expected [0] = 0x0;
-			expected [1] = 0x0;
-			expected [2] = 0x0;
 			break;
 	}
 
@@ -258,9 +258,9 @@ void fpga_check (int mode) {
 
 			printf ("Output: %016llX | ", observed);
 			if (observed == expected [i])  {
-				std::cout << "\033[0;32m OK \033[0m\n";
+				std::cout << ANSI_GREEN << "OK\n" << ANSI_RESET;
 			} else {
-				std::cout <<  "\033[0;33m WARN \033[0m\n";
+				std::cout << ANSI_YELLOW "WARN\n" << ANSI_RESET;
 			}
 		}
 

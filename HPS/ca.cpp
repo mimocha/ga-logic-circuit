@@ -55,7 +55,7 @@ void cellprint (const uint8_t cell) {
 			cout << ANSI_LCYAN;
 			break;
 		case 5:
-			cout << ANSI_LPURPLE;
+			cout << ANSI_LPURPL;
 			break;
 		default: // Undefined
 			cout << ANSI_WHITE;
@@ -63,7 +63,7 @@ void cellprint (const uint8_t cell) {
 	}
 
 	printf("%X",cell);
-	cout << RESET;
+	cout << ANSI_RESET;
 }
 
 void ca_graph (const uint8_t *array, const unsigned int length) {
@@ -72,41 +72,3 @@ void ca_graph (const uint8_t *array, const unsigned int length) {
 	}
 	std::cout << std::endl;
 }
-
-// void ca_graph (GeneticAlgorithm *pop, const int count) {
-// 	printf("Array of the top %d individuals:\n", count);
-//
-// 	for (int i=0; i<count; i++) {
-// 		printf("RANK: %4d | UID: %7d | FITNESS: %7d\n\n",
-// 			pop[i].getrnk(), pop[i].getuid(), pop[i].getfit());
-//
-// 		cellgen (seed, pop[i].getdna());
-//
-// 		for (int y=0; y<DIM; y++) {
-// 			for (int x=0; x<DIM; x++) {
-// 				cellprint (LGA[y][x]);
-// 			}
-// 			cout << endl;
-// 		}
-//
-// 		cellgen (LGA[DIM-1], pop[i].getdna());
-//
-// 		// for (int y=1; y<DIM; y++) {
-// 		// 	for (int x=0; x<DIM; x++) {
-// 		// 		cellprint (LGA[y][x]);
-// 		// 	}
-// 		// 	cout << endl;
-// 		// }
-// 		cout << endl;
-//
-// 		for (int y=0; y<DIM; y++) {
-// 			for (int x=0; x<DIM; x++) {
-// 				cellprint (LGA[y][x]);
-// 			}
-// 			cout << endl;
-// 		}
-// 		cout << endl;
-//
-// 	}
-//
-// }

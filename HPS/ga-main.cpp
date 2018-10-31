@@ -23,12 +23,10 @@ int main (int argc, char **argv) {
 
 	/* Main Menu */
 	while (1) {
-		cout << "\033[0m";
 		sel = main_menu ();
-
 		switch (sel) {
 			case 0: /* Exit */
-				printf ("Exiting Program.\n");
+				printf (ANSI_BLINK "Exiting Program.\n" ANSI_RESET);
 				cleanup ();
 				return EXIT_SUCCESS;
 			case 1: /* About */
@@ -40,17 +38,20 @@ int main (int argc, char **argv) {
 			case 3: /* Initialize FPGA */
 				global.fpga_init = fpga_init ();
 				break;
-			case 4: /* Run Simulation */
-				global.run_check = run_sim ();
-				break;
-			case 5: /* Display Previous Results */
-				results ();
-				break;
-			case 6: /* FPGA Circuit Verification */
+			case 4: /* FPGA Circuit Verification */
 				fpga_verify ();
 				break;
-			case 7: /* Test One Individual DNA */
-			case 8: /* Set CA */
+			case 5: /* Read Truth Table CSV */
+				global.tt_init = read_csv ();
+				break;
+			case 6: /* Run Simulation */
+				global.run_check = run_sim ();
+				break;
+			case 7: /* Display Previous Results */
+				results ();
+				break;
+			case 8: /* Export Results */
+			case 9: /* Analyze DNA */
 			default: /* Invalid Input */
 				printf ("Invalid input: %d\n", sel);
 		}
@@ -63,17 +64,37 @@ unsigned int main_menu (void) {
 	unsigned int var;
 
 	/* Prints option list */
-	printf ("\n\t>---- Main Menu ----<\n"
+	printf (ANSI_REVRS "\n\t>---- Main Menu ----<\n" ANSI_RESET
 			"\t0. Exit Program\n"
 			"\t1. About\n"
 			"\t2. Settings\n"
-			"\t3. Initialize FPGA | %d\n"
-			"\t4. Run Simulation\n"
-			"\t5. View Results | %d\n"
-			"\t6. Verify FPGA\n"
-			"\n"
-			"Waiting for Input: ",
-		(int)global.fpga_init, (int)global.run_check);
+			"\t3. Initialize FPGA | ");
+
+	if (global.fpga_init == 1) {
+		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
+	} else {
+		cout << ANSI_RED "FAILED" ANSI_RESET "\n";
+	}
+
+	printf ("\t4. Verify FPGA\n"
+			"\t5. Set Truth Table | ");
+
+	if (global.tt_init == 1) {
+		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
+	} else {
+		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
+	}
+
+	printf ("\t6. Run Simulation\n"
+			"\t7. View Results    | ");
+
+	if (global.run_check == 1) {
+		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
+	} else {
+		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
+	}
+
+	printf ("\nWaiting for Input: ");
 
 	/* Sanitized Scan */
 	scan_uint (&var);
@@ -86,25 +107,31 @@ void settings (void) {
 
 	while (true) {
 		/* Prints option list */
-		printf (
-			"\n\t>>--- Settings ---<<\n"
+		printf (ANSI_REVRS "\n\t>>--- Settings ---<<\n" ANSI_RESET
 			"\t0. Back\n"
+			ANSI_BOLD "\t===== Genetic Algorithm Parameters =====\n" ANSI_RESET
 			"\t1. GA Max Population\t| Current Value: %u\n"
 			"\t2. GA Max Generation\t| Current Value: %u\n"
 			"\t3. GA Mutation Prob\t| Current Value: %.3f\n"
 			"\t4. GA Pool Size\t\t| Current Value: %u\n"
+			ANSI_BOLD "\t===== Cellular Automaton Parameters =====\n" ANSI_RESET
 			"\t5. CA X Axis Dimension\t| Current Value: %u\n"
 			"\t6. CA Y Axis Dimension\t| Current Value: %u\n"
 			"\t7. CA Color Count\t| Current Value: %u\n"
 			"\t8. CA Neighbor Count\t| Current Value: %u\n"
+			ANSI_BOLD "\t===== Data Parameters =====\n" ANSI_RESET
 			"\t9. DATA Fitness Track\t| Current Value: %u\n"
 			"\t10. DATA Time Track\t| Current Value: %u\n"
 			"\t11. DATA CA Print\t| Current Value: %u\n"
-			"\t12. DATA Export\t\t| Current Value: %u\n\n"
+			"\t12. DATA Export\t\t| Current Value: %u\n"
+			ANSI_BOLD "\t===== Truth Table Parameters =====\n" ANSI_RESET
+			"\t13. TT Variable Count\t| Current Value: %u\n"
+			"\t14. TT Configuration Count | Current Value: %u\n\n"
 			"Waiting for Input: ",
 			global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
 			global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
-			global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT
+			global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
+			global.truth.var, global.truth.config
 		);
 
 		/* Sanitized Scan */
@@ -181,7 +208,7 @@ void settings (void) {
 					printf ("Minimum value: %u\n", global.CA.COLOR);
 				}
 				break;
-			case 8: /* global.CA.Nb */
+			case 8: /* global.CA.NB */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.NB);
 				if (global.CA.NB == 0) {
@@ -208,11 +235,43 @@ void settings (void) {
 				printf ("Input New Value: ");
 				scan_bool (&global.DATA.EXPORT);
 				break;
+			case 13: /* global.truth.var */
+				printf ("Input New Value: ");
+				scan_uint (&global.truth.var);
+				break;
+			case 14: /* global.truth.config */
+				printf ("Input New Value: ");
+				scan_uint (&global.truth.config);
+				break;
 			default:
 				printf ("Invalid input: %d\n", var);
 				break;
 		}
 	}
+}
+
+bool read_csv (void) {
+
+	/*
+	Check from predefined default file.
+		> If available: ask to read
+
+			> If YES: read
+				> If OK: set & return SUCCESS
+				> If FAIL: perror & return FAILURE
+
+			> If NO: ask for manual input
+				> Get input
+					> If OK: set & return SUCCESS
+					> If FAIL: perror & return FAILURE
+
+		> If unavailable: ask for manual input
+			> Get input
+				> If OK: set & return SUCCESS
+				> If FAIL: perror & return FAILURE
+	*/
+
+	return 1;
 }
 
 void results (void) {
@@ -221,14 +280,17 @@ void results (void) {
 		return;
 	}
 
-	puts ("\n\t>>--- Simulation Results ---<<");
-	puts ("  Gen | Maximum | Minimum | Median | Average");
-	puts ("--------------------------------------------");
+	printf (ANSI_REVRS "\n\t>>--- Simulation Results ---<<\n" ANSI_RESET
+		"\n\t\tFitness Table\n"
+		"  Gen | Maximum | Minimum | Median | Average\n"
+		"--------------------------------------------\n");
 	for (uint32_t i=0; i<global.stats.gen; i++) {
 		printf(" %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
 		global.stats.max [i], global.stats.min [i],
 		global.stats.med [i], global.stats.avg [i]);
 	}
+
+	std::cout << std::endl;
 
 	return;
 }
@@ -243,5 +305,7 @@ void cleanup (void) {
 		if (global.stats.min != NULL) free (global.stats.min);
 	}
 
-
+	if (global.tt_init == 1) {
+		/* Free Truth Table Memory, if set */
+	}
 }

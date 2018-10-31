@@ -19,6 +19,9 @@
 #include <array>		/* arrays */
 // #include <bitset>		/* bitset is unavailable in DE0-Nano-SoC */
 
+/* CSV Parser Library */
+#include "./fast-cpp-csv-parser/csv.h"
+
 // ----- Function Prototypes && Documentation ----- //
 
 /* unsigned int main_menu (void)
@@ -35,6 +38,9 @@ unsigned int main_menu (void);
 	Handles changing of global parameters.
 */
 void settings (void);
+
+/* */
+bool read_csv (void);
 
 /* void results (void)
 	Displays results from a previous simulation.

@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.04
+#define VERSION 1.05
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.
@@ -34,7 +34,7 @@
 	unsigned 32-bit int: [0,4294967295]
 	unsigned 64-bit int: [0,18446744073709551615]
 */
-#define MAX_CA_COLOR 4
+#define MAX_CA_COLOR 40
 /*	Max Cellular Automaton Neighbor Cell Count
 	Similarly to the the above variable, this should be defined based on memory and index integer.
 
@@ -43,7 +43,7 @@
 	A length of a CA rule set is given by K^N; where K = color count, N = neighbor count
 	Refer to the above comment for more info on memory and index integer limit.
 */
-#define MAX_CA_NB 10
+#define MAX_CA_NB 8
 /* Max Genetic Algorithm Population Size */
 #define MAX_GA_POP 10000
 /* Max Genetic Algorithm Generations */
@@ -60,6 +60,9 @@
 #define GXDIM 80 // Fitness Graph X-Dimensions
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 
+/* Estimated Number of Individuals Evaluated per Second */
+#define INDV_PER_SEC 197
+
 /* ----- Global Variable Parameters ----- */ // Sue me
 
 /* TODO: Make parameter linked list? *Low Priority*
@@ -69,10 +72,14 @@
 
 /* Genetics Algorithm Parameters Struct */
 struct param_ga {
-	unsigned int POP = 100;	/* Maximum Population */
-	unsigned int GEN = 100;	/* Maximum Generation */
-	float MUTP = 0.05;		/* Mutation Probability in decimal, range [0.00, 1.00] */
-	unsigned int POOL = 5;	/* Tournament Selection Poolsize */
+	/* Maximum Population */
+	unsigned int POP = 100;
+	/* Maximum Generation */
+	unsigned int GEN = 100;
+	/* Mutation Probability in decimal, range [0.00, 1.00] */
+	float MUTP = 0.05;
+	/* Tournament Selection Poolsize */
+	unsigned int POOL = 5;
 };
 
 /* Cellular Automaton Parameters Struct */
@@ -82,9 +89,9 @@ struct param_ca {
 	/* Y-Axis Dimension */
 	unsigned int DIMY = MAX_CA_DIMY;
 	/* CA Color Count */
-	unsigned int COLOR = MAX_CA_COLOR;
+	unsigned int COLOR = 4;
 	/* CA Neighbor Count */
-	unsigned int NB = MAX_CA_NB;
+	unsigned int NB = 3;
 	/* CA Grid Seed Array */
 	uint8_t *SEED;
 };
@@ -104,7 +111,7 @@ struct param_data {
 	/* Cellular Automaton Grid Print | Default = 1
 		Prints the CA Grid of the fittest individual at the end of the experiment.
 	*/
-	bool CAPRINT = 0;
+	bool CAPRINT = 1;
 	/* Export data from the experiment to file | (Off for now)*/
 	bool EXPORT = 0;
 };
@@ -127,6 +134,8 @@ struct stats_var {
 	unsigned int color;
 	/* CA Neighbor Count */
 	unsigned int nb;
+	/* Time to first solution */
+	unsigned int tts;
 
 	/* Array of stats across each generations */
 	float *avg;
@@ -138,24 +147,28 @@ struct stats_var {
 /* Target Truth Table Struct
 	Contains the desired truth table for evaluating circuits.
 
-	Definition  | Variable 1 | Variable 2 | Variable 3 ...
+	Definition  | Input		 | Variable 1 | Variable 2 ...
 	------------+------------+------------+------------
 	Config 1	| Input    1 | Output A 1 | Output B 1
 	Config 2	| Input    2 | Output A 2 | Output B 2
 	Config 3	| Input    3 | Output A 3 | Output B 3
 
-	Note that each variable can be set to anything. It is not limited that Input must be variable 1, or to have only a single input, etc.
+	There should be only a single input column.
+	There could be any number of output columns.
+	All column should have the same length
 	Same goes for the number of configurations. A complete truth table is not required.
 
 	Should be set in main-menu, before simulations.
 */
 struct truth_table {
 	/* Number of variables to check */
-	unsigned int var = 2;
+	unsigned int var = 1;
 	/* Number of configurations to check */
 	unsigned int config = 2;
-	/* Truth Table Array -- value [var][config] */
-	uint64_t **table;
+	/* Input Array */
+	uint64_t input[2] = {0x0F0F0F0F0F0F0F0F, 0xFFFFFFFFDE0DBEEF};
+	/* Output Array */
+	uint64_t output[2] = {0x0F0F0F0F0F0F0F0F, 0xFFFFFFFFDE0DBEEF};
 };
 
 /*	Main Global Parameters Struct
@@ -183,5 +196,32 @@ struct param_main {
 	/* Truth Table Initialization Flag */
 	bool tt_init = 0;
 } global;
+
+// ----- Define Colors for Pretty Colored Outputs ----- //
+// https://misc.flogisoft.com/bash/tip_colors_and_formatting
+#define ANSI_DFLT	"\e[39m"
+#define ANSI_RESET	"\e[0m"
+
+#define ANSI_BOLD	"\e[1m"
+#define ANSI_UNDERL	"\e[4m"
+#define ANSI_BLINK	"\e[5m"
+#define ANSI_REVRS	"\e[7m"
+#define ANSI_HIDDEN	"\e[8m"
+
+#define ANSI_BLACK	"\e[0;30m"
+#define ANSI_RED	"\e[0;31m"
+#define ANSI_GREEN	"\e[0;32m"
+#define ANSI_YELLOW	"\e[0;33m"
+#define ANSI_BLUE	"\e[0;34m"
+#define ANSI_PURPL	"\e[0;35m"
+#define ANSI_CYAN	"\e[0;36m"
+
+#define ANSI_GRAY	"\e[1;30m"
+#define ANSI_LRED	"\e[1;31m"
+#define ANSI_LGREEN	"\e[1;32m"
+#define ANSI_LBLUE	"\e[1;34m"
+#define ANSI_LPURPL	"\e[1;35m"
+#define ANSI_LCYAN	"\e[1;36m"
+#define ANSI_WHITE	"\e[1;37m"
 
 #endif

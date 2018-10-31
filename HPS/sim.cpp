@@ -2,8 +2,7 @@
 
 void sim_init (void) {
 	/* Prints Parameter List */
-	printf (
-		"\n\t>>>-- Initializing Simulation --<<<\n"
+	printf (ANSI_REVRS "\n\t>>>-- Initializing Simulation --<<<\n" ANSI_RESET
 		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
 		"\tDIMX = %3u | DIMY = %3u | COLOR = %3u | NEIGHBOR = %2u\n"
 		"\tFIT = %1u | TIME = %1u | CAPRINT = %1u | EXPORT = %1u | FPGA INIT = %1u\n\n",
@@ -25,6 +24,7 @@ void sim_init (void) {
 		global.stats.dimy = global.CA.DIMY;
 		global.stats.color = global.CA.COLOR;
 		global.stats.nb = global.CA.NB;
+		global.stats.tts = 0;
 
 		// For data arrays, check if NULL. If not null, free()
 		if (global.stats.avg != NULL) free (global.stats.avg);
@@ -39,7 +39,9 @@ void sim_init (void) {
 }
 
 bool run_sim (void) {
+
 	/* ===== ELABORATION PHASE ===== */
+
 	sim_init ();
 
 	/* Temporary variables, for easier reference */
@@ -47,11 +49,11 @@ bool run_sim (void) {
 	const unsigned int dimy = global.CA.DIMY;
 	const unsigned int gen_lim = global.GA.GEN;
 	const unsigned int pop_lim = global.GA.POP;
-	/* Computes DNA length, the number of CA rules; Calculated by -> Color^Neighbor (exponent, not XOR) */
+
+	/* Computes DNA length, the number of CA rules;
+		Calculated by -> Color^Neighbor (exponent, not XOR)
+	*/
 	uint32_t dna_length = pow (global.CA.COLOR, global.CA.NB);
-	/* If TIME is enabled, initialize time_t */
-	time_t timer;
-	if (global.DATA.TIME == 1) timer = clock ();
 
 	/* Allocates an array of individuals (population), of size "global.GA.POP" */
 	GeneticAlgorithm *indv;
@@ -76,12 +78,24 @@ bool run_sim (void) {
 	unsigned int mid = floor (dimx / 2);
 	global.CA.SEED [mid] = 1;
 
+	/* If TIME is enabled, initialize time_t */
+	time_t timer;
+	const float time_est = (gen_lim * pop_lim / 2 / INDV_PER_SEC);
+	if (global.DATA.TIME == 1) {
+		timer = clock ();
+	}
+
+	/* If no Truth Table set */
+	if (global.tt_init == 0) {
+
+	}
+	uint64_t output = 0;
+
 	/* ===== END ELABORATION ===== */
 
-	printf ("\tBeginning Simulation\n");
+	printf ("\tSimulation Progress:\n");
 	fpga_set_input (0xDEADBEEFABCDEF12);
-	uint64_t output = 0;
-	const uint64_t desired = 0x0F0E0D0C0B0A0908;
+	const uint64_t desired = 0xFFFFFFFFDE0DBEEF;
 
 	/* ===== SIMULATION LOOP ===== */
 
@@ -114,16 +128,6 @@ bool run_sim (void) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
 			}
 
-			/* Optional Print */
-			if (global.DATA.CAPRINT == 1) {
-				printf ("UID: %u | FIT: %u | DNA: ", indv[idx].uid, indv[idx].fit);
-				indv[idx].print_dna();
-				cout << endl;
-
-				print_grid (grid);
-				cout << endl;
-			}
-
 			/* Edit FPGA RAM - Only if FPGA array initialized - Assumes correct setting */
 			if (global.fpga_init == 1) {
 				fpga_set_grid (grid);
@@ -139,21 +143,76 @@ bool run_sim (void) {
 		GeneticAlgorithm::Sort (indv);
 		statistics (indv, gen);
 
+		// TODO: Calculate maximum fitness value for a given TT.
+		if ((global.stats.tts == 0) && (indv[0].fit == 64)) {
+			global.stats.tts = gen;
+		}
+
 		/* Status Report */
 		if (gen % 10 == 0) {
-			status (gen);
+			// Current Progress
+			printf ("\t%4u / %4u ", gen, global.GA.GEN);
+
+			// Estimate Time Arrival
 			if (global.DATA.TIME == 1) {
-				cout << "| ";
-				eta (gen, timer);
-				timer = clock ();
+				float eta = time_est - ((float)(clock() - timer) / CLOCKS_PER_SEC);
+				printf (" | ETA:%8.1f s", eta);
 			}
-			cout << endl;
+
+			// Flags / Warnings / Notes
+			// TODO: Calculate maximum fitness value for a given TT.
+			if (global.stats.tts != 0) {
+				cout << ANSI_GREEN " << Solution Found!" ANSI_RESET;
+			}
+
+			cout << "\n";
 		}
 	}
 
 	/* ===== END SIMULATION ===== */
 
-	printf ("\tDONE\n");
+	/* Prints Pretty Results */
+	cout << ANSI_GREEN "\tDONE : ";
+	cout << ((float)(clock() - timer) / CLOCKS_PER_SEC) << " s\n\n" ANSI_RESET;
+
+	/* Solution not found */
+	if (global.stats.tts == 0) {
+		cout << ANSI_RED "No solution has been found\n" ANSI_RESET;
+	/* Solution found */
+	} else {
+		cout << ANSI_GREEN "First solution found in: " << global.stats.tts << " gen\n" ANSI_RESET;
+	}
+
+	printf ("Final Fitness Statistics:\n"
+			"Average Fitness: %.1f\n"
+			"Median Fitness: %.1f\n"
+			"Maximum Fitness: %u\n"
+			"Minimum Fitness: %u\n\n",
+			global.stats.avg [gen_lim-1], global.stats.med [gen_lim-1],
+			global.stats.max [gen_lim-1], global.stats.min [gen_lim-1] );
+
+	printf ("Best Solution: UID: %u | FIT: %u\n"
+			"DNA: ", indv[0].uid, indv[0].fit );
+	indv[0].print_dna();
+	cout << "\n\n";
+
+	/* Optional Print of Fittest Solution */
+	if (global.DATA.CAPRINT == 1) {
+		printf ("\e[100m\tLogic Circuit" ANSI_RESET "\n");
+
+		cellgen (global.CA.SEED, grid[0], indv[0].dna);
+		for (unsigned int y=1; y<dimy; y++) {
+			cellgen (grid[y-1], grid[y], indv[0].dna);
+		}
+
+		cellgen (grid[dimy-1], grid[0], indv[0].dna);
+		for (unsigned int y=1; y<dimy; y++) {
+			cellgen (grid[y-1], grid[y], indv[0].dna);
+		}
+
+		print_grid (grid);
+		cout << endl;
+	}
 
 	/* ===== CLEANUP =====
 	Manually Memory Management Memo //
@@ -193,16 +252,6 @@ bool run_sim (void) {
 	/* ===== END CLEANUP ===== */
 
 	return 1;
-}
-
-void status (const unsigned int gen) {
-	printf ("%4u / %4u Done ", gen, global.GA.GEN);
-}
-
-void eta (const unsigned int gen, const time_t timer) {
-	time_t time_diff = clock () - timer;
-	float eta = ((float)(global.GA.GEN - gen) / 10) * ((float) time_diff / CLOCKS_PER_SEC);
-	printf ("ETA %5.1f s ", eta);
 }
 
 void print_grid (uint8_t **grid) {

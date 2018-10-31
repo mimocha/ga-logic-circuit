@@ -20,17 +20,6 @@ static void sim_init (void);
 */
 bool run_sim (void);
 
-/* void status (const unsigned int gen)
-	Status indicator function.
-	Indicates current progress of simulation, at minimal cpu cost.
-*/
-void status (const unsigned int gen);
-
-/* void eta (const time_t timer)
-	Prints estimated time to completion
-*/
-void eta (const unsigned int gen, const time_t timer);
-
 /* void print_grid (uint8_t **grid)
 	Prints the working array grid onto terminal.
 */

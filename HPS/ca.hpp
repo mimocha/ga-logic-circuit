@@ -4,27 +4,6 @@
 #ifndef CA_HPP
 #define CA_HPP
 
-// ----- Define Colors for Colored CA graph output ----- //
-// https://misc.flogisoft.com/bash/tip_colors_and_formatting
-#define DEFAULT	"\033[39m"
-#define RESET	"\033[0m"
-
-#define ANSI_BLACK	"\033[0;30m"
-#define ANSI_RED	"\033[0;31m"
-#define ANSI_GREEN	"\033[0;32m"
-#define ANSI_YELLOW	"\033[0;33m"
-#define ANSI_BLUE	"\033[0;34m"
-#define ANSI_PURPLE	"\033[0;35m"
-#define ANSI_CYAN	"\033[0;36m"
-
-#define ANSI_GRAY	"\033[1;30m"
-#define ANSI_LRED	"\033[1;31m"
-#define ANSI_LGREEN	"\033[1;32m"
-#define ANSI_LBLUE	"\033[1;34m"
-#define ANSI_LPURPLE	"\033[1;35m"
-#define ANSI_LCYAN	"\033[1;36m"
-#define ANSI_WHITE	"\033[1;37m"
-
 /* uint8_t cellfunc (uint8_t *neighbors, const uint8_t *DNA) //
 	This function takes in a given neighboring cell array, and converts it into an index number.
 	The conversion is done automatically with respect to the CA Color and Neighbor count.
