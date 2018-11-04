@@ -27,9 +27,10 @@ void help_message (void) {
 	"\tSOFTWARE\n"
 	);
 
-	/* Internal Variables for debug use */
+	/* Print internal Variables for quick debug use */
 	if (global.tt_init == 1) {
-		printf ("\n\tTruth Table:\tInput \t|\t Output\n");
+		printf (ANSI_REVRS "\n\t\t\tTruth Table" ANSI_RESET
+				"\n\t\t\tInput \t|\t Output\n");
 		for (unsigned int row = 0; row < global.truth.step; row++) {
 			printf ("\t%016llX \t|\t %016llX\n",
 			global.truth.input [row], global.truth.output [row]);

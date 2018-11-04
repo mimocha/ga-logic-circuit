@@ -285,7 +285,7 @@ void statistics (GeneticAlgorithm *array, const unsigned int gen) {
 	global.stats.min [gen] = array[pop-1].fit;
 }
 
-// TODO: Evaluation function
+// TODO: Evaluation function -- Apply F1 Scoring?
 uint32_t evaluate (void) {
 	uint64_t observed;
 	uint32_t fitness = 0;
@@ -348,7 +348,7 @@ void report (void) {
 		fpga_set_grid (grid);
 
 		// TODO: case for sequential logic
-		printf ("\t\t\t    \e[100m Checked Truth Table\e[0m\n"
+		printf ("\t\t\t    \e[100mChecked Logic Table\e[0m\n"
 		"\t             Input |      Expected      | Observed\n"
 		"\t-------------------+--------------------+-------------------\n");
 		for (unsigned int i=0; i<global.truth.step; i++) {
@@ -372,7 +372,7 @@ void report (void) {
 
 	/* Print error message if FPGA is not set */
 	} else {
-		printf (ANSI_YELLOW "\t FPGA Not Initialized. Truth Table Unavailable." ANSI_RESET "\n");
+		printf (ANSI_YELLOW "\tFPGA Not Initialized. Logic Table Unavailable." ANSI_RESET "\n");
 	}
 
 	/* Optional Print of Fittest Solution */

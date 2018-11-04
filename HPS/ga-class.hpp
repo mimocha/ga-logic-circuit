@@ -43,7 +43,7 @@ public:
 	*/
 	// ~GeneticAlgorithm (void);
 
-	/* ----- Genetic ALgorithm Operations ----- */
+	/* ----- Genetic Algorithm Operations ----- */
 
 	/* Selection (GeneticAlgorithm *array)
 		The likelyhood of any individual being selected, and living on, passing their genes onto the next generation, is inversely-proportional to its rank in the population. The higher the rank, the less likely they'll survive.

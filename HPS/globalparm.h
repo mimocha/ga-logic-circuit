@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.06
+#define VERSION 1.07
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.

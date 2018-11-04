@@ -74,8 +74,10 @@ int main (int argc, char **argv) {
 			case 7: /* Display Previous Results */
 				results ();
 				break;
-			case 8: /* Export Results */
-			case 9: /* Analyze DNA */
+			case 8: /* Inspect DNA */
+				inspect ();
+				break;
+			case 9: /* Export Results */
 			default: /* Invalid Input */
 				printf ("Invalid input: %d\n", sel);
 		}
@@ -117,6 +119,8 @@ unsigned int main_menu (void) {
 	} else {
 		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
 	}
+
+	printf ("\t8. Inspect DNA\n");
 
 	printf ("\nWaiting for Input: ");
 
@@ -353,6 +357,149 @@ void results (void) {
 
 	std::cout << std::endl;
 
+	return;
+}
+
+void inspect (void) {
+
+	printf (ANSI_REVRS "\n\tDNA Inspection\n" ANSI_RESET);
+
+	unsigned int dimx, dimy, color, nb;
+	char *buffer;
+	uint8_t *dna;
+	uint8_t **grid;
+
+	/* Enter desired settings */
+	printf ("\nDNA color count : ");
+	scan_uint (&color);
+	printf ("Neighbor count : ");
+	scan_uint (&nb);
+
+	/* Enter DNA String in given base / LSB format */
+	unsigned int length = (unsigned int) pow (color, nb);
+	buffer = (char *) calloc (length, sizeof (char));
+	dna = (uint8_t *) calloc (length, sizeof (uint8_t));
+	printf ("Input DNA string in base %u | LSB | Expected length - %u :\n", color, length);
+	scanf ("%s", buffer);
+
+	/* Checks DNA length validity */
+	if ( strlen (buffer) != length) {
+		printf (ANSI_RED "DNA length mismatch. Give length was %u\n" ANSI_RESET,
+		(unsigned int) strlen (buffer));
+		if (buffer != NULL) free (buffer);
+		if (dna != NULL) free (dna);
+		return;
+	}
+
+	/* Checks DNA string validity & fixes offset.
+		WARNING: This only works upto base 10. Cannot handle hexadecimals properly yet.
+	*/
+	for (unsigned int i=0; i<length; i++) {
+		dna [i] = buffer [i] - 48;
+
+		if (dna [i] >= color) {
+			std::cout << "\e[41;97m^" << ANSI_RESET;
+			printf (ANSI_RED "\nDNA string invalid at position %u\n" ANSI_RESET, i);
+			if (buffer != NULL) free (buffer);
+			if (dna != NULL) free (dna);
+			return;
+		}
+
+		std::cout << " ";
+	}
+	printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
+
+	/* Sets desired grid size */
+	printf ("Desired DIMX (current: %d) : ", global.CA.DIMX);
+	scan_uint (&dimx);
+	if (dimx > MAX_CA_DIMX) {
+		dimx = MAX_CA_DIMX;
+		printf (ANSI_RED "DIMX Upper bound: %u\n" ANSI_RESET, MAX_CA_DIMX);
+	}
+	printf ("Desired DIMY (current: %d) : ", global.CA.DIMY);
+	scan_uint (&dimy);
+	if (dimy > MAX_CA_DIMY) {
+		dimy = MAX_CA_DIMY;
+		printf (ANSI_RED "DIMY Upper bound: %u\n" ANSI_RESET, MAX_CA_DIMY);
+	}
+
+	/* ===== CA PRINT ===== */
+
+	/* Allocate temporary working grid here */
+	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
+	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
+		grid[i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
+	}
+
+	/* Initialize Cellular Automaton grid seed */
+	global.CA.SEED = (uint8_t *) calloc (dimx, sizeof (uint8_t));
+	unsigned int mid = floor (dimx / 2);
+	global.CA.SEED [mid] = 1;
+
+	/* Generate & Set Grid */
+	cellgen (global.CA.SEED, grid[0], dna);
+	for (unsigned int y=1; y<dimy; y++) {
+		cellgen (grid[y-1], grid[y], dna);
+	}
+	cellgen (grid[dimy-1], grid[0], dna);
+	for (unsigned int y=1; y<dimy; y++) {
+		cellgen (grid[y-1], grid[y], dna);
+	}
+
+	/* ===== FPGA SET GRID ===== */
+
+	/* Same code as sim.cpp - report() */
+	if ((global.fpga_init == 1) && (global.tt_init == 1)) {
+		fpga_set_grid (grid);
+
+		printf ("\t\t\t    \e[100mChecked Logic Table\e[0m\n"
+		"\t             Input |      Expected      | Observed\n"
+		"\t-------------------+--------------------+-------------------\n");
+		for (unsigned int i=0; i<global.truth.step; i++) {
+			uint64_t output;
+
+			fpga_set_input (global.truth.input [i]);
+			printf ("\t0x%016llX | 0x%016llX | ", global.truth.input [i], global.truth.output [i]);
+			output = fpga_get_output ();
+			output = fpga_get_output ();
+			if (output == global.truth.output [i]) {
+				cout << ANSI_GREEN;
+				printf ("0x%016llX", output);
+				cout << ANSI_RESET;
+			} else {
+				std::cout << ANSI_RED;
+				printf ("0x%016llX", output);
+				std::cout << ANSI_RESET;
+			}
+			std::cout << "\n";
+		}
+
+	/* Print error message if FPGA or Truth Table is not set */
+	} else {
+		if (global.fpga_init == 0) {
+			printf (ANSI_YELLOW "\tFPGA Not Initialized\n" ANSI_RESET);
+		}
+		if (global.tt_init == 0) {
+			printf (ANSI_YELLOW "\tTruth Table Not Initialized\n" ANSI_RESET);
+		}
+
+		printf (ANSI_YELLOW "\tLogic Table Unavailable\n" ANSI_RESET);
+	}
+
+	printf ("\n\e[100m\t-- Generated Logic Circuit --" ANSI_RESET "\n");
+	print_grid (grid);
+	std::cout << "\n";
+
+	/* ===== CLEANUP ===== */
+
+	if (buffer != NULL)free (buffer);
+	if (dna != NULL)free (dna);
+	if (grid != NULL) {
+		for (unsigned int y=0; y<MAX_CA_DIMY; y++) {
+			free (grid [y]);
+		}
+		free (grid);
+	}
 	return;
 }
 
