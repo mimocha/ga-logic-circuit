@@ -15,6 +15,45 @@ void sim_init (void) {
 	/* Initializes Random Number Generator */
 	srand (time (NULL));
 
+	/* Renames variables, for easier reference */
+	dimx = global.CA.DIMX;
+	dimy = global.CA.DIMY;
+	gen_lim = global.GA.GEN;
+	pop_lim = global.GA.POP;
+
+	/* Computes DNA length, the number of CA rules;
+		Calculated by -> Color^Neighbor (exponent, not XOR)
+	*/
+	dna_length = pow (global.CA.COLOR, global.CA.NB);
+
+	/*Maxmimum fitness possible
+		Calculated as: (Output bit width) * (Truth Table Steps)
+	*/
+	fit_lim = dimx * global.truth.step;
+
+	/* Allocates an array of individuals (population), of size "global.GA.POP" */
+	indv = (GeneticAlgorithm *) calloc (pop_lim, sizeof (GeneticAlgorithm));
+	/* Initialize Population */
+	for (unsigned int idx=0; idx<pop_lim; idx++) {
+		indv[idx] = GeneticAlgorithm (dna_length);
+	}
+
+	/* Allocates 2D working array for Cellular Automaton //
+		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
+		This mistake will cause attempts to free grid[0] at the end to fail, throwing a double free.
+
+		NOTE: **grid always has the physical dimension allocated, not the user set dimension
+	*/
+	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
+	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
+		grid[i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
+	}
+
+	/* Initialize Cellular Automaton grid seed */
+	global.CA.SEED = (uint8_t *) calloc (dimx, sizeof (uint8_t));
+	unsigned int mid = floor (dimx / 2);
+	global.CA.SEED [mid] = 1;
+
 	/* Initializes Statistics Variables*/
 	if (global.DATA.TRACK == 1) {
 		/* Stores current setting */
@@ -36,68 +75,57 @@ void sim_init (void) {
 		if (global.stats.min != NULL) free (global.stats.min);
 		global.stats.min = (unsigned int *) calloc (global.GA.GEN, sizeof (unsigned int));
 	}
+
+	/* If no Truth Table set -- Initialize randomly */
+	if (global.tt_init == 0) {
+		printf ("No truth table defined. Generating random truth table... ");
+
+		/* Checks & Frees first, just in case */
+		if (global.truth.input != NULL) free (global.truth.input);
+		global.truth.input = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
+		if (global.truth.output != NULL) free (global.truth.output);
+		global.truth.output = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
+
+		/* Initializing with random number
+			RAND_MAX is defined as a 32-bit number.
+			Thus, two bit-shifted 32-bit numbers, combine into one, 64-bit random number.
+
+			Its Shit. I know.
+		*/
+		for (unsigned int i=0; i<global.truth.step; i++) {
+			global.truth.input [i] |= rand ();
+			global.truth.input [i] <<= 32;
+			global.truth.input [i] |= rand ();
+			// Right Shifts for grids narrower than 64 bit
+			global.truth.input [i] >>= (64 - global.CA.DIMX);
+
+
+			global.truth.output [i] |= rand ();
+			global.truth.output [i] <<= 32;
+			global.truth.output [i] |= rand ();
+			// Right Shifts for grids narrower than 64 bit
+			global.truth.output [i] >>= (64 - global.CA.DIMX);
+		}
+
+		global.tt_init = 1;
+		printf ( ANSI_GREEN "DONE" ANSI_RESET "\n");
+	}
+
+	/* If TIME is enabled, initialize time_t */
+	time_est = (gen_lim * pop_lim / 2 / INDV_PER_SEC);
+	if (global.DATA.TIME == 1) {
+		time (&timer_begin);
+	}
 }
 
 bool run_sim (void) {
 
-	/* ===== ELABORATION PHASE ===== */
-
+	/* ===== ELABORATION ===== */
 	sim_init ();
 
-	/* Temporary variables, for easier reference */
-	const unsigned int dimx = global.CA.DIMX;
-	const unsigned int dimy = global.CA.DIMY;
-	const unsigned int gen_lim = global.GA.GEN;
-	const unsigned int pop_lim = global.GA.POP;
-
-	/* Computes DNA length, the number of CA rules;
-		Calculated by -> Color^Neighbor (exponent, not XOR)
-	*/
-	uint32_t dna_length = pow (global.CA.COLOR, global.CA.NB);
-
-	/* Allocates an array of individuals (population), of size "global.GA.POP" */
-	GeneticAlgorithm *indv;
-	indv = (GeneticAlgorithm *) calloc (pop_lim, sizeof (GeneticAlgorithm));
-	/* Initialize Population */
-	for (unsigned int idx=0; idx<pop_lim; idx++) {
-		indv[idx] = GeneticAlgorithm (dna_length);
-	}
-
-	/* Allocates 2D working array for Cellular Automaton //
-		Note:
-		Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
-		This mistake will cause attempts to free grid[0] at the end to fail, throwing a double free.
-	*/
-	uint8_t **grid;
-	grid = (uint8_t **) calloc (dimy, sizeof (uint8_t *));
-	for (unsigned int i=0; i<dimy; i++) {
-		grid[i] = (uint8_t *) calloc (dimx, sizeof (uint8_t));
-	}
-	/* Initialize Cellular Automaton grid seed */
-	global.CA.SEED = (uint8_t *) calloc (dimx, sizeof (uint8_t));
-	unsigned int mid = floor (dimx / 2);
-	global.CA.SEED [mid] = 1;
-
-	/* If TIME is enabled, initialize time_t */
-	time_t timer;
-	const float time_est = (gen_lim * pop_lim / 2 / INDV_PER_SEC);
-	if (global.DATA.TIME == 1) {
-		timer = clock ();
-	}
-
-	/* If no Truth Table set */
-	if (global.tt_init == 0) {
-
-	}
-	uint64_t output = 0;
-
-	/* ===== END ELABORATION ===== */
-
 	printf ("\tSimulation Progress:\n");
-	fpga_set_input (0xDEADBEEFABCDEF12);
-	const uint64_t desired = 0xFFFFFFFFDE0DBEEF;
 
-	/* ===== SIMULATION LOOP ===== */
+	/* ===== MAIN SIMULATION LOOP ===== */
 
 	/* Loop over each generation */
 	for (unsigned int gen=0; gen<gen_lim; gen++) {
@@ -128,39 +156,50 @@ bool run_sim (void) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
 			}
 
-			/* Edit FPGA RAM - Only if FPGA array initialized - Assumes correct setting */
+			/* Edit FPGA RAM & Evaluate Circuit
+				Only if FPGA array initialized
+				Assumes correct setting
+
+				WARNING: Getting output right after setting the grid,
+				might return inaccurate results.
+
+				If FPGA is unavailable, sets fitness as a random number.
+			*/
 			if (global.fpga_init == 1) {
 				fpga_set_grid (grid);
-				output = fpga_get_output ();
+				indv[idx].fit = evaluate ();
+				fpga_clear ();
+			} else {
+				indv[idx].fit = rand () % 100;
 			}
 
-			/* Evaluate Circuit */
-			// A XNOR B | aka. A == B
-			indv[idx].fit = bitcount64 ( ~(desired^output) );
 			indv[idx].eval = 1;
 		}
 
 		GeneticAlgorithm::Sort (indv);
 		statistics (indv, gen);
 
-		// TODO: Calculate maximum fitness value for a given TT.
-		if ((global.stats.tts == 0) && (indv[0].fit == 64)) {
+		/* Progress Status Report */
+		if ((global.stats.tts == 0) && (indv[0].fit >= fit_lim )) {
 			global.stats.tts = gen;
 		}
-
-		/* Status Report */
 		if (gen % 10 == 0) {
 			// Current Progress
 			printf ("\t%4u / %4u ", gen, global.GA.GEN);
 
 			// Estimate Time Arrival
 			if (global.DATA.TIME == 1) {
-				float eta = time_est - ((float)(clock() - timer) / CLOCKS_PER_SEC);
-				printf (" | ETA:%8.1f s", eta);
+				time (&timer_end);
+				float eta = time_est - difftime (timer_end, timer_begin);
+				if (eta > 0) {
+					printf (" | ETA:%8.1f s", eta);
+				} else {
+					// The estimate could be wrong...
+					printf (" | ETA: < 0 s...");
+				}
 			}
 
 			// Flags / Warnings / Notes
-			// TODO: Calculate maximum fitness value for a given TT.
 			if (global.stats.tts != 0) {
 				cout << ANSI_GREEN " << Solution Found!" ANSI_RESET;
 			}
@@ -169,50 +208,10 @@ bool run_sim (void) {
 		}
 	}
 
-	/* ===== END SIMULATION ===== */
+	/* ===== END SIMULATION LOOP ===== */
 
-	/* Prints Pretty Results */
-	cout << ANSI_GREEN "\tDONE : ";
-	cout << ((float)(clock() - timer) / CLOCKS_PER_SEC) << " s\n\n" ANSI_RESET;
-
-	/* Solution not found */
-	if (global.stats.tts == 0) {
-		cout << ANSI_RED "No solution has been found\n" ANSI_RESET;
-	/* Solution found */
-	} else {
-		cout << ANSI_GREEN "First solution found in: " << global.stats.tts << " gen\n" ANSI_RESET;
-	}
-
-	printf ("Final Fitness Statistics:\n"
-			"Average Fitness: %.1f\n"
-			"Median Fitness: %.1f\n"
-			"Maximum Fitness: %u\n"
-			"Minimum Fitness: %u\n\n",
-			global.stats.avg [gen_lim-1], global.stats.med [gen_lim-1],
-			global.stats.max [gen_lim-1], global.stats.min [gen_lim-1] );
-
-	printf ("Best Solution: UID: %u | FIT: %u\n"
-			"DNA: ", indv[0].uid, indv[0].fit );
-	indv[0].print_dna();
-	cout << "\n\n";
-
-	/* Optional Print of Fittest Solution */
-	if (global.DATA.CAPRINT == 1) {
-		printf ("\e[100m\tLogic Circuit" ANSI_RESET "\n");
-
-		cellgen (global.CA.SEED, grid[0], indv[0].dna);
-		for (unsigned int y=1; y<dimy; y++) {
-			cellgen (grid[y-1], grid[y], indv[0].dna);
-		}
-
-		cellgen (grid[dimy-1], grid[0], indv[0].dna);
-		for (unsigned int y=1; y<dimy; y++) {
-			cellgen (grid[y-1], grid[y], indv[0].dna);
-		}
-
-		print_grid (grid);
-		cout << endl;
-	}
+	/* ===== REPORT FINAL RESULTS ===== */
+	report ();
 
 	/* ===== CLEANUP =====
 	Manually Memory Management Memo //
@@ -233,23 +232,7 @@ bool run_sim (void) {
 		Probably due to the specific size of (uint8_t) and memory address stuff.
 		Needless to say, don't mess CALLOC up again.
 	*/
-
-	/* Free Seed Array */
-	free (global.CA.SEED);
-
-	/* Free Grid Array */
-	for (unsigned int y=0; y<dimy; y++) {
-		free (grid[y]);
-	}
-	free (grid);
-
-	/* Free GA Class Objects */
-	for (unsigned int idx=0; idx<pop_lim; idx++) {
-		free (indv[idx].dna);
-	}
-	free (indv);
-
-	/* ===== END CLEANUP ===== */
+	sim_cleanup ();
 
 	return 1;
 }
@@ -300,4 +283,122 @@ void statistics (GeneticAlgorithm *array, const unsigned int gen) {
 
 	/* Get min value (list is presorted) */
 	global.stats.min [gen] = array[pop-1].fit;
+}
+
+// TODO: Evaluation function
+uint32_t evaluate (void) {
+	uint64_t observed;
+	uint32_t fitness = 0;
+
+	/* WARNING: Possible Data Race -- This might now work with sequential logic */
+	for (unsigned int i=0; i<global.truth.step; i++) {
+		fpga_set_input (global.truth.input [i]);
+		/* Gets output twice */
+		observed = fpga_get_output ();
+		/* Counts equivalent bits */
+		fitness += bitcount64 ( ~( global.truth.output [i] ^ observed ) );
+		/* Adjusts for grids narrower than 64-bits */
+		fitness -= (64 - global.CA.DIMX);
+	}
+
+	return fitness;
+}
+
+void report (void) {
+	/* Prints Pretty Results */
+	cout << ANSI_GREEN "\tDONE : ";
+	cout << difftime (timer_end, timer_begin) << " s\n\n" ANSI_RESET;
+
+	/* Solution not found */
+	if (global.stats.tts == 0) {
+		cout << ANSI_RED "No solution has been found\n" ANSI_RESET;
+	/* Solution found */
+	} else {
+		cout << ANSI_GREEN "First solution found in: " << global.stats.tts << " gen\n" ANSI_RESET;
+	}
+
+	printf ("Final Fitness Statistics:\n"
+			"Average Fitness:\t%.1f / %d\n"
+			"Median Fitness: \t%.1f / %d\n"
+			"Maximum Fitness:\t%u / %d\n"
+			"Minimum Fitness:\t%u / %d\n\n",
+			global.stats.avg [gen_lim-1], fit_lim,
+			global.stats.med [gen_lim-1], fit_lim,
+			global.stats.max [gen_lim-1], fit_lim,
+			global.stats.min [gen_lim-1], fit_lim
+	);
+	printf ("Best Solution: UID: %u | FIT: %u\n"
+			"DNA: ", indv[0].uid, indv[0].fit
+	);
+	indv[0].print_dna();
+	cout << "\n\n";
+
+	/* Generate & Set Grid */
+	cellgen (global.CA.SEED, grid[0], indv[0].dna);
+	for (unsigned int y=1; y<dimy; y++) {
+		cellgen (grid[y-1], grid[y], indv[0].dna);
+	}
+	cellgen (grid[dimy-1], grid[0], indv[0].dna);
+	for (unsigned int y=1; y<dimy; y++) {
+		cellgen (grid[y-1], grid[y], indv[0].dna);
+	}
+
+	/* Sets FPGA & Checks Truth Table if FPGA is set */
+	if (global.fpga_init == 1) {
+		fpga_set_grid (grid);
+
+		// TODO: case for sequential logic
+		printf ("\t\t\t    \e[100m Checked Truth Table\e[0m\n"
+		"\t             Input |      Expected      | Observed\n"
+		"\t-------------------+--------------------+-------------------\n");
+		for (unsigned int i=0; i<global.truth.step; i++) {
+			uint64_t output;
+
+			fpga_set_input (global.truth.input [i]);
+			printf ("\t0x%016llX | 0x%016llX | ", global.truth.input [i], global.truth.output [i]);
+			output = fpga_get_output ();
+			output = fpga_get_output ();
+			if (output == global.truth.output [i]) {
+				cout << ANSI_GREEN;
+				printf ("0x%016llX", output);
+				cout << ANSI_RESET;
+			} else {
+				cout << ANSI_RED;
+				printf ("0x%016llX", output);
+				cout << ANSI_RESET;
+			}
+			cout << endl;
+		}
+
+	/* Print error message if FPGA is not set */
+	} else {
+		printf (ANSI_YELLOW "\t FPGA Not Initialized. Truth Table Unavailable." ANSI_RESET "\n");
+	}
+
+	/* Optional Print of Fittest Solution */
+	if (global.DATA.CAPRINT == 1) {
+		printf ("\n\e[100m\t-- Generated Logic Circuit --" ANSI_RESET "\n");
+		print_grid (grid);
+		cout << endl;
+	}
+}
+
+void sim_cleanup (void) {
+	/* Free Seed Array */
+	free (global.CA.SEED);
+
+	/* Free Grid Array */
+	for (unsigned int y=0; y<dimy; y++) {
+		free (grid[y]);
+	}
+	free (grid);
+
+	/* Free GA Class Objects */
+	for (unsigned int idx=0; idx<pop_lim; idx++) {
+		free (indv[idx].dna);
+	}
+	free (indv);
+
+	/* Clear FPGA Grid one last time */
+	fpga_clear ();
 }

@@ -39,22 +39,28 @@ void cellgen (const uint8_t *input, uint8_t *output, const uint8_t *DNA) {
 
 void cellprint (const uint8_t cell) {
 	switch (cell) {
-		case 0:
-			cout << ANSI_GRAY;
-			break;
-		case 1:
+		case 0x0:
 			cout << ANSI_RED;
 			break;
-		case 2:
-			cout << ANSI_YELLOW;
+		case 0x1:
+			cout << ANSI_GREEN;
 			break;
-		case 3:
+		case 0x2:
+			cout << ANSI_BLUE;
+			break;
+		case 0x3:
+			cout << ANSI_PURPL;
+			break;
+		case 0x8:
+			cout << ANSI_LRED;
+			break;
+		case 0x9:
 			cout << ANSI_LGREEN;
 			break;
-		case 4:
-			cout << ANSI_LCYAN;
+		case 0xA:
+			cout << ANSI_LBLUE;
 			break;
-		case 5:
+		case 0xB:
 			cout << ANSI_LPURPL;
 			break;
 		default: // Undefined

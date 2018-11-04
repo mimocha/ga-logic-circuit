@@ -4,7 +4,8 @@
 #define MISC_HPP
 
 /* void help_message (void)
-	Displays help message
+	Displays about message.
+	Also displays certain internal variables for debug purposes.
 */
 void help_message (void);
 

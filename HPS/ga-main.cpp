@@ -1,4 +1,28 @@
-/* Main C++ file for this Genetic Algorithm program. */
+/* Main C++ file for this Genetic Algorithm program.
+
+MIT License
+
+Copyright (c) 2018 Chawit Leosrisook
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE
+
+*/
 
 #include "ga-main.hpp"	/* Standard Includes & Function Prototypes */
 #include "globalparm.h"	/* Global Parameters */
@@ -120,18 +144,18 @@ void settings (void) {
 			"\t7. CA Color Count\t| Current Value: %u\n"
 			"\t8. CA Neighbor Count\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Data Parameters =====\n" ANSI_RESET
-			"\t9. DATA Fitness Track\t| Current Value: %u\n"
+			"\t9.  DATA Fitness Track\t| Current Value: %u\n"
 			"\t10. DATA Time Track\t| Current Value: %u\n"
 			"\t11. DATA CA Print\t| Current Value: %u\n"
 			"\t12. DATA Export\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Truth Table Parameters =====\n" ANSI_RESET
-			"\t13. TT Variable Count\t| Current Value: %u\n"
-			"\t14. TT Configuration Count | Current Value: %u\n\n"
+			"\t13. TT Sequential Logic\t| Current Value: %u\n"
+			"\t14. TT Step Count\t| Current Value: %u\n\n"
 			"Waiting for Input: ",
 			global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
 			global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
 			global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
-			global.truth.var, global.truth.config
+			global.truth.time, global.truth.step
 		);
 
 		/* Sanitized Scan */
@@ -185,6 +209,8 @@ void settings (void) {
 					global.CA.DIMX = 1;
 					printf ("Minimum value: %u\n", global.CA.DIMX);
 				}
+				/* Affects Truth Table Settings, Force Reinitialization */
+				global.tt_init = 0;
 				break;
 			case 6: /* global.CA.DIMY */
 				printf ("Input New Value: ");
@@ -235,13 +261,17 @@ void settings (void) {
 				printf ("Input New Value: ");
 				scan_bool (&global.DATA.EXPORT);
 				break;
-			case 13: /* global.truth.var */
+			case 13: /* global.truth.time */
 				printf ("Input New Value: ");
-				scan_uint (&global.truth.var);
+				scan_bool (&global.truth.time);
+				/* Affects Truth Table Settings, Force Reinitialization */
+				global.tt_init = 0;
 				break;
-			case 14: /* global.truth.config */
+			case 14: /* global.truth.step */
 				printf ("Input New Value: ");
-				scan_uint (&global.truth.config);
+				scan_uint (&global.truth.step);
+				/* Affects Truth Table Settings, Force Reinitialization */
+				global.tt_init = 0;
 				break;
 			default:
 				printf ("Invalid input: %d\n", var);
@@ -251,26 +281,50 @@ void settings (void) {
 }
 
 bool read_csv (void) {
+	printf ("Parsing CSV... ");
 
-	/*
-	Check from predefined default file.
-		> If available: ask to read
+	FILE *fp = fopen (CSV_FILE, "r");
+	if (fp == NULL) {
+		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, CSV_FILE);
+		return 0;
+	}
 
-			> If YES: read
-				> If OK: set & return SUCCESS
-				> If FAIL: perror & return FAILURE
+	/* Checks Header Row */
+	char buffer [16];
 
-			> If NO: ask for manual input
-				> Get input
-					> If OK: set & return SUCCESS
-					> If FAIL: perror & return FAILURE
+	/* Checks input header */
+	fscanf (fp, "%s", buffer);
+	if ( strcmp(buffer, "input") != 0 ) {
+		printf (ANSI_RED "FAILED -- Missing input column\n" ANSI_RESET);
+		return 0;
+	}
 
-		> If unavailable: ask for manual input
-			> Get input
-				> If OK: set & return SUCCESS
-				> If FAIL: perror & return FAILURE
-	*/
+	/* Checks output header */
+	fscanf (fp, "%s", buffer);
+	if ( strcmp(buffer, "output") != 0 ) {
+		printf (ANSI_RED "FAILED -- Missing output column\n" ANSI_RESET);
+		return 0;
+	}
 
+	/* Gets row count */
+	fscanf (fp, "%u", &global.truth.step);
+
+	/* Clears any previously set truth table, then calloc STEP number of items */
+	if (global.truth.input != NULL) free (global.truth.input);
+	global.truth.input = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
+	if (global.truth.output != NULL) free (global.truth.output);
+	global.truth.output = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
+
+	/* Gets value, one-by-one */
+	for (unsigned int row = 0; row < global.truth.step; row++) {
+		fscanf (fp, "%llx", &global.truth.input [row]);
+		fscanf (fp, "%llx", &global.truth.output [row]);
+	}
+
+	/* Print Completion Message */
+	printf (ANSI_GREEN "DONE. Parsed %d rows.\n" ANSI_RESET, global.truth.step);
+
+	fclose (fp);
 	return 1;
 }
 
@@ -298,14 +352,11 @@ void results (void) {
 void cleanup (void) {
 	if (global.fpga_init == 1) close (fd);
 
-	if (global.run_check == 1) {
-		if (global.stats.avg != NULL) free (global.stats.avg);
-		if (global.stats.med != NULL) free (global.stats.med);
-		if (global.stats.max != NULL) free (global.stats.max);
-		if (global.stats.min != NULL) free (global.stats.min);
-	}
+	if (global.stats.avg != NULL) free (global.stats.avg);
+	if (global.stats.med != NULL) free (global.stats.med);
+	if (global.stats.max != NULL) free (global.stats.max);
+	if (global.stats.min != NULL) free (global.stats.min);
 
-	if (global.tt_init == 1) {
-		/* Free Truth Table Memory, if set */
-	}
+	if (global.truth.input != NULL) free (global.truth.input);
+	if (global.truth.output != NULL) free (global.truth.output);
 }

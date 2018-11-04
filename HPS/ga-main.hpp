@@ -17,10 +17,8 @@
 #include <algorithm>	/* sort, find */
 #include <vector>		/* vectors */
 #include <array>		/* arrays */
-// #include <bitset>		/* bitset is unavailable in DE0-Nano-SoC */
-
-/* CSV Parser Library */
-#include "./fast-cpp-csv-parser/csv.h"
+#include <cstring>		/* strcmp */
+// #include <bitset>		/* bitset is unavailable on current DE0-Nano-SoC settings */
 
 // ----- Function Prototypes && Documentation ----- //
 
@@ -39,7 +37,24 @@ unsigned int main_menu (void);
 */
 void settings (void);
 
-/* */
+/* bool read_csv (void)
+	Parses the CSV file "CSV_FILE" defined in "globalparm.h"
+	Reads "global.truth.step" rows, excluding the header row.
+
+	CSV file must be in the following format:
+	-----------------
+	input output <row count>
+	<input value 1> <output value 1>
+	<input value 2> <output value 2>
+	<input value 3> <output value 3>
+	...
+	-----------------
+
+	Spaces and tabs are automatically trimmed.
+	Header row is Case Sensitive!
+	Missing columns will return a failure.
+	Input / Output values are required to be in hexadecimals.
+*/
 bool read_csv (void);
 
 /* void results (void)

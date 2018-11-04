@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.05
+#define VERSION 1.06
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.
@@ -61,7 +61,10 @@
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 
 /* Estimated Number of Individuals Evaluated per Second */
-#define INDV_PER_SEC 197
+#define INDV_PER_SEC 190
+
+/* Default Truth Table CSV Filename & Location */
+#define CSV_FILE "./tt.csv"
 
 /* ----- Global Variable Parameters ----- */ // Sue me
 
@@ -147,28 +150,39 @@ struct stats_var {
 /* Target Truth Table Struct
 	Contains the desired truth table for evaluating circuits.
 
-	Definition  | Input		 | Variable 1 | Variable 2 ...
+	Definition  | Input		 | Output     | Time (optional?)
 	------------+------------+------------+------------
-	Config 1	| Input    1 | Output A 1 | Output B 1
-	Config 2	| Input    2 | Output A 2 | Output B 2
-	Config 3	| Input    3 | Output A 3 | Output B 3
+				| Input    1 | Output   1 | Time Step 1
+				| Input    2 | Output   2 | Time Step 2
+				| Input    3 | Output   3 | Time Step 3
 
-	There should be only a single input column.
-	There could be any number of output columns.
+	There must be only a single input column.
+	There must be only a single output column.
+	There may be only one single time column?
 	All column should have the same length
 	Same goes for the number of configurations. A complete truth table is not required.
 
 	Should be set in main-menu, before simulations.
 */
 struct truth_table {
-	/* Number of variables to check */
-	unsigned int var = 1;
-	/* Number of configurations to check */
-	unsigned int config = 2;
+	/* Sequential or Combinational Logic
+		Boolean value for whether or not Input order matters.
+		1 = Sequential Logic | Order of Input matter
+		0 = Combinational Logic | Order of Input doesn't matter
+	*/
+	bool time = 0;
+	/* Number of steps/config to check
+		The number of steps or configurations to check.
+		If it is a combinational logic (order doesn't matter),
+			this is simply the number of different Input/Output combinations to check.
+		If it is a sequential logic (order matters),
+			this is the number of input/output steps to check.
+	*/
+	unsigned int step = 1;
 	/* Input Array */
-	uint64_t input[2] = {0x0F0F0F0F0F0F0F0F, 0xFFFFFFFFDE0DBEEF};
+	uint64_t *input;
 	/* Output Array */
-	uint64_t output[2] = {0x0F0F0F0F0F0F0F0F, 0xFFFFFFFFDE0DBEEF};
+	uint64_t *output;
 };
 
 /*	Main Global Parameters Struct
@@ -197,7 +211,7 @@ struct param_main {
 	bool tt_init = 0;
 } global;
 
-// ----- Define Colors for Pretty Colored Outputs ----- //
+/* ----- Define Colors for Pretty Colored Outputs ----- */
 // https://misc.flogisoft.com/bash/tip_colors_and_formatting
 #define ANSI_DFLT	"\e[39m"
 #define ANSI_RESET	"\e[0m"

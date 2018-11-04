@@ -1,4 +1,3 @@
-
 bool fpga_init (void) {
 	/* If FPGA was already initialized, reinitialize. */
 	if (global.fpga_init == 1) {
@@ -49,7 +48,7 @@ bool fpga_init (void) {
 
 	fpga_clear ();
 
-	std::cout << ANSI_GREEN << "OK\n" << ANSI_RESET;
+	std::cout << ANSI_GREEN << "DONE\n" << ANSI_RESET;
 
 	return 1;
 }
@@ -165,17 +164,23 @@ void fpga_verify (void) {
 /* ----- Level 1 ----- */
 
 void fpga_clear (void) {
-
 	for (uint32_t i=0; i<S2_RANGE; i++) {
 		fpga_s2_write (i, 0x00000000);
 	}
-
 	fpga_set_input (0x0);
 }
 
 void fpga_set_grid (uint8_t **grid) {
 	uint32_t data = 0;
 	uint32_t offset = S2_RANGE;
+
+	/* This function handles setting the input rows
+		WARNING: If this is not set, the FPGA Cell Array will have no linux input cells set.
+		Output may remain the same, regardless of given input.
+	*/
+	for (unsigned int x=0; x<MAX_CA_DIMX; x++) {
+		grid [global.CA.DIMY-1][x] |= 0x8;
+	}
 
 	for (int y=MAX_CA_DIMY-1; y>=0; y--) {
 		for (int x=MAX_CA_DIMX-1; x>=0; x--) {
@@ -188,7 +193,6 @@ void fpga_set_grid (uint8_t **grid) {
 			}
 		}
 	}
-
 }
 
 void fpga_set_input (const uint64_t data) {
