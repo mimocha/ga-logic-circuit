@@ -319,6 +319,13 @@ bool read_csv (void) {
 	for (unsigned int row = 0; row < global.truth.step; row++) {
 		fscanf (fp, "%llx", &global.truth.input [row]);
 		fscanf (fp, "%llx", &global.truth.output [row]);
+
+		/* Unexpected End of File Error */
+		if ( feof (fp) ) {
+			printf (ANSI_RED "FAILED -- Unexpected End of File. Read %d / %d\n" ANSI_RESET,
+			row, global.truth.step);
+			return 0;
+		}
 	}
 
 	/* Print Completion Message */
