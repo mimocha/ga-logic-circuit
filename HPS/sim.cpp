@@ -5,11 +5,12 @@ void sim_init (void) {
 	printf (ANSI_REVRS "\n\t>>>-- Initializing Simulation --<<<\n" ANSI_RESET
 		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
 		"\tDIMX = %3u | DIMY = %3u | COLOR = %3u | NEIGHBOR = %2u\n"
-		"\tFIT = %1u | TIME = %1u | CAPRINT = %1u | EXPORT = %1u | FPGA INIT = %1u\n\n",
+		"\tFIT = %1u | TIME = %1u | CAPRINT = %1u | EXPORT = %1u | FPGA INIT = %1u\n"
+		"\tSEQUENTIAL = %1u | STEP = %1u | F1 SCORING = %1u\n\n",
 		global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
 		global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
-		global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
-		global.fpga_init
+		global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT, global.fpga_init,
+		global.truth.time, global.truth.step, global.truth.f1
 	);
 
 	/* Initializes Random Number Generator */
@@ -26,27 +27,11 @@ void sim_init (void) {
 	*/
 	dna_length = pow (global.CA.COLOR, global.CA.NB);
 
-	/*Maxmimum fitness possible
-		Calculated as: (Output bit width) * (Truth Table Steps)
-	*/
-	fit_lim = dimx * global.truth.step;
-
 	/* Allocates an array of individuals (population), of size "global.GA.POP" */
 	indv = (GeneticAlgorithm *) calloc (pop_lim, sizeof (GeneticAlgorithm));
 	/* Initialize Population */
 	for (unsigned int idx=0; idx<pop_lim; idx++) {
 		indv[idx] = GeneticAlgorithm (dna_length);
-	}
-
-	/* Allocates 2D working array for Cellular Automaton //
-		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
-		This mistake will cause attempts to free grid[0] at the end to fail, throwing a double free.
-
-		NOTE: **grid always has the physical dimension allocated, not the user set dimension
-	*/
-	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
-	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
-		grid[i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
 	}
 
 	/* Initialize Cellular Automaton grid seed */
@@ -111,8 +96,23 @@ void sim_init (void) {
 		printf ( ANSI_GREEN "DONE" ANSI_RESET "\n");
 	}
 
+	/* Maxmimum fitness possible
+		Calculated as: (Output bit width) * (Truth Table Steps)
+		Or as defined by F1_MAX
+		F1 Scoring in computationally expensive, takes more time
+	*/
+	if (global.truth.f1 == 1) {
+		fit_lim = F1_MAX;
+		time_est = (gen_lim * pop_lim / 2 / (INDV_PER_SEC - 20));
+	} else {
+		fit_lim = dimx * global.truth.step;
+		time_est = (gen_lim * pop_lim / 2 / INDV_PER_SEC);
+	}
+
+	/* Resets Data Export flag */
+	global.export_check = 0;
+
 	/* If TIME is enabled, initialize time_t */
-	time_est = (gen_lim * pop_lim / 2 / INDV_PER_SEC);
 	if (global.DATA.TIME == 1) {
 		time (&timer_begin);
 	}
@@ -150,7 +150,6 @@ bool run_sim (void) {
 			for (unsigned int y=1; y<dimy; y++) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
 			}
-
 			cellgen (grid[dimy-1], grid[0], indv[idx].dna);
 			for (unsigned int y=1; y<dimy; y++) {
 				cellgen (grid[y-1], grid[y], indv[idx].dna);
@@ -167,7 +166,13 @@ bool run_sim (void) {
 			*/
 			if (global.fpga_init == 1) {
 				fpga_set_grid (grid);
-				indv[idx].fit = evaluate ();
+
+				if (global.truth.f1 == 0) {
+					indv[idx].fit = evaluate ();
+				} else {
+					indv[idx].fit = evaluate_f1 ();
+				}
+
 				fpga_clear ();
 			} else {
 				indv[idx].fit = rand () % 100;
@@ -201,7 +206,7 @@ bool run_sim (void) {
 
 			// Flags / Warnings / Notes
 			if (global.stats.tts != 0) {
-				cout << ANSI_GREEN " << Solution Found!" ANSI_RESET;
+				printf (ANSI_GREEN " << Solution Found! (%u)" ANSI_RESET, global.stats.tts);
 			}
 
 			cout << "\n";
@@ -211,7 +216,14 @@ bool run_sim (void) {
 	/* ===== END SIMULATION LOOP ===== */
 
 	/* ===== REPORT FINAL RESULTS ===== */
+	// Sorts one last time
+	GeneticAlgorithm::Sort (indv);
+
 	report ();
+
+	if (global.DATA.EXPORT == 1) {
+		global.export_check = export_rpt (indv);
+	}
 
 	/* ===== CLEANUP =====
 	Manually Memory Management Memo //
@@ -285,23 +297,133 @@ void statistics (GeneticAlgorithm *array, const unsigned int gen) {
 	global.stats.min [gen] = array[pop-1].fit;
 }
 
-// TODO: Evaluation function -- Apply F1 Scoring?
 uint32_t evaluate (void) {
-	uint64_t observed;
 	uint32_t fitness = 0;
+	uint64_t observed;
 
-	/* WARNING: Possible Data Race -- This might now work with sequential logic */
 	for (unsigned int i=0; i<global.truth.step; i++) {
 		fpga_set_input (global.truth.input [i]);
-		/* Gets output twice */
 		observed = fpga_get_output ();
+
 		/* Counts equivalent bits */
 		fitness += bitcount64 ( ~( global.truth.output [i] ^ observed ) );
+
 		/* Adjusts for grids narrower than 64-bits */
 		fitness -= (64 - global.CA.DIMX);
 	}
 
 	return fitness;
+}
+
+uint32_t evaluate_f1 (void) {
+	uint64_t observed;
+	/* True Positive, False Positive, False Negative */
+	float tpos = 0;
+	float fpos = 0;
+	float fneg = 0;
+
+	for (unsigned int i=0; i<global.truth.step; i++) {
+		fpga_set_input (global.truth.input [i]);
+		observed = fpga_get_output ();
+
+		/* Calculates F1 Score */
+		tpos += bitcount64
+			( ~( global.truth.output [i] ^ observed ) & global.truth.output [i] );
+		fpos += bitcount64
+			( ( global.truth.output [i] ^ observed ) & observed );
+		fneg += bitcount64
+			( ( global.truth.output [i] ^ observed ) & ~(observed) );
+	}
+
+	/* Recall, Precision, F1 Score */
+	float precision = tpos / (tpos + fpos);
+	float recall = tpos / (tpos + fneg);
+	float f1_score = 2 * precision * recall / (precision + recall);
+
+	/* Returns f1 score */
+	return (uint32_t) floor (F1_MAX * f1_score);
+}
+
+void id_evaluate (uint8_t **grid) {
+	uint32_t fitness = 0;
+	const uint32_t fit_lim = global.CA.DIMX * global.truth.step;
+	uint64_t observed;
+
+	fpga_set_grid (grid);
+
+	printf ("\n\t\t\t    \e[100mChecked Logic Table\e[0m\n"
+	"\t             Input |      Expected      | Observed\n"
+	"\t-------------------+--------------------+-------------------\n");
+
+	for (unsigned int i=0; i<global.truth.step; i++) {
+		fpga_set_input (global.truth.input [i]);
+		observed = fpga_get_output ();
+
+		/* Counts equivalent bits */
+		fitness += bitcount64 ( ~( global.truth.output [i] ^ observed ) );
+
+		/* Adjusts for grids narrower than 64-bits */
+		fitness -= (64 - global.CA.DIMX);
+
+		/* Prints In-Depth Results */
+		printf ("\t0x%016llX | 0x%016llX | ", global.truth.input [i], global.truth.output [i]);
+		if (observed == global.truth.output [i]) {
+			printf (ANSI_GREEN "0x%016llX\n" ANSI_RESET, observed);
+		} else {
+			printf (ANSI_RED "0x%016llX\n" ANSI_RESET, observed);
+		}
+	}
+
+	printf ("\n\tFitness: %u / %u\n", fitness, fit_lim);
+
+	return;
+}
+
+void id_evaluate_f1 (uint8_t **grid) {
+	uint32_t fitness;
+	uint64_t observed;
+	/* True Positive, False Positive, False Negative */
+	float tpos = 0;
+	float fpos = 0;
+	float fneg = 0;
+
+	fpga_set_grid (grid);
+
+	printf ("\n\t\t\t    \e[100mChecked Logic Table\e[0m\n"
+	"\t             Input |      Expected      | Observed\n"
+	"\t-------------------+--------------------+-------------------\n");
+
+	for (unsigned int i=0; i<global.truth.step; i++) {
+		fpga_set_input (global.truth.input [i]);
+		observed = fpga_get_output ();
+
+		/* Calculates F1 Score */
+		tpos += bitcount64
+			( ~( global.truth.output [i] ^ observed ) & global.truth.output [i] );
+		fpos += bitcount64
+			( ( global.truth.output [i] ^ observed ) & observed );
+		fneg += bitcount64
+			( ( global.truth.output [i] ^ observed ) & ~(observed) );
+
+		/* Prints In-Depth Results */
+		printf ("\t0x%016llX | 0x%016llX | ", global.truth.input [i], global.truth.output [i]);
+		if (observed == global.truth.output [i]) {
+			printf (ANSI_GREEN "0x%016llX\n" ANSI_RESET, observed);
+		} else {
+			printf (ANSI_RED "0x%016llX\n" ANSI_RESET, observed);
+		}
+	}
+
+	/* Recall, Precision, F1 Score */
+	float precision = tpos / (tpos + fpos);
+	float recall = tpos / (tpos + fneg);
+	float f1_score = 2 * precision * recall / (precision + recall);
+
+	/* Scales fitness with F1 score */
+	fitness = (uint32_t) floor (F1_MAX * f1_score);
+	printf ("\n\tFitness: %u / %u\n", fitness, F1_MAX);
+
+	return;
 }
 
 void report (void) {
@@ -344,35 +466,23 @@ void report (void) {
 	}
 
 	/* Sets FPGA & Checks Truth Table if FPGA is set */
-	if (global.fpga_init == 1) {
-		fpga_set_grid (grid);
+	if ((global.fpga_init == 1) && (global.tt_init == 1)) {
 
-		// TODO: case for sequential logic
-		printf ("\t\t\t    \e[100mChecked Logic Table\e[0m\n"
-		"\t             Input |      Expected      | Observed\n"
-		"\t-------------------+--------------------+-------------------\n");
-		for (unsigned int i=0; i<global.truth.step; i++) {
-			uint64_t output;
-
-			fpga_set_input (global.truth.input [i]);
-			printf ("\t0x%016llX | 0x%016llX | ", global.truth.input [i], global.truth.output [i]);
-			output = fpga_get_output ();
-			output = fpga_get_output ();
-			if (output == global.truth.output [i]) {
-				cout << ANSI_GREEN;
-				printf ("0x%016llX", output);
-				cout << ANSI_RESET;
-			} else {
-				cout << ANSI_RED;
-				printf ("0x%016llX", output);
-				cout << ANSI_RESET;
-			}
-			cout << endl;
+		if (global.truth.f1 == 1) {
+			id_evaluate_f1 (grid);
+		} else {
+			id_evaluate (grid);
 		}
 
-	/* Print error message if FPGA is not set */
+	/* Print error message if FPGA or Truth Table is not set */
 	} else {
-		printf (ANSI_YELLOW "\tFPGA Not Initialized. Logic Table Unavailable." ANSI_RESET "\n");
+		if (global.fpga_init == 0) {
+			printf (ANSI_YELLOW "\tFPGA Not Initialized\n" ANSI_RESET);
+		}
+		if (global.tt_init == 0) {
+			printf (ANSI_YELLOW "\tTruth Table Not Initialized\n" ANSI_RESET);
+		}
+		printf (ANSI_YELLOW "\tLogic Table Unavailable\n" ANSI_RESET);
 	}
 
 	/* Optional Print of Fittest Solution */
@@ -387,12 +497,6 @@ void sim_cleanup (void) {
 	/* Free Seed Array */
 	free (global.CA.SEED);
 
-	/* Free Grid Array */
-	for (unsigned int y=0; y<dimy; y++) {
-		free (grid[y]);
-	}
-	free (grid);
-
 	/* Free GA Class Objects */
 	for (unsigned int idx=0; idx<pop_lim; idx++) {
 		free (indv[idx].dna);
@@ -401,4 +505,77 @@ void sim_cleanup (void) {
 
 	/* Clear FPGA Grid one last time */
 	fpga_clear ();
+}
+
+bool export_rpt (GeneticAlgorithm *array) {
+	if (global.run_check == 0) {
+		printf ("No simulation results.\n");
+		return 0;
+	}
+
+	FILE *fp;
+	char filename [64];
+
+	/* Get Current Local Time & Convert to Time Struct */
+	time_t raw_time;
+	struct tm *timeinfo;
+	time (&raw_time);
+	timeinfo = localtime (&raw_time);
+	/* Sets filename to YYYY-MM-DD_HH-MM-SS format */
+	strftime (filename, 64, "%F_%H-%M-%S.txt", timeinfo);
+
+	printf ("Exporting results as: \"%s\"\n", filename);
+
+	fp = fopen (filename, "w");
+	if (fp == NULL) {
+		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
+		return 0;
+	}
+
+	/* ===== Write to File ===== */
+
+	fprintf (fp, "Simulation Report: %s\n\n", filename);
+
+	fprintf (fp, ">> Settings:\n"
+		"\tGeneration Limit: %u\n"
+		"\tPopulation Limit: %u\n"
+		"\tX-Axis Dimension: %u\n"
+		"\tY-Axis Dimension: %u\n"
+		"\tCA Color: %u\n"
+		"\tCA Neighbor: %u\n"
+		"\tTime to first Solution: ",
+		global.stats.gen, global.stats.pop,
+		global.stats.dimx, global.stats.dimy,
+		global.stats.color, global.stats.nb );
+
+	if (global.stats.tts != 0) {
+		fprintf (fp, "%u gens\n", global.stats.tts);
+	} else {
+		fprintf (fp, "Not Applicable\n");
+	}
+
+	fprintf (fp, "\nFitness Table\n"
+		"  Gen | Maximum | Minimum | Median | Average\n"
+		"--------------------------------------------\n");
+	for (uint32_t i=0; i<global.stats.gen; i++) {
+		fprintf (fp, " %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
+		global.stats.max [i], global.stats.min [i],
+		global.stats.med [i], global.stats.avg [i]);
+	}
+
+	/* ===== Final Population Results ===== */
+
+	if ( array != NULL ) {
+		fprintf (fp, "\n\n Resulting Individuals\n"
+			"UID | FITNESS | DNA \n");
+		for (uint32_t i=0; i<global.stats.pop; i++) {
+			fprintf (fp, " %u | %u | ", array[i].uid, array[i].fit);
+			array[i].fprint_dna (fp);
+			fputc ('\n', fp);
+		}
+	}
+
+	fclose (fp);
+	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
+	return 1;
 }

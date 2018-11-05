@@ -45,6 +45,17 @@ int main (int argc, char **argv) {
 
 	global.fpga_init = fpga_init ();
 
+	/* Allocates 2D working array for Cellular Automaton //
+		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
+		This mistake will cause attempts to free grid[0] at the end to fail, throwing a double free.
+
+		NOTE: **grid always has the physical dimension allocated, not the user set dimension
+	*/
+	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
+	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
+		grid [i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
+	}
+
 	/* Main Menu */
 	while (1) {
 		sel = main_menu ();
@@ -78,6 +89,8 @@ int main (int argc, char **argv) {
 				inspect ();
 				break;
 			case 9: /* Export Results */
+				global.export_check = export_rpt ();
+				break;
 			default: /* Invalid Input */
 				printf ("Invalid input: %d\n", sel);
 		}
@@ -120,7 +133,14 @@ unsigned int main_menu (void) {
 		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
 	}
 
-	printf ("\t8. Inspect DNA\n");
+	printf ("\t8. Inspect DNA\n"
+			"\t9. Export Results  | ");
+
+	if (global.export_check == 1) {
+		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
+	} else {
+		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
+	}
 
 	printf ("\nWaiting for Input: ");
 
@@ -154,12 +174,13 @@ void settings (void) {
 			"\t12. DATA Export\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Truth Table Parameters =====\n" ANSI_RESET
 			"\t13. TT Sequential Logic\t| Current Value: %u\n"
-			"\t14. TT Step Count\t| Current Value: %u\n\n"
+			"\t14. TT Step Count\t| Current Value: %u\n"
+			"\t15. TT F1 Scoring\t| Current Value: %u\n\n"
 			"Waiting for Input: ",
 			global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
 			global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
 			global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
-			global.truth.time, global.truth.step
+			global.truth.time, global.truth.step, global.truth.f1
 		);
 
 		/* Sanitized Scan */
@@ -277,6 +298,10 @@ void settings (void) {
 				/* Affects Truth Table Settings, Force Reinitialization */
 				global.tt_init = 0;
 				break;
+			case 15: /* global.truth.f1 */
+				printf ("Input New Value: ");
+				scan_bool (&global.truth.f1);
+				break;
 			default:
 				printf ("Invalid input: %d\n", var);
 				break;
@@ -285,13 +310,19 @@ void settings (void) {
 }
 
 bool read_csv (void) {
-	printf ("Parsing CSV... ");
+	FILE *fp;
+	char filename [80];
 
-	FILE *fp = fopen (CSV_FILE, "r");
+	printf ("Enter file to read from: ");
+	scanf ("%s", filename);
+
+	fp = fopen (filename, "r");
 	if (fp == NULL) {
-		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, CSV_FILE);
+		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
 		return 0;
 	}
+
+	printf ("Parsing CSV... ");
 
 	/* Checks Header Row */
 	char buffer [16];
@@ -367,7 +398,6 @@ void inspect (void) {
 	unsigned int dimx, dimy, color, nb;
 	char *buffer;
 	uint8_t *dna;
-	uint8_t **grid;
 
 	/* Enter desired settings */
 	printf ("\nDNA color count : ");
@@ -384,7 +414,7 @@ void inspect (void) {
 
 	/* Checks DNA length validity */
 	if ( strlen (buffer) != length) {
-		printf (ANSI_RED "DNA length mismatch. Give length was %u\n" ANSI_RESET,
+		printf (ANSI_RED "DNA length mismatch. Given length was %u\n" ANSI_RESET,
 		(unsigned int) strlen (buffer));
 		if (buffer != NULL) free (buffer);
 		if (dna != NULL) free (dna);
@@ -423,18 +453,14 @@ void inspect (void) {
 		printf (ANSI_RED "DIMY Upper bound: %u\n" ANSI_RESET, MAX_CA_DIMY);
 	}
 
-	/* ===== CA PRINT ===== */
-
-	/* Allocate temporary working grid here */
-	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
-	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
-		grid[i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
-	}
+	/* ===== CELLULAR AUTOMATON ===== */
 
 	/* Initialize Cellular Automaton grid seed */
 	global.CA.SEED = (uint8_t *) calloc (dimx, sizeof (uint8_t));
 	unsigned int mid = floor (dimx / 2);
 	global.CA.SEED [mid] = 1;
+
+	/* ===== FPGA SET GRID ===== */
 
 	/* Generate & Set Grid */
 	cellgen (global.CA.SEED, grid[0], dna);
@@ -446,32 +472,13 @@ void inspect (void) {
 		cellgen (grid[y-1], grid[y], dna);
 	}
 
-	/* ===== FPGA SET GRID ===== */
-
-	/* Same code as sim.cpp - report() */
+	/* Sets FPGA & Checks Truth Table if FPGA is set */
 	if ((global.fpga_init == 1) && (global.tt_init == 1)) {
-		fpga_set_grid (grid);
 
-		printf ("\t\t\t    \e[100mChecked Logic Table\e[0m\n"
-		"\t             Input |      Expected      | Observed\n"
-		"\t-------------------+--------------------+-------------------\n");
-		for (unsigned int i=0; i<global.truth.step; i++) {
-			uint64_t output;
-
-			fpga_set_input (global.truth.input [i]);
-			printf ("\t0x%016llX | 0x%016llX | ", global.truth.input [i], global.truth.output [i]);
-			output = fpga_get_output ();
-			output = fpga_get_output ();
-			if (output == global.truth.output [i]) {
-				cout << ANSI_GREEN;
-				printf ("0x%016llX", output);
-				cout << ANSI_RESET;
-			} else {
-				std::cout << ANSI_RED;
-				printf ("0x%016llX", output);
-				std::cout << ANSI_RESET;
-			}
-			std::cout << "\n";
+		if (global.truth.f1 == 1) {
+			id_evaluate_f1 (grid);
+		} else {
+			id_evaluate (grid);
 		}
 
 	/* Print error message if FPGA or Truth Table is not set */
@@ -482,26 +489,24 @@ void inspect (void) {
 		if (global.tt_init == 0) {
 			printf (ANSI_YELLOW "\tTruth Table Not Initialized\n" ANSI_RESET);
 		}
-
 		printf (ANSI_YELLOW "\tLogic Table Unavailable\n" ANSI_RESET);
 	}
 
-	printf ("\n\e[100m\t-- Generated Logic Circuit --" ANSI_RESET "\n");
+	/* ===== PRINT CA GRID ===== */
+
+	printf ("\n\e[100m\t\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 	print_grid (grid);
 	std::cout << "\n";
 
 	/* ===== CLEANUP ===== */
 
-	if (buffer != NULL)free (buffer);
-	if (dna != NULL)free (dna);
-	if (grid != NULL) {
-		for (unsigned int y=0; y<MAX_CA_DIMY; y++) {
-			free (grid [y]);
-		}
-		free (grid);
-	}
+	free (buffer);
+	free (dna);
+	free (global.CA.SEED);
 	return;
 }
+
+// export_rpt
 
 void cleanup (void) {
 	if (global.fpga_init == 1) close (fd);
@@ -513,4 +518,12 @@ void cleanup (void) {
 
 	if (global.truth.input != NULL) free (global.truth.input);
 	if (global.truth.output != NULL) free (global.truth.output);
+
+	fpga_clear ();
+	if (grid != NULL) {
+		for (unsigned int y=0; y<dimy; y++) {
+			free (grid[y]);
+		}
+		free (grid);
+	}
 }

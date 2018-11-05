@@ -232,3 +232,10 @@ void GeneticAlgorithm::print_dna (void) {
 		std::cout << (unsigned int) dna [i];
 	}
 }
+
+void GeneticAlgorithm::fprint_dna (FILE *fp) {
+	uint32_t dna_length = pow (global.CA.COLOR, global.CA.NB);
+	for (uint32_t i = 0; i < dna_length; i++) {
+		fputc ((unsigned int) dna [i], fp);
+	}
+}

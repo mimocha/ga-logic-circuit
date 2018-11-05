@@ -67,10 +67,10 @@ void results (void);
 	Practically a smaller version of run_sim() on its own.
 	given a DNA string, this function will apply CA to it,
 	generate a logic circuit, and evaluate the circuits truth table.
-
-	IDEA: Trim this function, along with report() down by modularizing some of the functions.
 */
 void inspect (void);
+
+// export_rpt
 
 /* void cleanup (void)
 	Cleanup global variable memory before exiting program.

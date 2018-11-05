@@ -119,6 +119,11 @@ public:
 		Prints the DNA string of the individual
 	*/
 	void print_dna (void);
+	/* fprint_dna (FILE *fp)
+		Prints the DNA string of the individual to FILE
+	*/
+	void fprint_dna (FILE *fp);
+
 
 };
 

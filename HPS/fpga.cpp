@@ -209,6 +209,11 @@ uint64_t fpga_get_output (void) {
 	int offset = MAX_CA_DIMX / AVALON_PORT_WIDTH;
 	uint64_t results = 0;
 
+	/* Force reads output twice */
+	for (offset = offset-1; offset >= 0; offset--) {
+		results <<=  AVALON_PORT_WIDTH;
+		results |= fpga_s1_read (offset);
+	}
 	for (offset = offset-1; offset >= 0; offset--) {
 		results <<=  AVALON_PORT_WIDTH;
 		results |= fpga_s1_read (offset);

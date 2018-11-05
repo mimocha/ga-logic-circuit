@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.07
+#define VERSION 1.08
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.
@@ -63,15 +63,10 @@
 /* Estimated Number of Individuals Evaluated per Second */
 #define INDV_PER_SEC 190
 
-/* Default Truth Table CSV Filename & Location */
-#define CSV_FILE "./tt.csv"
+/* Arbitrary Value for Maximum F1 Score */
+#define F1_MAX 1000
 
 /* ----- Global Variable Parameters ----- */ // Sue me
-
-/* TODO: Make parameter linked list? *Low Priority*
-	Possibly more flexible handling of parameters
-	ie. Automatically numbered parameter list, automatically managed
-*/
 
 /* Genetics Algorithm Parameters Struct */
 struct param_ga {
@@ -137,7 +132,7 @@ struct stats_var {
 	unsigned int color;
 	/* CA Neighbor Count */
 	unsigned int nb;
-	/* Time to first solution */
+	/* Time to (first) solution */
 	unsigned int tts;
 
 	/* Array of stats across each generations */
@@ -183,6 +178,8 @@ struct truth_table {
 	uint64_t *input;
 	/* Output Array */
 	uint64_t *output;
+	/* Toggle F1 Metric */
+	bool f1 = 0;
 };
 
 /*	Main Global Parameters Struct
@@ -209,7 +206,12 @@ struct param_main {
 	bool run_check = 0;
 	/* Truth Table Initialization Flag */
 	bool tt_init = 0;
+	/* Whether or not current data has been exported */
+	bool export_check = 0;
 } global;
+
+/* Cellular Automaton Virtual Grid */
+uint8_t **grid;
 
 /* ----- Define Colors for Pretty Colored Outputs ----- */
 // https://misc.flogisoft.com/bash/tip_colors_and_formatting

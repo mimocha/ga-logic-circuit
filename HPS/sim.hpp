@@ -44,6 +44,25 @@ void statistics (GeneticAlgorithm *array, const unsigned int gen);
 */
 uint32_t evaluate (void);
 
+/* uint32_t evaluate_f1 (void)
+	Evaluates circuit with F1 scoring instead of usual bitcount.
+	More computationally expensive, but better at discriminating small changes.
+*/
+uint32_t evaluate_f1 (void);
+
+/* void id_evaluate (uint8_t **grid)
+	In-Depth Evaluate function.
+	Evaluates the currently set CA Grid, and also prints the circuit logic & fitness values.
+*/
+void id_evaluate (void);
+
+/* void id_evaluate_f1 (uint8_t **grid)
+	In-Depth F1 Evaluate function.
+	Evaluates the currently set CA Grid with F1 metrics,
+	and also prints the circuit logic & fitness values.
+*/
+void id_evaluate_f1 (void);
+
 /* void report (void)
 	Wrapper function for end of simulation report.
 */
@@ -54,6 +73,9 @@ void report (void);
 	Dynamically allocated memories are freed here.
 */
 void sim_cleanup (void);
+
+/* void export (GeneticAlgorithm *array = NULL) */
+bool export_rpt (GeneticAlgorithm *array = NULL);
 
 /* ===== Simulation File Level Global Variables =====
 	Ignores the need to pass variables around.
@@ -87,13 +109,12 @@ static uint32_t fit_lim;
 */
 static time_t timer_begin;
 static time_t timer_end;
+
 /* Time Estimate Variable */
 static float time_est;
 
 /* Genetic Algorithm Population Array */
 static GeneticAlgorithm *indv;
-/* Cellular Automaton Virtual Grid */
-static uint8_t **grid;
 
 #include "sim.cpp"
 
