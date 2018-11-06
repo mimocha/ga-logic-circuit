@@ -20,11 +20,6 @@ static void sim_init (void);
 */
 bool run_sim (void);
 
-/* void print_grid (uint8_t **grid)
-	Prints the working array grid onto terminal.
-*/
-void print_grid (uint8_t **grid);
-
 /* uint64_t bitcount64 (uint64_t x)
 	64-bit Hamming Weight Counting Algorithm
 	https://en.wikipedia.org/wiki/Hamming_weight
@@ -50,13 +45,13 @@ uint32_t evaluate (void);
 */
 uint32_t evaluate_f1 (void);
 
-/* void id_evaluate (uint8_t **grid)
+/* void id_evaluate (void)
 	In-Depth Evaluate function.
 	Evaluates the currently set CA Grid, and also prints the circuit logic & fitness values.
 */
 void id_evaluate (void);
 
-/* void id_evaluate_f1 (uint8_t **grid)
+/* void id_evaluate_f1 (void)
 	In-Depth F1 Evaluate function.
 	Evaluates the currently set CA Grid with F1 metrics,
 	and also prints the circuit logic & fitness values.
@@ -74,8 +69,8 @@ void report (void);
 */
 void sim_cleanup (void);
 
-/* void export (GeneticAlgorithm *array = NULL) */
-bool export_rpt (GeneticAlgorithm *array = NULL);
+/* void auto_export (GeneticAlgorithm *array = NULL) */
+bool auto_export (GeneticAlgorithm *array = NULL);
 
 /* ===== Simulation File Level Global Variables =====
 	Ignores the need to pass variables around.
@@ -115,6 +110,8 @@ static float time_est;
 
 /* Genetic Algorithm Population Array */
 static GeneticAlgorithm *indv;
+
+static uint8_t saved_dna [MAX_CA_DIMX];
 
 #include "sim.cpp"
 

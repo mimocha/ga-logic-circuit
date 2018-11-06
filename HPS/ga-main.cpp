@@ -1,26 +1,26 @@
-/* Main C++ file for this Genetic Algorithm program.
+/*	Main C++ file for this Genetic Algorithm program.
 
-MIT License
+	MIT License
 
-Copyright (c) 2018 Chawit Leosrisook
+	Copyright (c) 2018 Chawit Leosrisook
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE
 
 */
 
@@ -44,6 +44,7 @@ int main (int argc, char **argv) {
 	static unsigned int sel;
 
 	global.fpga_init = fpga_init ();
+	ca_init (global.CA.NB, global.CA.COLOR, global.CA.DIMX, global.CA.DIMY);
 
 	/* Allocates 2D working array for Cellular Automaton //
 		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
@@ -58,42 +59,58 @@ int main (int argc, char **argv) {
 
 	/* Main Menu */
 	while (1) {
+
 		sel = main_menu ();
+
 		switch (sel) {
+
 			case 0: /* Exit */
 				printf (ANSI_BLINK "Exiting Program.\n" ANSI_RESET);
 				cleanup ();
+				ca_cleanup ();
 				return EXIT_SUCCESS;
+
 			case 1: /* About */
 				help_message ();
 				break;
+
 			case 2: /* Settings */
 				settings ();
 				break;
+
 			case 3: /* Initialize FPGA */
 				global.fpga_init = fpga_init ();
 				break;
+
 			case 4: /* FPGA Circuit Verification */
 				fpga_verify ();
 				break;
+
 			case 5: /* Read Truth Table CSV */
 				global.tt_init = read_csv ();
 				break;
+
 			case 6: /* Run Simulation */
 				global.run_check = run_sim ();
 				break;
+
 			case 7: /* Display Previous Results */
 				results ();
 				break;
+
 			case 8: /* Inspect DNA */
 				inspect ();
 				break;
+
 			case 9: /* Export Results */
 				global.export_check = export_rpt ();
 				break;
+
 			default: /* Invalid Input */
 				printf ("Invalid input: %d\n", sel);
+
 		}
+
 	}
 }
 
@@ -186,14 +203,12 @@ void settings (void) {
 		/* Sanitized Scan */
 		scan_uint (&var);
 
-		/* Changing from a simple struct of global parameters to a linked list could fix this.
-			Displaying lists and rearranging could be done more flexibly.
-			But it is too much of a hassle for now, dissertation must come first.
-		*/
 		switch (var) {
+
 			case 0: /* Back */
 				printf ("Returning to main menu\n");
 				return;
+
 			case 1: /* global.GA.POP */
 				printf ("Input New Value: ");
 				scan_uint (&global.GA.POP);
@@ -205,6 +220,7 @@ void settings (void) {
 					printf ("Minimum value: %u\n", global.GA.POP);
 				}
 				break;
+
 			case 2: /* global.GA.GEN */
 				printf ("Input New Value: ");
 				scan_uint (&global.GA.GEN);
@@ -216,14 +232,17 @@ void settings (void) {
 					printf ("Minimum value: %u\n", global.GA.GEN);
 				}
 				break;
+
 			case 3: /* global.GA.MUTP */
 				printf ("Input New Value: ");
 				scan_float (&global.GA.MUTP);
 				break;
+
 			case 4: /* global.GA.POOL */
 				printf ("Input New Value: ");
 				scan_uint (&global.GA.POOL);
 				break;
+
 			case 5: /* global.CA.DIMX */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.DIMX);
@@ -237,6 +256,7 @@ void settings (void) {
 				/* Affects Truth Table Settings, Force Reinitialization */
 				global.tt_init = 0;
 				break;
+
 			case 6: /* global.CA.DIMY */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.DIMY);
@@ -248,6 +268,7 @@ void settings (void) {
 					printf ("Minimum value: %u\n", global.CA.DIMY);
 				}
 				break;
+
 			case 7: /* global.CA.COLOR */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.COLOR);
@@ -259,6 +280,7 @@ void settings (void) {
 					printf ("Minimum value: %u\n", global.CA.COLOR);
 				}
 				break;
+
 			case 8: /* global.CA.NB */
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.NB);
@@ -270,41 +292,50 @@ void settings (void) {
 					printf ("Even values not accepted. Set to %u\n", global.CA.NB);
 				}
 				break;
+
 			case 9: /* global.DATA.TRACK */
 				printf ("Input New Value: ");
 				scan_bool (&global.DATA.TRACK);
 				break;
+
 			case 10: /* global.DATA.TIME */
 				printf ("Input New Value: ");
 				scan_bool (&global.DATA.TIME);
 				break;
+
 			case 11: /* global.DATA.CAPRINT */
 				printf ("Input New Value: ");
 				scan_bool (&global.DATA.CAPRINT);
 				break;
+
 			case 12: /* global.DATA.EXPORT */
 				printf ("Input New Value: ");
 				scan_bool (&global.DATA.EXPORT);
 				break;
+
 			case 13: /* global.truth.time */
 				printf ("Input New Value: ");
 				scan_bool (&global.truth.time);
 				/* Affects Truth Table Settings, Force Reinitialization */
 				global.tt_init = 0;
 				break;
+
 			case 14: /* global.truth.step */
 				printf ("Input New Value: ");
 				scan_uint (&global.truth.step);
 				/* Affects Truth Table Settings, Force Reinitialization */
 				global.tt_init = 0;
 				break;
+
 			case 15: /* global.truth.f1 */
 				printf ("Input New Value: ");
 				scan_bool (&global.truth.f1);
 				break;
+
 			default:
 				printf ("Invalid input: %d\n", var);
 				break;
+
 		}
 	}
 }
@@ -395,7 +426,7 @@ void inspect (void) {
 
 	printf (ANSI_REVRS "\n\tDNA Inspection\n" ANSI_RESET);
 
-	unsigned int dimx, dimy, color, nb;
+	unsigned int color, nb;
 	char *buffer;
 	uint8_t *dna;
 
@@ -439,46 +470,33 @@ void inspect (void) {
 	}
 	printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
 
-	/* Sets desired grid size */
-	printf ("Desired DIMX (current: %d) : ", global.CA.DIMX);
-	scan_uint (&dimx);
-	if (dimx > MAX_CA_DIMX) {
-		dimx = MAX_CA_DIMX;
-		printf (ANSI_RED "DIMX Upper bound: %u\n" ANSI_RESET, MAX_CA_DIMX);
-	}
-	printf ("Desired DIMY (current: %d) : ", global.CA.DIMY);
-	scan_uint (&dimy);
-	if (dimy > MAX_CA_DIMY) {
-		dimy = MAX_CA_DIMY;
-		printf (ANSI_RED "DIMY Upper bound: %u\n" ANSI_RESET, MAX_CA_DIMY);
-	}
-
 	/* ===== CELLULAR AUTOMATON ===== */
 
 	/* Initialize Cellular Automaton grid seed */
-	global.CA.SEED = (uint8_t *) calloc (dimx, sizeof (uint8_t));
-	unsigned int mid = floor (dimx / 2);
+	global.CA.SEED = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
+	unsigned int mid = floor (MAX_CA_DIMX / 2);
 	global.CA.SEED [mid] = 1;
 
 	/* ===== FPGA SET GRID ===== */
 
 	/* Generate & Set Grid */
-	cellgen (global.CA.SEED, grid[0], dna);
-	for (unsigned int y=1; y<dimy; y++) {
-		cellgen (grid[y-1], grid[y], dna);
+	ca_gen_row (global.CA.SEED, grid [0], dna);
+	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
+		ca_gen_row (grid [y-1], grid [y], dna);
 	}
-	cellgen (grid[dimy-1], grid[0], dna);
-	for (unsigned int y=1; y<dimy; y++) {
-		cellgen (grid[y-1], grid[y], dna);
+
+	ca_gen_row (grid [MAX_CA_DIMY-1], grid [0], dna);
+	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
+		ca_gen_row (grid [y-1], grid [y], dna);
 	}
 
 	/* Sets FPGA & Checks Truth Table if FPGA is set */
 	if ((global.fpga_init == 1) && (global.tt_init == 1)) {
 
 		if (global.truth.f1 == 1) {
-			id_evaluate_f1 (grid);
+			id_evaluate_f1 ();
 		} else {
-			id_evaluate (grid);
+			id_evaluate ();
 		}
 
 	/* Print error message if FPGA or Truth Table is not set */
@@ -495,8 +513,35 @@ void inspect (void) {
 	/* ===== PRINT CA GRID ===== */
 
 	printf ("\n\e[100m\t\t-- Generated Logic Circuit --" ANSI_RESET "\n");
+
+	/* Print Seed Row */
+	ca_printrow (global.CA.SEED);
+
+	/* Print CA First Pass */
+	ca_gen_row (global.CA.SEED, grid [0], dna);
+	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
+		ca_gen_row (grid [y-1], grid [y], dna);
+	}
 	print_grid (grid);
-	std::cout << "\n";
+
+	/* Print Center Marker */
+	std::cout << "\e[103;30m";
+	for (unsigned int x=0; x<MAX_CA_DIMX; x++) {
+		if (x % 4 == 0) {
+			printf ("%X", x/4%16);
+		} else {
+			std::cout << "+";
+		}
+	}
+	std::cout << ANSI_RESET "\n";
+
+	/* Print CA Second Pass */
+	ca_gen_row (grid [MAX_CA_DIMY-1], grid [0], dna);
+	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
+		ca_gen_row (grid [y-1], grid [y], dna);
+	}
+	print_grid (grid);
+	std::cout << '\n';
 
 	/* ===== CLEANUP ===== */
 
@@ -506,7 +551,61 @@ void inspect (void) {
 	return;
 }
 
-// export_rpt
+bool export_rpt (void) {
+		FILE *fp;
+		char filename [64];
+
+		/* Get Current Local Time & Convert to Time Struct */
+		time_t raw_time;
+		struct tm *timeinfo;
+		time (&raw_time);
+		timeinfo = localtime (&raw_time);
+		/* Sets filename to YYYYMMDD-HHMMSS format */
+		strftime (filename, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
+
+		printf ("Exporting results as: \"%s\" ...", filename);
+
+		fp = fopen (filename, "w");
+		if (fp == NULL) {
+			printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
+			return 0;
+		}
+
+		/* ===== Write to File ===== */
+
+		fprintf (fp, "Simulation Report: %s\n\n", filename);
+
+		fprintf (fp, ">> Settings:\n"
+			"\tGeneration Limit: %u\n"
+			"\tPopulation Limit: %u\n"
+			"\tX-Axis Dimension: %u\n"
+			"\tY-Axis Dimension: %u\n"
+			"\tCA Color: %u\n"
+			"\tCA Neighbor: %u\n"
+			"\tTime to first Solution: ",
+			global.stats.gen, global.stats.pop,
+			global.stats.dimx, global.stats.dimy,
+			global.stats.color, global.stats.nb );
+
+		if (global.stats.tts != 0) {
+			fprintf (fp, "%u gens\n", global.stats.tts);
+		} else {
+			fprintf (fp, "Not Applicable\n");
+		}
+
+		fprintf (fp, "\nFitness Table\n"
+			"  Gen | Maximum | Minimum | Median | Average\n"
+			"--------------------------------------------\n");
+		for (uint32_t i=0; i<global.stats.gen; i++) {
+			fprintf (fp, " %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
+			global.stats.max [i], global.stats.min [i],
+			global.stats.med [i], global.stats.avg [i]);
+		}
+
+		fclose (fp);
+		printf (ANSI_GREEN " DONE\n" ANSI_RESET);
+		return 1;
+}
 
 void cleanup (void) {
 	if (global.fpga_init == 1) close (fd);
@@ -521,7 +620,7 @@ void cleanup (void) {
 
 	fpga_clear ();
 	if (grid != NULL) {
-		for (unsigned int y=0; y<dimy; y++) {
+		for (unsigned int y=0; y<MAX_CA_DIMY; y++) {
 			free (grid[y]);
 		}
 		free (grid);

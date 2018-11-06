@@ -18,7 +18,6 @@
 #include <vector>		/* vectors */
 #include <array>		/* arrays */
 #include <cstring>		/* strcmp */
-// #include <bitset>		/* bitset is unavailable on current DE0-Nano-SoC settings */
 
 // ----- Function Prototypes && Documentation ----- //
 
@@ -38,9 +37,6 @@ unsigned int main_menu (void);
 void settings (void);
 
 /* bool read_csv (void)
-	Parses the CSV file "CSV_FILE" defined in "globalparm.h"
-	Reads "global.truth.step" rows, excluding the header row.
-
 	CSV file must be in the following format:
 	-----------------
 	input output <row count>
@@ -70,7 +66,8 @@ void results (void);
 */
 void inspect (void);
 
-// export_rpt
+/* */
+bool export_rpt (void);
 
 /* void cleanup (void)
 	Cleanup global variable memory before exiting program.

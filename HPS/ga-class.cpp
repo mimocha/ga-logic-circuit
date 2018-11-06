@@ -33,11 +33,31 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *array) {
 	unsigned int idx, i, counter;
 	vector<uint16_t> live, dead;
 
-	/* Note: idx is equivalent to the rank, because array is pre-sorted.
-	 We will be keeping track of the idx, because it allows easy access to the original population via array[idx] and its properties.
+	/* 	Natural Selection
+		Selection is done by ranking and age.
+		Thus, it is required that the population be sorted by fitness before selection.
+
+		The higher the rank of an individual, the higher chance of survival.
+		Done by simple probability: p of death = rank. eg:
+		Rank 1% == 1% p of death
+		Rank 100% == 100% p of death
+
+		The older the individual, the lower the chance of survival.
+		This heuristics is added to prevent getting stuck in local optimas.
+		As a fit candidate can be alive indefinitely, aging forces new solutions to be considered.
+		This should hopefully increase the likelihood of a population getting 'unstuck'.
+
+		The possible downside of this is the possible loss of a solution.
+		As the fittest individual's trait is not guaranteed to get passed on,
+		simple probability might cause a newly found solution to be lossed.
+		This is still relatively unlikely, but a possibility to keep in mind.
+
+		NOTE: idx is equivalent to the rank, because the array is pre-sorted.
+		We will be keeping track of the idx, because it allows easy access to the original
+		population via array[idx] and its properties.
 	*/
 	for (idx=0; idx<global.GA.POP; idx++) {
-		uint16_t rng = rand () % global.GA.POP;
+		uint32_t rng = rand () % global.GA.POP + array[idx].age;
 		if ( rng >= idx ) { // 'Normal' selection
 			live.push_back(idx); // lives
 		} else {
@@ -236,6 +256,7 @@ void GeneticAlgorithm::print_dna (void) {
 void GeneticAlgorithm::fprint_dna (FILE *fp) {
 	uint32_t dna_length = pow (global.CA.COLOR, global.CA.NB);
 	for (uint32_t i = 0; i < dna_length; i++) {
-		fputc ((unsigned int) dna [i], fp);
+		char buff = dna [i] + 48;
+		fputc (buff, fp);
 	}
 }

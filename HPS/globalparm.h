@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.08
+#define VERSION 1.09
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.
@@ -61,7 +61,7 @@
 #define GYDIM 40 // Fitness Graph Y-Dimensions
 
 /* Estimated Number of Individuals Evaluated per Second */
-#define INDV_PER_SEC 190
+#define INDV_PER_SEC 200
 
 /* Arbitrary Value for Maximum F1 Score */
 #define F1_MAX 1000
@@ -110,7 +110,7 @@ struct param_data {
 		Prints the CA Grid of the fittest individual at the end of the experiment.
 	*/
 	bool CAPRINT = 1;
-	/* Export data from the experiment to file | (Off for now)*/
+	/* Export data from the experiment to file*/
 	bool EXPORT = 0;
 };
 

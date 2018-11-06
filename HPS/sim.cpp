@@ -103,10 +103,10 @@ void sim_init (void) {
 	*/
 	if (global.truth.f1 == 1) {
 		fit_lim = F1_MAX;
-		time_est = (gen_lim * pop_lim / 2 / (INDV_PER_SEC - 20));
+		time_est = ((float) gen_lim * pop_lim / 2 / (INDV_PER_SEC - 20));
 	} else {
 		fit_lim = dimx * global.truth.step;
-		time_est = (gen_lim * pop_lim / 2 / INDV_PER_SEC);
+		time_est = ((float) gen_lim * pop_lim / 2 / INDV_PER_SEC);
 	}
 
 	/* Resets Data Export flag */
@@ -146,13 +146,13 @@ bool run_sim (void) {
 			3. Generate first row again, with last row of grid
 			4. Iterate over entire grid again, same as step 2.
 			*/
-			cellgen (global.CA.SEED, grid[0], indv[idx].dna);
+			ca_gen_row (global.CA.SEED, grid[0], indv[idx].dna);
 			for (unsigned int y=1; y<dimy; y++) {
-				cellgen (grid[y-1], grid[y], indv[idx].dna);
+				ca_gen_row (grid[y-1], grid[y], indv[idx].dna);
 			}
-			cellgen (grid[dimy-1], grid[0], indv[idx].dna);
+			ca_gen_row (grid[dimy-1], grid[0], indv[idx].dna);
 			for (unsigned int y=1; y<dimy; y++) {
-				cellgen (grid[y-1], grid[y], indv[idx].dna);
+				ca_gen_row (grid[y-1], grid[y], indv[idx].dna);
 			}
 
 			/* Edit FPGA RAM & Evaluate Circuit
@@ -187,7 +187,12 @@ bool run_sim (void) {
 		/* Progress Status Report */
 		if ((global.stats.tts == 0) && (indv[0].fit >= fit_lim )) {
 			global.stats.tts = gen;
+
+			for (int i=0; i<MAX_CA_DIMX; i++) {
+				saved_dna [i] = indv[0].dna[i];
+			}
 		}
+
 		if (gen % 10 == 0) {
 			// Current Progress
 			printf ("\t%4u / %4u ", gen, global.GA.GEN);
@@ -197,10 +202,10 @@ bool run_sim (void) {
 				time (&timer_end);
 				float eta = time_est - difftime (timer_end, timer_begin);
 				if (eta > 0) {
-					printf (" | ETA:%8.1f s", eta);
+					printf (" | ETA: %6.0f s", eta);
 				} else {
 					// The estimate could be wrong...
-					printf (" | ETA: < 0 s...");
+					printf (" | ETA: < 0 s ...");
 				}
 			}
 
@@ -216,14 +221,11 @@ bool run_sim (void) {
 	/* ===== END SIMULATION LOOP ===== */
 
 	/* ===== REPORT FINAL RESULTS ===== */
-	// Sorts one last time
-	GeneticAlgorithm::Sort (indv);
 
 	report ();
 
-	if (global.DATA.EXPORT == 1) {
-		global.export_check = export_rpt (indv);
-	}
+	if (global.DATA.EXPORT == 1)
+		global.export_check = auto_export (indv);
 
 	/* ===== CLEANUP =====
 	Manually Memory Management Memo //
@@ -247,12 +249,6 @@ bool run_sim (void) {
 	sim_cleanup ();
 
 	return 1;
-}
-
-void print_grid (uint8_t **grid) {
-	for (unsigned int i=0; i<global.CA.DIMY; i++) {
-		ca_graph (grid [i], global.CA.DIMX);
-	}
 }
 
 uint64_t bitcount64 (uint64_t x) {
@@ -344,7 +340,7 @@ uint32_t evaluate_f1 (void) {
 	return (uint32_t) floor (F1_MAX * f1_score);
 }
 
-void id_evaluate (uint8_t **grid) {
+void id_evaluate (void) {
 	uint32_t fitness = 0;
 	const uint32_t fit_lim = global.CA.DIMX * global.truth.step;
 	uint64_t observed;
@@ -379,7 +375,7 @@ void id_evaluate (uint8_t **grid) {
 	return;
 }
 
-void id_evaluate_f1 (uint8_t **grid) {
+void id_evaluate_f1 (void) {
 	uint32_t fitness;
 	uint64_t observed;
 	/* True Positive, False Positive, False Negative */
@@ -437,6 +433,13 @@ void report (void) {
 	/* Solution found */
 	} else {
 		cout << ANSI_GREEN "First solution found in: " << global.stats.tts << " gen\n" ANSI_RESET;
+		printf ("First Solution:\n");
+
+		for (int i=0; i<MAX_CA_DIMX; i++) {
+			printf ("%X", saved_dna [i]);
+		}
+
+		cout << "\n";
 	}
 
 	printf ("Final Fitness Statistics:\n"
@@ -456,22 +459,22 @@ void report (void) {
 	cout << "\n\n";
 
 	/* Generate & Set Grid */
-	cellgen (global.CA.SEED, grid[0], indv[0].dna);
+	ca_gen_row (global.CA.SEED, grid[0], indv[0].dna);
 	for (unsigned int y=1; y<dimy; y++) {
-		cellgen (grid[y-1], grid[y], indv[0].dna);
+		ca_gen_row (grid[y-1], grid[y], indv[0].dna);
 	}
-	cellgen (grid[dimy-1], grid[0], indv[0].dna);
+	ca_gen_row (grid[dimy-1], grid[0], indv[0].dna);
 	for (unsigned int y=1; y<dimy; y++) {
-		cellgen (grid[y-1], grid[y], indv[0].dna);
+		ca_gen_row (grid[y-1], grid[y], indv[0].dna);
 	}
 
 	/* Sets FPGA & Checks Truth Table if FPGA is set */
 	if ((global.fpga_init == 1) && (global.tt_init == 1)) {
 
 		if (global.truth.f1 == 1) {
-			id_evaluate_f1 (grid);
+			id_evaluate_f1 ();
 		} else {
-			id_evaluate (grid);
+			id_evaluate ();
 		}
 
 	/* Print error message if FPGA or Truth Table is not set */
@@ -507,12 +510,7 @@ void sim_cleanup (void) {
 	fpga_clear ();
 }
 
-bool export_rpt (GeneticAlgorithm *array) {
-	if (global.run_check == 0) {
-		printf ("No simulation results.\n");
-		return 0;
-	}
-
+bool auto_export (GeneticAlgorithm *array) {
 	FILE *fp;
 	char filename [64];
 
@@ -521,10 +519,10 @@ bool export_rpt (GeneticAlgorithm *array) {
 	struct tm *timeinfo;
 	time (&raw_time);
 	timeinfo = localtime (&raw_time);
-	/* Sets filename to YYYY-MM-DD_HH-MM-SS format */
-	strftime (filename, 64, "%F_%H-%M-%S.txt", timeinfo);
+	/* Sets filename to YYYYMMDD-HHMMSS format */
+	strftime (filename, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
 
-	printf ("Exporting results as: \"%s\"\n", filename);
+	printf ("Exporting results as: \"%s\" ...", filename);
 
 	fp = fopen (filename, "w");
 	if (fp == NULL) {
@@ -566,9 +564,9 @@ bool export_rpt (GeneticAlgorithm *array) {
 	/* ===== Final Population Results ===== */
 
 	if ( array != NULL ) {
-		fprintf (fp, "\n\n Resulting Individuals\n"
+		fprintf (fp, "\n\n Top 10 Individuals\n"
 			"UID | FITNESS | DNA \n");
-		for (uint32_t i=0; i<global.stats.pop; i++) {
+		for (uint32_t i=0; i<10; i++) {
 			fprintf (fp, " %u | %u | ", array[i].uid, array[i].fit);
 			array[i].fprint_dna (fp);
 			fputc ('\n', fp);
@@ -576,6 +574,6 @@ bool export_rpt (GeneticAlgorithm *array) {
 	}
 
 	fclose (fp);
-	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
+	printf (ANSI_GREEN " DONE\n" ANSI_RESET);
 	return 1;
 }
