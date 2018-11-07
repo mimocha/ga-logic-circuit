@@ -1,4 +1,4 @@
-/*	Main C++ file for this Genetic Algorithm program.
+/*	Main C++ file for the Genetic Algorithm main file
 
 	MIT License
 
@@ -21,10 +21,10 @@
 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE
-
 */
 
 #include "ga-main.hpp"	/* Standard Includes & Function Prototypes */
+#include "ansi.hpp"		/* Colored Terminal Outputs */
 #include "globalparm.h"	/* Global Parameters */
 #include "misc.hpp"		/* Miscellaneous Functions */
 #include "ga-class.hpp"	/* Genetics Algorithm Class */
@@ -34,28 +34,18 @@
 
 using namespace std;
 
+/* Cellular Automaton Virtual Grid */
+// uint8_t **grid;
+
 /* Initializes Global UID Counter */
 uint32_t GeneticAlgorithm::object_count = 0;
 
 int main (int argc, char **argv) {
-	input_argument (argc, argv);
-
 	/* Variable for selecting menu option */
 	static unsigned int sel;
 
-	global.fpga_init = fpga_init ();
-	ca_init (global.CA.NB, global.CA.COLOR, global.CA.DIMX, global.CA.DIMY);
-
-	/* Allocates 2D working array for Cellular Automaton //
-		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
-		This mistake will cause attempts to free grid[0] at the end to fail, throwing a double free.
-
-		NOTE: **grid always has the physical dimension allocated, not the user set dimension
-	*/
-	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
-	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
-		grid [i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
-	}
+	/* Main Initialization Function */
+	main_init ();
 
 	/* Main Menu */
 	while (1) {
@@ -65,9 +55,11 @@ int main (int argc, char **argv) {
 		switch (sel) {
 
 			case 0: /* Exit */
-				printf (ANSI_BLINK "Exiting Program.\n" ANSI_RESET);
-				cleanup ();
+				printf ("\nExiting Program.\n");
+				main_cleanup ();
 				ca_cleanup ();
+				global.fpga_init = fpga_cleanup ();
+
 				return EXIT_SUCCESS;
 
 			case 1: /* About */
@@ -79,11 +71,11 @@ int main (int argc, char **argv) {
 				break;
 
 			case 3: /* Initialize FPGA */
-				global.fpga_init = fpga_init ();
+				global.fpga_init = fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
 				break;
 
 			case 4: /* FPGA Circuit Verification */
-				fpga_verify ();
+				fpga_verify (grid);
 				break;
 
 			case 5: /* Read Truth Table CSV */
@@ -114,7 +106,52 @@ int main (int argc, char **argv) {
 	}
 }
 
-/* ----- Other Handling Functions ----- */
+/* ========== Initialize / Cleanup Functions ========== */
+
+void main_init (void) {
+	printf ("Initializing GA Program...\n");
+
+	/* Initialize FPGA */
+	global.fpga_init = fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
+
+	/* Initialize CA */
+	ca_init (global.CA.NB, global.CA.COLOR, global.CA.DIMX, global.CA.DIMY);
+
+	/* Allocates 2D working array for Cellular Automaton
+		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
+		This mistake will cause attempts to free grid[0] at the end to fail, throwing a double free.
+
+		NOTE: **grid will always have the physical dimension allocated, not the user set dimension
+	*/
+	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
+	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
+		grid [i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
+	}
+
+}
+
+void main_cleanup (void) {
+	printf ("Cleaning up main... ");
+
+	if (global.stats.avg != NULL) free (global.stats.avg);
+	if (global.stats.med != NULL) free (global.stats.med);
+	if (global.stats.max != NULL) free (global.stats.max);
+	if (global.stats.min != NULL) free (global.stats.min);
+
+	if (global.truth.input != NULL) free (global.truth.input);
+	if (global.truth.output != NULL) free (global.truth.output);
+
+	if (grid != NULL) {
+		for (unsigned int y=0; y<MAX_CA_DIMY; y++) {
+			free (grid[y]);
+		}
+		free (grid);
+	}
+
+	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
+}
+
+/* ========== Menu Options ========== */
 
 unsigned int main_menu (void) {
 	unsigned int var;
@@ -180,8 +217,8 @@ void settings (void) {
 			"\t3. GA Mutation Prob\t| Current Value: %.3f\n"
 			"\t4. GA Pool Size\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Cellular Automaton Parameters =====\n" ANSI_RESET
-			"\t5. CA X Axis Dimension\t| Current Value: %u\n"
-			"\t6. CA Y Axis Dimension\t| Current Value: %u\n"
+			ANSI_GRAY "\t5. CA X Axis Dimension\t| Current Value: %u\n" ANSI_RESET
+			ANSI_GRAY "\t6. CA Y Axis Dimension\t| Current Value: %u\n" ANSI_RESET
 			"\t7. CA Color Count\t| Current Value: %u\n"
 			"\t8. CA Neighbor Count\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Data Parameters =====\n" ANSI_RESET
@@ -244,6 +281,8 @@ void settings (void) {
 				break;
 
 			case 5: /* global.CA.DIMX */
+				printf ("Cannot Be Changed\n");
+				/*
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.DIMX);
 				if (global.CA.DIMX > MAX_CA_DIMX) {
@@ -253,11 +292,14 @@ void settings (void) {
 					global.CA.DIMX = 1;
 					printf ("Minimum value: %u\n", global.CA.DIMX);
 				}
-				/* Affects Truth Table Settings, Force Reinitialization */
+				// Affects Truth Table Settings, Force Reinitialization
 				global.tt_init = 0;
+				*/
 				break;
 
 			case 6: /* global.CA.DIMY */
+				printf ("Cannot Be Changed\n");
+				/*
 				printf ("Input New Value: ");
 				scan_uint (&global.CA.DIMY);
 				if (global.CA.DIMY > MAX_CA_DIMY) {
@@ -267,6 +309,7 @@ void settings (void) {
 					global.CA.DIMY = 1;
 					printf ("Minimum value: %u\n", global.CA.DIMY);
 				}
+				*/
 				break;
 
 			case 7: /* global.CA.COLOR */
@@ -344,9 +387,11 @@ bool read_csv (void) {
 	FILE *fp;
 	char filename [80];
 
+	/* Get filename */
 	printf ("Enter file to read from: ");
 	scanf ("%s", filename);
 
+	/* Open file in read mode */
 	fp = fopen (filename, "r");
 	if (fp == NULL) {
 		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
@@ -358,14 +403,14 @@ bool read_csv (void) {
 	/* Checks Header Row */
 	char buffer [16];
 
-	/* Checks input header */
+	/* Checks input column header */
 	fscanf (fp, "%s", buffer);
 	if ( strcmp(buffer, "input") != 0 ) {
 		printf (ANSI_RED "FAILED -- Missing input column\n" ANSI_RESET);
 		return 0;
 	}
 
-	/* Checks output header */
+	/* Checks output column header */
 	fscanf (fp, "%s", buffer);
 	if ( strcmp(buffer, "output") != 0 ) {
 		printf (ANSI_RED "FAILED -- Missing output column\n" ANSI_RESET);
@@ -375,7 +420,7 @@ bool read_csv (void) {
 	/* Gets row count */
 	fscanf (fp, "%u", &global.truth.step);
 
-	/* Clears any previously set truth table, then calloc STEP number of items */
+	/* Clears any previously set truth table, then calloc row number of items */
 	if (global.truth.input != NULL) free (global.truth.input);
 	global.truth.input = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
 	if (global.truth.output != NULL) free (global.truth.output);
@@ -480,15 +525,8 @@ void inspect (void) {
 	/* ===== FPGA SET GRID ===== */
 
 	/* Generate & Set Grid */
-	ca_gen_row (global.CA.SEED, grid [0], dna);
-	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
-		ca_gen_row (grid [y-1], grid [y], dna);
-	}
-
-	ca_gen_row (grid [MAX_CA_DIMY-1], grid [0], dna);
-	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
-		ca_gen_row (grid [y-1], grid [y], dna);
-	}
+	ca_gen_grid (grid, dna, global.CA.SEED);
+	ca_gen_grid (grid, dna);
 
 	/* Sets FPGA & Checks Truth Table if FPGA is set */
 	if ((global.fpga_init == 1) && (global.tt_init == 1)) {
@@ -515,14 +553,11 @@ void inspect (void) {
 	printf ("\n\e[100m\t\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 
 	/* Print Seed Row */
-	ca_printrow (global.CA.SEED);
+	ca_print_row (global.CA.SEED);
 
 	/* Print CA First Pass */
-	ca_gen_row (global.CA.SEED, grid [0], dna);
-	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
-		ca_gen_row (grid [y-1], grid [y], dna);
-	}
-	print_grid (grid);
+	ca_gen_grid (grid, dna, global.CA.SEED);
+	ca_print_grid (grid);
 
 	/* Print Center Marker */
 	std::cout << "\e[103;30m";
@@ -536,12 +571,22 @@ void inspect (void) {
 	std::cout << ANSI_RESET "\n";
 
 	/* Print CA Second Pass */
-	ca_gen_row (grid [MAX_CA_DIMY-1], grid [0], dna);
-	for (unsigned int y=1; y<MAX_CA_DIMY; y++) {
-		ca_gen_row (grid [y-1], grid [y], dna);
+	ca_gen_grid (grid, dna);
+	ca_print_grid (grid);
+
+	/* Print Center Marker */
+	std::cout << "\e[103;30m";
+	for (unsigned int x=0; x<MAX_CA_DIMX; x++) {
+		if (x % 4 == 0) {
+			printf ("%X", x/4%16);
+		} else {
+			std::cout << "+";
+		}
 	}
-	print_grid (grid);
-	std::cout << '\n';
+	std::cout << ANSI_RESET "\n";
+
+	/* Line Break */
+	std::cout << std::endl;
 
 	/* ===== CLEANUP ===== */
 
@@ -607,22 +652,36 @@ bool export_rpt (void) {
 		return 1;
 }
 
-void cleanup (void) {
-	if (global.fpga_init == 1) close (fd);
 
-	if (global.stats.avg != NULL) free (global.stats.avg);
-	if (global.stats.med != NULL) free (global.stats.med);
-	if (global.stats.max != NULL) free (global.stats.max);
-	if (global.stats.min != NULL) free (global.stats.min);
 
-	if (global.truth.input != NULL) free (global.truth.input);
-	if (global.truth.output != NULL) free (global.truth.output);
-
-	fpga_clear ();
-	if (grid != NULL) {
-		for (unsigned int y=0; y<MAX_CA_DIMY; y++) {
-			free (grid[y]);
-		}
-		free (grid);
-	}
-}
+// void rand_tt (void) {
+// 	/* Checks & Frees first, just in case */
+// 	if (global.truth.input != NULL) free (global.truth.input);
+// 	global.truth.input = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
+// 	if (global.truth.output != NULL) free (global.truth.output);
+// 	global.truth.output = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
+//
+// 	/* Initializing with random number
+// 		RAND_MAX is defined as a 32-bit number.
+// 		Thus, two bit-shifted 32-bit numbers, combine into one, 64-bit random number.
+//
+// 		Its Shit. I know.
+// 	*/
+// 	for (unsigned int i=0; i<global.truth.step; i++) {
+// 		global.truth.input [i] |= rand ();
+// 		global.truth.input [i] <<= 32;
+// 		global.truth.input [i] |= rand ();
+// 		// Right Shifts for grids narrower than 64 bit
+// 		global.truth.input [i] >>= (64 - global.CA.DIMX);
+//
+//
+// 		global.truth.output [i] |= rand ();
+// 		global.truth.output [i] <<= 32;
+// 		global.truth.output [i] |= rand ();
+// 		// Right Shifts for grids narrower than 64 bit
+// 		global.truth.output [i] >>= (64 - global.CA.DIMX);
+// 	}
+//
+// 	global.tt_init = 1;
+// 	printf ( ANSI_GREEN "DONE" ANSI_RESET "\n");
+// }

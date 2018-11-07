@@ -22,49 +22,43 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE
 
+	DNA Length Cheat Sheet
+		Base-K   | Index range == LUT length | LUT permutations
+		------------------------------------------
+		> Base-2   | 8   | 256
+		> Base-3   | 27  | 7 625 597 484 987
+		> Base-4   | 64  | 3.402 823 669 e38
+		... (LUT permutations grow exponentially) ...
+		> Base-8   | 512 | 2.410 312 426 e462
+		> Base-10  | 1000 | 10 e1000
+		... (Very-large-permutations) ...
+		> Base-16  | 4096 | ...
+		> Base-32  | 32768 | ...
+		> Base-40  | 64000 | ... << Max for 16-bit number
+		> Base-64  | 262144 | ...
+		> Base-128 | 2-million | ...
+		> Base-256 | 16-million | 1.196 e40 403 562
+		-------------------------------------------
 */
 
 #ifndef CA_HPP
 #define CA_HPP
 
-// ----- Standard Library Definition ----- //
+/* ========== Standard Library Include ========== */
 
-#include <stdio.h>		/* Standard I/O */
-#include <stdlib.h>		/* calloc, free, rand, srand */
+#include <stdio.h>		/* printf, perror */
+#include <stdlib.h>		/* calloc, free */
 #include <stdint.h>		/* uint definitions */
-#include <math.h>		/* pow, round, ceiling */
-#include <iostream>		/* cin, cout */
+#include <iostream>		/* cout */
+#include <math.h>		/* pow */
 
-/* ----- Define Colors for Pretty Colored Outputs ----- */
-// https://misc.flogisoft.com/bash/tip_colors_and_formatting
-#define ANSI_DFLT	"\e[39m"
-#define ANSI_RESET	"\e[0m"
 
-#define ANSI_BOLD	"\e[1m"
-#define ANSI_UNDERL	"\e[4m"
-#define ANSI_BLINK	"\e[5m"
-#define ANSI_REVRS	"\e[7m"
-#define ANSI_HIDDEN	"\e[8m"
 
-#define ANSI_BLACK	"\e[0;30m"
-#define ANSI_RED	"\e[0;31m"
-#define ANSI_GREEN	"\e[0;32m"
-#define ANSI_YELLOW	"\e[0;33m"
-#define ANSI_BLUE	"\e[0;34m"
-#define ANSI_PURPL	"\e[0;35m"
-#define ANSI_CYAN	"\e[0;36m"
+/* ========== Miscellaneous Functions ========== */
 
-#define ANSI_GRAY	"\e[1;30m"
-#define ANSI_LRED	"\e[1;31m"
-#define ANSI_LGREEN	"\e[1;32m"
-#define ANSI_LBLUE	"\e[1;34m"
-#define ANSI_LPURPL	"\e[1;35m"
-#define ANSI_LCYAN	"\e[1;36m"
-#define ANSI_WHITE	"\e[1;37m"
+/* void ca_init (const unsigned int nbin, const unsigned int color_in,
+	const unsigned int dimx_in, const unsigned int dimy_in)
 
-/* ===== PUBLIC FUNCTIONS ===== */
-
-/* void ca_init (const unsigned int, const unsigned int, const unsigned int, const unsigned int)
 	Initializes CA file's global variable.
 	Done once at the beginning of every simulation.
 
@@ -72,7 +66,8 @@
 	In this order:
 	Neighbor Count, Color Count, Grid DIMX, Grid DIMY
 */
-void ca_init (const unsigned int, const unsigned int, const unsigned int, const unsigned int);
+void ca_init (const unsigned int nbin, const unsigned int color_in,
+	const unsigned int dimx_in, const unsigned int dimy_in);
 
 /* void ca_cleanup (void)
 	Cleans up any dynamically allocated memory on the CA global level.
@@ -80,64 +75,100 @@ void ca_init (const unsigned int, const unsigned int, const unsigned int, const 
 */
 void ca_cleanup (void);
 
-/* void ca_gen (uint8_t *input, uint8_t *output, const uint8_t *DNA)
-	This function applies the rules of a 1D Cellular Automaton.
-	Working row by row, this function takes the previous CA row to generate the next CA row,
-	given a CA rule set - in this case, a DNA string.
+/* static bool ca_not_init (void)
+	Checks if CA is not initialized.
 
-	This function can only handle odd-numbered neighbor counts.
-	Out-of-bound neighbor cells are replaced with zeroes.
+	Prints error message and returns TRUE when it is NOT initialized.
+	Returns FALSE when it IS initialized.
 
-	  Base-K   | Index range == LUT length | LUT permutations
-	------------------------------------------
-	> Base-2   | 8   | 256
-	> Base-3   | 27  | 7 625 597 484 987
-	> Base-4   | 64  | 3.402 823 669 e38
-	... (LUT permutations grow exponentially) ...
-	> Base-8   | 512 | 2.410 312 426 e462
-	> Base-10  | 1000 | 10 e1000
-	... (Very-large-permutations) ...
-	> Base-16  | 4096 | ...
-	> Base-32  | 32768 | ...
-	> Base-40  | 64000 | ... << Max for 16-bit number
-	> Base-64  | 262144 | ...
-	> Base-128 | 2-million | ...
-	> Base-256 | 16-million | 1.196 e40 403 562
-	-------------------------------------------
+	Use this function as a roadblock,
+	to prevent usage of CA functions without proper initializations.
 */
-void ca_gen_row (const uint8_t *input, uint8_t *output, const uint8_t *DNA);
+// static bool ca_not_init (void);
 
-/* ===== STATIC FUNCTIONS ===== */
 
-/* static uint8_t ca_func (const uint8_t *neighbor)
-	This function takes in a given neighboring cell array, and converts it into an index number.
-	The conversion is done automatically with respect to the CA Color and Neighbor count.
-	This algorithm can handle any arbitrary number of Neighbor and Color. (Theoretically)
 
-	How this works:
-	The neighbor array is handled as a string of numbers, base 'Color Count'.
+/* ========== Generation Functions ========== */
+
+/* static uint8_t ca_func (const uint8_t *const neighbor)
+	Takes in a given neighboring cell array, and converts it into an index number.
+	The neighbor array is handled as a string of numbers, of base 'Color Count'.
 	The number string is provided to this function in LSB format.
 		ie, neighbor[0] < neighbor[1] < neighbor[2] ...
-	The decimal value of this number string is calculated and stored in 'uint32_t idx'.
-		uint32_t holds up to 2^32 or ~4.29 billion.
-	This index number is returned.
+	This algorithm can handle any arbitrary number of Neighbor and Color. (Theoretically)
+	The decimal value of this number string is calculated and returned as uint32_t.
+		uint32_t holds up to 2^32 or ~4.29 billion. -> DNA length of ~4.29 bil.
+
+	Input is a const pointer to const uint8_t.
+	The values of the array, and the pointer does not change within this function.
 */
-static uint8_t ca_func (const uint8_t *neighbor);
+// static uint8_t ca_func (const uint8_t *const neighbor);
+
+/* void ca_gen_row (const uint8_t *const input, uint8_t *const output,
+	const uint8_t *const DNA)
+
+	Generates a 1-Dimensional CA array, given a DNA string.
+	Works cell-by-cell, generating the output array, using the input array cells.
+	Out-of-bound neighbor cells are replaced with zeroes.
+
+	Inputs:
+	input is a const pointer to a const uint8_t. Neither the pointer nor the value will change.
+	output is a const pointer. The values of the array will change, but the pointer wont.
+	DNA is a const pointer to a const uint8_t. Neither the pointer nor the value will change.
+*/
+void ca_gen_row (const uint8_t *const input, uint8_t *const output,
+	const uint8_t *const DNA);
+
+/* void ca_gen_grid (uint8_t *const *const grid, const uint8_t *const DNA,
+	const uint8_t *const seed = NULL)
+
+	Generates a 2-Dimensional CA grid, given a dna string.
+	A seed is optional.
+	If provided, the first row is generated using the seed.
+	If not, the first row is generated using the last row of the grid.
+
+	Inputs:
+	grid is a double const pointer. The values of the grid will change, but the pointer wont.
+	DNA is a const pointer to a const uint8_t. Neither the pointer nor the value will change.
+	seed is a const pointer to a const uint8_t. Neither the pointer nor the value will change.
+	If seed is not provided, it is defaulted to NULL.
+*/
+void ca_gen_grid (uint8_t *const *const grid, const uint8_t *const DNA,
+	const uint8_t *const seed = NULL);
+
+
+
+/* ========== Printing Functions ========== */
 
 /* static void ca_print (const uint8_t cell)
 	Prints a predetermined colored-ASCII character to terminal, based on a cell's value.
-*/
-static void ca_print (const uint8_t cell);
 
-/* void ca_printrow (const uint8_t *array) //
-	Prints a single line of CA Grid, of given length.
-*/
-void ca_printrow (const uint8_t *array);
+	Input is a constant unsigned char 'cell'
+	The value of 'cell' cannot be changed within this function.
 
-/* void print_grid (uint8_t **grid)
-	Prints the working array grid onto terminal.
+	Does not clear styling at the end.
 */
-void print_grid (uint8_t **grid);
+// static void ca_print (const uint8_t cell);
 
+/* void ca_print_row (const uint8_t *const array)
+	Prints a 1-Dimensional CA array.
+
+	Input is a constant pointer to a constant value,
+	neither the value pointed to, nor the pointer itself can be changed inside this function.
+
+	Clears styling at the end.
+*/
+void ca_print_row (const uint8_t *const array);
+
+/* void ca_print_grid (const uint8_t *const *const grid)
+	Prints a 2-Dimensional CA array.
+
+	Input is a double constant pointer to a constant value.
+	ie: A constant pointer, to a constant pointer, to a constant value.
+	None of the pointers, nor the values pointed to can be changed inside this function.
+
+	Does not clear styling at the end (already handled by 'ca_print_row()').
+*/
+void ca_print_grid (const uint8_t *const *const grid);
 
 #endif

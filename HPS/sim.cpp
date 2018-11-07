@@ -1,6 +1,13 @@
 /* Simulation Wrapper File */
 
 void sim_init (void) {
+
+	/* If no Truth Table set -- Fails */
+	if (global.tt_init == 0) {
+		printf (ANSI_RED "No truth table defined.\n" ANSI_RESET);
+		return;
+	}
+
 	/* Prints Parameter List */
 	printf (ANSI_REVRS "\n\t>>>-- Initializing Simulation --<<<\n" ANSI_RESET
 		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
@@ -61,41 +68,6 @@ void sim_init (void) {
 		global.stats.min = (unsigned int *) calloc (global.GA.GEN, sizeof (unsigned int));
 	}
 
-	/* If no Truth Table set -- Initialize randomly */
-	if (global.tt_init == 0) {
-		printf ("No truth table defined. Generating random truth table... ");
-
-		/* Checks & Frees first, just in case */
-		if (global.truth.input != NULL) free (global.truth.input);
-		global.truth.input = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
-		if (global.truth.output != NULL) free (global.truth.output);
-		global.truth.output = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
-
-		/* Initializing with random number
-			RAND_MAX is defined as a 32-bit number.
-			Thus, two bit-shifted 32-bit numbers, combine into one, 64-bit random number.
-
-			Its Shit. I know.
-		*/
-		for (unsigned int i=0; i<global.truth.step; i++) {
-			global.truth.input [i] |= rand ();
-			global.truth.input [i] <<= 32;
-			global.truth.input [i] |= rand ();
-			// Right Shifts for grids narrower than 64 bit
-			global.truth.input [i] >>= (64 - global.CA.DIMX);
-
-
-			global.truth.output [i] |= rand ();
-			global.truth.output [i] <<= 32;
-			global.truth.output [i] |= rand ();
-			// Right Shifts for grids narrower than 64 bit
-			global.truth.output [i] >>= (64 - global.CA.DIMX);
-		}
-
-		global.tt_init = 1;
-		printf ( ANSI_GREEN "DONE" ANSI_RESET "\n");
-	}
-
 	/* Maxmimum fitness possible
 		Calculated as: (Output bit width) * (Truth Table Steps)
 		Or as defined by F1_MAX
@@ -103,10 +75,10 @@ void sim_init (void) {
 	*/
 	if (global.truth.f1 == 1) {
 		fit_lim = F1_MAX;
-		time_est = ((float) gen_lim * pop_lim / 2 / (INDV_PER_SEC - 20));
+		time_est = ((float) gen_lim * pop_lim / (INDV_PER_SEC - 20));
 	} else {
 		fit_lim = dimx * global.truth.step;
-		time_est = ((float) gen_lim * pop_lim / 2 / INDV_PER_SEC);
+		time_est = ((float) gen_lim * pop_lim / INDV_PER_SEC);
 	}
 
 	/* Resets Data Export flag */
@@ -165,6 +137,7 @@ bool run_sim (void) {
 				If FPGA is unavailable, sets fitness as a random number.
 			*/
 			if (global.fpga_init == 1) {
+				fpga_clear ();
 				fpga_set_grid (grid);
 
 				if (global.truth.f1 == 0) {
@@ -173,7 +146,6 @@ bool run_sim (void) {
 					indv[idx].fit = evaluate_f1 ();
 				}
 
-				fpga_clear ();
 			} else {
 				indv[idx].fit = rand () % 100;
 			}
@@ -491,7 +463,7 @@ void report (void) {
 	/* Optional Print of Fittest Solution */
 	if (global.DATA.CAPRINT == 1) {
 		printf ("\n\e[100m\t-- Generated Logic Circuit --" ANSI_RESET "\n");
-		print_grid (grid);
+		ca_print_grid (grid);
 		cout << endl;
 	}
 }

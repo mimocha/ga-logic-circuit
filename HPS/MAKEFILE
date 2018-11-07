@@ -7,37 +7,61 @@ CC = arm-linux-gnueabihf-g++
 # Compiler Flags
 CFLAGS = -g -Wall -std=c++11
 # Compiler Include (Altera Libraries)
-INCLUDE = -I../hwlib/include/ -I../hwlib/include/soc_cv_av/ -I../ref/
+ALT_INCLUDE = -I../hwlib/include/ -I../hwlib/include/soc_cv_av/ -I../ref/
 # Output program name
-OUTPUT = ga.prog
+OUTPUT-ARM = ga.prog
+OUTPUT-PC = ga.exe
 
 # ================================================================
 # X86 PC COMPILATION
 # ================================================================
+.PHONY : pc pc-link
 
+# Compile Recipe for X86 PC
+pc : pc-link clean
 
+# Compile CA File
+pc-ca.o :
+	g++ $(CFLAGS) ca.cpp -o pc-ca.o -c
+
+# Compile FPGA File
+pc-fpga.o :
+	$(CC) $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o pc-fpga.o -c
+
+# Compile GA Main File
+pc-main.o :
+	g++ $(CFLAGS) $(ALT_INCLUDE) ga-main.cpp -o pc-main.o -c
+
+# Links together all the files
+pc-link : pc-main.o pc-fpga.o pc-ca.o
+	g++ -o $(OUTPUT-PC) pc-main.o pc-fpga.o pc-ca.o
 
 # ================================================================
 # ARM COMPILATION
 # ================================================================
+.PHONY : arm arm-link
 
 # Cross Compile Recipe for ARM
-arm : arm-ca arm-main arm-link clean
+arm : arm-link clean
 
 # Compile CA File
-arm-ca :
-	$(CC) $(CFLAGS) ca.cpp -o ca.o -c
+arm-ca.o :
+	$(CC) $(CFLAGS) ca.cpp -o arm-ca.o -c
+
+# Compile FPGA File
+arm-fpga.o :
+	$(CC) $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o arm-fpga.o -c
 
 # Compile GA Main File
-arm-main :
-	$(CC) $(CFLAGS) $(INCLUDE) ga-main.cpp -o ga-main.o -c
+arm-main.o :
+	$(CC) $(CFLAGS) $(ALT_INCLUDE) ga-main.cpp -o arm-main.o -c
 
 # Links together all the files
-arm-link : ga-main.o ca.o
-	$(CC) -o $(OUTPUT) ga-main.o ca.o
+arm-link : arm-main.o arm-fpga.o arm-ca.o
+	$(CC) -o $(OUTPUT-ARM) arm-main.o arm-fpga.o arm-ca.o
 
 # ================================================================
-# DUMMY OPTIONS
+# OTHER OPTIONS
 # ================================================================
 
 .PHONY: clean

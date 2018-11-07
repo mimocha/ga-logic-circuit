@@ -111,6 +111,7 @@ static float time_est;
 /* Genetic Algorithm Population Array */
 static GeneticAlgorithm *indv;
 
+// Hack
 static uint8_t saved_dna [MAX_CA_DIMX];
 
 #include "sim.cpp"

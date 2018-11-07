@@ -1,15 +1,46 @@
-/* FPGA header file - For containing most fpga interfaces */
+/* Header file for FPGA Functions
+
+	MIT License
+
+	Copyright (c) 2018 Chawit Leosrisook
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE
+
+*/
 
 #ifndef FPGA_HPP
 #define FPGA_HPP
 
-/* ----- Linux API Include ----- */
+/* ========== Standard Library Include ========== */
+
+#include <stdio.h>		/* printf, perror */
+#include <stdlib.h>		/* calloc, free */
+#include <stdint.h>		/* uint definitions */
+#include <iostream>		/* cout */
+
+/* ========== Linux API Include ========== */
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 
-/* ----- Altera HWLIB Include ----- */
+/* ========== Altera HWLIB Include ========== */
 
 #include "hwlib.h"
 #include "socal/socal.h"
@@ -17,59 +48,73 @@
 #include "socal/alt_gpio.h"
 #include "hps_0.h"
 
-/* Pointer for virtual memory */
-void *virtual_base;
-int fd; // something for mmap
 
-/* ----- Defining FPGA memory address ----- */
 
-#define HW_REGS_BASE ( ALT_STM_OFST )
-#define HW_REGS_SPAN ( 0x04000000 )
-#define HW_REGS_MASK ( HW_REGS_SPAN - 1 )
+/* ========== Miscellaneous Functions ========== */
 
-/* Avalon Slave Ports
-	The module contains 2 different Avalon Slave Ports.
-	Port S1 -- Linux IO
-	Port S2 -- RAM
+/* bool fpga_init (const unsigned int dimx_in, const unsigned int dimy_in)
+	Initialize FPGA variables and pointers.
+
+	Inputs:
+	dimx_in is a constant unsigned int. The values will not change in this function.
+	dimy_in is a constant unsigned int. The values will not change in this function.
+
+	Returns a boolean for initialization status.
+	Returns TRUE if successfully initialized.
+	Returns FALSE if initialization failed.
+*/
+bool fpga_init (const unsigned int dimx_in, const unsigned int dimy_in);
+
+/* bool fpga_cleanup (void)
+	Cleans up initialized FPGA variables.
+
+	Returns FALSE on cleanup SUCCESS -> use to set flag in other files.
+*/
+bool fpga_cleanup (void);
+
+/* static bool fpga_not_init (void)
+	Checks if FPGA is not initialized.
+
+	Returns TRUE if it is NOT initialized, and prints error message.
+	Returns FALSE if it IS initialized.
+
+	Use this function as a roadblock,
+	to prevent usage before proper initialization.
+*/
+// static bool fpga_not_init (void);
+
+
+
+/* ========== FPGA Verification ========== */
+
+/* void fpga_verify (uint8_t *const *const grid)
+	FPGA verification function.
+	Runs a short test to determine if INPUT / OUTPUT is as expected.
+
+	Takes in a double const pointer array 'grid'.
+	'grid' is a double const pointer to a uint8_t.
+	The values of the array will change. The pointers will not.
+*/
+void fpga_verify (uint8_t *const *const grid);
+
+
+
+/* ========== AVALON S1 Functions ==========
+	Handles interactions with S1 port (Linux IO)
+*/
+/* ========== AVALON S2 Functions ==========
+	Handles interactions with S2 port (FPGA RAM)
+*/
+/* ========== Avalon Port Read / Write Functions ==========
+	Low level read / write functions. Static.
+	Limited to usage by other FPGA functions only.
+	Handles simple interaction with Altera read / write functions.
+	Handles address offsets.
 */
 
-// Linux In / Out
-#define S1_ADDRESS		0x1000
-#define S1_ADDRESS_MAX	0x1007
-#define S1_RANGE 2
 
-// Cell Row RAM
-#define S2_ADDRESS		0x0000
-#define S2_ADDRESS_MAX	0x07FF
-#define S2_RANGE 512
 
-// Avalon Slave Port Data Width (Bits)
-#define AVALON_PORT_WIDTH	32
 
-/* ----- Declaring address pointers ----- */
-
-#if (AVALON_PORT_WIDTH == 32)
-	uint32_t *s1_address;
-	uint32_t *s2_address;
-#else
-	uint64_t *s1_address;
-	uint64_t *s2_address;
-#endif
-
-/* ----- Function Prototypes ----- */
-
-/* bool fpga_init (void)
-	Initializes FPGA array. Return bool of initialization status.
-	1 = SUCCESS | 0 = FAILURE
-*/
-bool fpga_init (void);
-
-/* void fpga_verify (void)
-	Hard-coded code for manually verifying FPGA Cell Array functions.
-	Verification data not proven to be correct.
-	TODO: Automate and verify this.
-*/
-void fpga_verify (void);
 
 /* ----- Level 1 ----- */
 
@@ -79,7 +124,7 @@ void fpga_verify (void);
 */
 void fpga_clear (void);
 
-/* void fpga_set_grid (uint8_t **grid)
+/*
 	Sets the FPGA Cell Array according to the given grid data.
 	Writes from the bottom-most row up, from LSB to MSB, offset 511 to 0.
 
@@ -90,7 +135,7 @@ void fpga_clear (void);
 	Repeat this step over all rows and column.
 	This ensures precisely (MAX_CA_DIMX * MAX_CA_DIMY / 8) writes. (512)
 */
-void fpga_set_grid (uint8_t **grid);
+void fpga_set_grid (const uint8_t *const *const grid);
 
 /* void fpga_set_input (const uint64_t data)
 	Sets input for FPGA Cell Array.
@@ -120,59 +165,5 @@ void fpga_set_input (const uint64_t data);
 */
 uint64_t fpga_get_output (void);
 
-/* static void fpga_check (int mode)
-	Wrapper for checking 3 inputs / outputs.
-	Makes function fpga_verify() cleaner.
-*/
-static void fpga_check (int mode);
-
-/* ----- Level 2 -----
-	FPGA only functions. Declared as static.
-	These functions may only be used within the "fpga.cpp" translation unit.
-
-	Users should instead, use the "Level 1" hierachy functions.
-
-	Altera Definitions for reference:
-	 *!
-	 * \addtogroup ALT_SOCAL_UTIL_RW_FUNC SoCAL Memory Read/Write Utilities
-	 *
-	 * This section implements read and write functionality for various
-	 * memory untis. The memory unit terms used for these functions are
-	 * consistent with those used in the ARM Architecture Reference Manual
-	 * ARMv7-A and ARMv7-R edition manual. The terms used for units of memory are:
-	 *
-	 *  Unit of Memory | Abbreviation | Size in Bits
-	 * :---------------|:-------------|:------------:
-	 *  Byte           | byte         |       8
-	 *  Half Word      | hword        |      16
-	 *  Word           | word         |      32
-	 *  Double Word    | dword        |      64
-	 *
-	 * @{
-	 *
-*/
-
-/* static uint32_t fpga_s1_read (const uint32_t offset)
-	Read 32-bit unsigned int from selected address offset.
-	For S1 Avalon Slave Port
-*/
-static uint32_t fpga_s1_read (const uint32_t offset);
-
-/* static void fpga_s1_write (const uint32_t offset, const uint32_t data)
-	Writes 32-bit unsigned int to selected address offset.
-	For S1 Avalon Slave Port
-*/
-static void fpga_s1_write (const uint32_t offset, const uint32_t data);
-
-/* static void fpga_s2_write (const uint32_t offset, const uint32_t data)
-	Write 32-bit unsigned int to selected address offset.
-	For S2 Avalon Slave Port
-
-	Originally writes twice to the same address, due to FPGA circuit's setup.
-	Was done to reset WREN signal properly, but has since been proven unnecessary.
-*/
-static void fpga_s2_write (const uint32_t offset, const uint32_t data);
-
-#include "fpga.cpp"
 
 #endif
