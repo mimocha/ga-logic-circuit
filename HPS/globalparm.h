@@ -8,7 +8,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.10
+#define VERSION 1.11
 
 /*	Max Cellular Automaton Grid Size
 	This defines the maximum available length of a side of the square grid.
@@ -190,24 +190,28 @@ struct truth_table {
 */
 struct param_main {
 	param_ga GA;
+
 	param_ca CA;
+
 	param_data DATA;
 
 	stats_var stats;
+
 	truth_table truth;
 
-	/* FPGA Initialization Flag */
-	bool fpga_init = 0;
 	/* Simulation Run Checking Flag
 		Variable for checking whether or not a simulation has been ran.
 		0 = No simulation has been ran
 		1 = Simulation ran successfully
-*/
+	*/
 	bool run_check = 0;
+
 	/* Truth Table Initialization Flag */
 	bool tt_init = 0;
+
 	/* Whether or not current data has been exported */
 	bool export_check = 0;
+
 } global;
 
 /* Cellular Automaton Virtual Grid */

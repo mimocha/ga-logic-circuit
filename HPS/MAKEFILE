@@ -18,7 +18,7 @@ OUTPUT-PC = ga.exe
 .PHONY : pc pc-link
 
 # Compile Recipe for X86 PC
-pc : pc-link clean
+pc : pc-link
 
 # Compile CA File
 pc-ca.o :
@@ -26,7 +26,7 @@ pc-ca.o :
 
 # Compile FPGA File
 pc-fpga.o :
-	$(CC) $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o pc-fpga.o -c
+	g++ $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o pc-fpga.o -c
 
 # Compile GA Main File
 pc-main.o :
@@ -42,7 +42,7 @@ pc-link : pc-main.o pc-fpga.o pc-ca.o
 .PHONY : arm arm-link
 
 # Cross Compile Recipe for ARM
-arm : arm-link clean
+arm : arm-link
 
 # Compile CA File
 arm-ca.o :
@@ -52,13 +52,21 @@ arm-ca.o :
 arm-fpga.o :
 	$(CC) $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o arm-fpga.o -c
 
+# Compile Eval File
+arm-eval.o :
+	$(CC) $(CFLAGS) eval.cpp -o arm-eval.o -c
+
+# Compile Sim File
+arm-sim.o :
+	$(CC) $(CFLAGS) sim.cpp -o arm-sim.o -c
+
 # Compile GA Main File
 arm-main.o :
 	$(CC) $(CFLAGS) $(ALT_INCLUDE) ga-main.cpp -o arm-main.o -c
 
 # Links together all the files
-arm-link : arm-main.o arm-fpga.o arm-ca.o
-	$(CC) -o $(OUTPUT-ARM) arm-main.o arm-fpga.o arm-ca.o
+arm-link : arm-main.o arm-eval.o arm-fpga.o arm-ca.o
+	$(CC) -o $(OUTPUT-ARM) arm-main.o arm-eval.o arm-fpga.o arm-ca.o
 
 # ================================================================
 # OTHER OPTIONS

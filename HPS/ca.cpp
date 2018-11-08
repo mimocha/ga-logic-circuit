@@ -1,4 +1,4 @@
-/*	Main C++ file for Cellular Automaton Functions
+/*	Main C++ File for Cellular Automaton Functions
 
 	MIT License
 
@@ -23,6 +23,16 @@
 	SOFTWARE
 */
 
+/* ========== Standard Library Include ========== */
+
+#include <stdio.h>		/* printf, perror */
+#include <stdlib.h>		/* calloc, free */
+#include <stdint.h>		/* uint definitions */
+#include <iostream>		/* cout */
+#include <math.h>		/* pow */
+
+/* ========== Custom Header Include ========== */
+
 #include "ca.hpp"
 #include "ansi.hpp"
 
@@ -42,7 +52,7 @@ static uint16_t dimx;
 static uint16_t dimy;
 static uint16_t nb_count;
 
-/* Initialization Flag */
+/* Internal Initialization Flag */
 static bool ca_init_flag;
 
 using namespace std;
@@ -112,6 +122,10 @@ bool ca_not_init (void) {
 
 	/* Otherwise, return FALSE */
 	return 0;
+}
+
+bool ca_is_init (void) {
+	return ca_init_flag;
 }
 
 

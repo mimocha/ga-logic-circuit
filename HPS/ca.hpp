@@ -1,4 +1,4 @@
-/*	Header File for Cellular Automaton Function
+/* Header File for Cellular Automaton Function
 
 	MIT License
 
@@ -44,16 +44,6 @@
 #ifndef CA_HPP
 #define CA_HPP
 
-/* ========== Standard Library Include ========== */
-
-#include <stdio.h>		/* printf, perror */
-#include <stdlib.h>		/* calloc, free */
-#include <stdint.h>		/* uint definitions */
-#include <iostream>		/* cout */
-#include <math.h>		/* pow */
-
-
-
 /* ========== Miscellaneous Functions ========== */
 
 /* void ca_init (const unsigned int nbin, const unsigned int color_in,
@@ -81,10 +71,18 @@ void ca_cleanup (void);
 	Prints error message and returns TRUE when it is NOT initialized.
 	Returns FALSE when it IS initialized.
 
-	Use this function as a roadblock,
-	to prevent usage of CA functions without proper initializations.
+	Use this function as an internal roadblock,
+	to prevent usage of certain CA functions without proper initializations.
 */
 // static bool ca_not_init (void);
+
+/* bool ca_is_init (void)
+	Returns CA initialization status.
+
+	This function is created for access control of the varuable 'ca_init_flag'.
+	The variable should only be available within this compilation unit, and not to other files.
+*/
+bool ca_is_init (void);
 
 
 

@@ -40,14 +40,12 @@
 #include <array>		/* arrays */
 #include <cstring>		/* strcmp */
 
-// ----- Function Prototypes && Documentation ----- //
 
 
-
-/* ========== Initialize / Cleanup Functions ========== */
+/* ========== Main Menu / Initialize / Cleanup Functions ========== */
 
 /* static void main_init (void)
-	Initializes
+	Initializes main file.
 */
 static void main_init (void);
 
@@ -56,24 +54,24 @@ static void main_init (void);
 */
 static void main_cleanup (void);
 
+/* static unsigned int main_menu (void)
+	Main Menu function.
+	Users select inputs here. Selections are unsigned decimal integers.
+	The selection is then returned to main() for calling other functions.
+
+	The actual selection and function calling should not occur within this function,
+	but within the main() function to keep the code clean and easy to follow... ?
+*/
+static unsigned int main_menu (void);
+
 
 
 /* ========== Menu Options ========== */
 
-/* unsigned int main_menu (void)
-	Main Menu function.
-	Users select valid inputs here. Selections are single-digit unsigned decimal integers.
-	The selection is then returned to main() for calling other functions.
-
-	The actual selection and function calling should not occur within this function,
-	but within the main() function to keep the code clean and easy to follow.
-*/
-unsigned int main_menu (void);
-
 /* void settings (void)
 	Handles changing of global parameters.
 */
-void settings (void);
+static void settings (void);
 
 /* bool read_csv (void)
 	CSV file must be in the following format:
@@ -90,12 +88,12 @@ void settings (void);
 	Missing columns will return a failure.
 	Input / Output values are required to be in hexadecimals.
 */
-bool read_csv (void);
+static bool read_csv (void);
 
 /* void results (void)
 	Displays results from a previous simulation.
 */
-void results (void);
+// static void results (void);
 
 /* void inspect (void)
 	DNA inspection function.
@@ -103,10 +101,10 @@ void results (void);
 	given a DNA string, this function will apply CA to it,
 	generate a logic circuit, and evaluate the circuits truth table.
 */
-void inspect (void);
+static void inspect (void);
 
 /* */
-bool export_rpt (void);
+// static bool export_rpt (void);
 
 
 

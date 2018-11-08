@@ -1,119 +1,83 @@
-/* Simulation Wrapper Header File */
-/* Simulation Functions seperated in its own file to keep ga-main clean. */
+/* Header File for Simulation Functions
+
+	MIT License
+
+	Copyright (c) 2018 Chawit Leosrisook
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE
+
+*/
+
 
 #ifndef SIM_HPP
 #define SIM_HPP
 
-using namespace std;
+/* ========== Standard Library Include ========== */
 
-/* static void sim_init (void)
+#include <stdio.h>		/* Standard I/O */
+#include <stdlib.h>		/* calloc, free, rand, srand */
+#include <stdint.h>		/* uint definitions */
+#include <time.h>		/* time */
+#include <math.h>		/* pow, round, ceiling */
+#include <iostream>		/* cin, cout */
+#include <algorithm>	/* sort, find */
+#include <vector>		/* vectors */
+#include <array>		/* arrays */
+#include <cstring>		/* strcmp */
+
+
+
+// --------------------------------------
+// Simulation
+// --------------------------------------
+
+/*
 	Restricted to "sim.cpp" to prevent confusion with other initialization functions.
 	Created this function because the initialization codes are getting out of hand.
 */
 static void sim_init (void);
 
-/* bool run_sim (void)
+/*
 	Wrapper for running the simulation.
-	Returns bool to indicate sim results.
-
-	1 = SUCCESS
 */
 bool run_sim (void);
 
-/* uint64_t bitcount64 (uint64_t x)
-	64-bit Hamming Weight Counting Algorithm
-	https://en.wikipedia.org/wiki/Hamming_weight
-
-	Counts how many bits are set.
-	Input (Expected XNOR Observed) as value to count correct bits.
+/*
+	Wrapper function for end of simulation cleanups.
+	Dynamically allocated memories are freed here.
 */
-uint64_t bitcount64 (uint64_t x);
+static void sim_cleanup (void);
+
+
+
+// --------------------------------------
+// Report
+// --------------------------------------
 
 /* void statistics (GeneticAlgorithm *array, const unsigned int gen)
 	Stores statistics of the current simulation.
 */
 void statistics (GeneticAlgorithm *array, const unsigned int gen);
 
-/* uint32_t evaluate (void)
-	Wrapper for evaluating FPGA Logic Circuits
-*/
-uint32_t evaluate (void);
-
-/* uint32_t evaluate_f1 (void)
-	Evaluates circuit with F1 scoring instead of usual bitcount.
-	More computationally expensive, but better at discriminating small changes.
-*/
-uint32_t evaluate_f1 (void);
-
-/* void id_evaluate (void)
-	In-Depth Evaluate function.
-	Evaluates the currently set CA Grid, and also prints the circuit logic & fitness values.
-*/
-void id_evaluate (void);
-
-/* void id_evaluate_f1 (void)
-	In-Depth F1 Evaluate function.
-	Evaluates the currently set CA Grid with F1 metrics,
-	and also prints the circuit logic & fitness values.
-*/
-void id_evaluate_f1 (void);
-
 /* void report (void)
 	Wrapper function for end of simulation report.
 */
 void report (void);
-
-/* void sim_cleanup (void)
-	Wrapper function for end of simulation cleanups.
-	Dynamically allocated memories are freed here.
-*/
-void sim_cleanup (void);
-
-/* void auto_export (GeneticAlgorithm *array = NULL) */
-bool auto_export (GeneticAlgorithm *array = NULL);
-
-/* ===== Simulation File Level Global Variables =====
-	Ignores the need to pass variables around.
-	Should make program easier to understand.
-
-	> Encapsulate These Variables
-	Set as Static, limits scope to this compilation unit only.
-*/
-
-/* Renames variables, for easier reference */
-static unsigned int dimx;
-static unsigned int dimy;
-static unsigned int gen_lim;
-static unsigned int pop_lim;
-
-/* Computes DNA length, the number of CA rules;
-	Calculated by -> Color^Neighbor (exponent, not XOR)
-*/
-static uint32_t dna_length;
-
-/* Maxmimum fitness possible
-	Calculated as: (Output bit width) * (Truth Table Steps)
-*/
-static uint32_t fit_lim;
-
-/* Timer Variable
-	WARNING: Possible Timer Overflow
-	Overflowed @ 300 pop, 5000 gen
-	Switched from clock () to time ().
-	Might be fixed now.
-*/
-static time_t timer_begin;
-static time_t timer_end;
-
-/* Time Estimate Variable */
-static float time_est;
-
-/* Genetic Algorithm Population Array */
-static GeneticAlgorithm *indv;
-
-// Hack
-static uint8_t saved_dna [MAX_CA_DIMX];
-
-#include "sim.cpp"
 
 #endif

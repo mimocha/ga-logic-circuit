@@ -23,6 +23,8 @@
 	SOFTWARE
 */
 
+/* ========== Custom File Header ========== */
+
 #include "ga-main.hpp"	/* Standard Includes & Function Prototypes */
 #include "ansi.hpp"		/* Colored Terminal Outputs */
 #include "globalparm.h"	/* Global Parameters */
@@ -30,15 +32,24 @@
 #include "ga-class.hpp"	/* Genetics Algorithm Class */
 #include "ca.hpp"		/* Cellular Automaton Functions */
 #include "fpga.hpp"		/* FPGA Related Functions */
-#include "sim.hpp"		/* Simulation Function Wrapper */
+#include "eval.hpp"
+// #include "sim.hpp"		/* Simulation Function Wrapper */
 
-using namespace std;
+
+
+/* ========== Global Variables ========== */
 
 /* Cellular Automaton Virtual Grid */
 // uint8_t **grid;
 
 /* Initializes Global UID Counter */
 uint32_t GeneticAlgorithm::object_count = 0;
+
+using namespace std;
+
+
+
+/* ========== MAIN ========== */
 
 int main (int argc, char **argv) {
 	/* Variable for selecting menu option */
@@ -47,18 +58,28 @@ int main (int argc, char **argv) {
 	/* Main Initialization Function */
 	main_init ();
 
-	/* Main Menu */
+	/* Initialize FPGA */
+	fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
+
+	/* Initialize CA */
+	ca_init (global.CA.NB, global.CA.COLOR, global.CA.DIMX, global.CA.DIMY);
+
+
+
+	/* ===== Main Program ===== */
 	while (1) {
 
+		/* Prints available options and get user input */
 		sel = main_menu ();
 
 		switch (sel) {
 
 			case 0: /* Exit */
 				printf ("\nExiting Program.\n");
+
 				main_cleanup ();
 				ca_cleanup ();
-				global.fpga_init = fpga_cleanup ();
+				fpga_cleanup ();
 
 				return EXIT_SUCCESS;
 
@@ -71,7 +92,7 @@ int main (int argc, char **argv) {
 				break;
 
 			case 3: /* Initialize FPGA */
-				global.fpga_init = fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
+				fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
 				break;
 
 			case 4: /* FPGA Circuit Verification */
@@ -83,11 +104,9 @@ int main (int argc, char **argv) {
 				break;
 
 			case 6: /* Run Simulation */
-				global.run_check = run_sim ();
 				break;
 
 			case 7: /* Display Previous Results */
-				results ();
 				break;
 
 			case 8: /* Inspect DNA */
@@ -95,27 +114,21 @@ int main (int argc, char **argv) {
 				break;
 
 			case 9: /* Export Results */
-				global.export_check = export_rpt ();
 				break;
 
 			default: /* Invalid Input */
 				printf ("Invalid input: %d\n", sel);
 
 		}
-
 	}
 }
 
-/* ========== Initialize / Cleanup Functions ========== */
+
+
+/* ========== Main Menu / Initialize / Cleanup Functions ========== */
 
 void main_init (void) {
 	printf ("Initializing GA Program...\n");
-
-	/* Initialize FPGA */
-	global.fpga_init = fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
-
-	/* Initialize CA */
-	ca_init (global.CA.NB, global.CA.COLOR, global.CA.DIMX, global.CA.DIMY);
 
 	/* Allocates 2D working array for Cellular Automaton
 		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
@@ -151,8 +164,6 @@ void main_cleanup (void) {
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 }
 
-/* ========== Menu Options ========== */
-
 unsigned int main_menu (void) {
 	unsigned int var;
 
@@ -163,7 +174,7 @@ unsigned int main_menu (void) {
 			"\t2. Settings\n"
 			"\t3. Initialize FPGA | ");
 
-	if (global.fpga_init == 1) {
+	if (fpga_is_init () == 1) {
 		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
 	} else {
 		cout << ANSI_RED "FAILED" ANSI_RESET "\n";
@@ -203,6 +214,11 @@ unsigned int main_menu (void) {
 
 	return var;
 }
+
+
+
+/* ========== Menu Options ========== */
+
 
 void settings (void) {
 	unsigned int var;
@@ -446,30 +462,47 @@ bool read_csv (void) {
 	return 1;
 }
 
-void results (void) {
-	if (global.run_check == 0) {
-		printf ("No simulation results.\n");
-		return;
-	}
-
-	printf (ANSI_REVRS "\n\t>>--- Simulation Results ---<<\n" ANSI_RESET
-		"\n\t\tFitness Table\n"
-		"  Gen | Maximum | Minimum | Median | Average\n"
-		"--------------------------------------------\n");
-	for (uint32_t i=0; i<global.stats.gen; i++) {
-		printf(" %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
-		global.stats.max [i], global.stats.min [i],
-		global.stats.med [i], global.stats.avg [i]);
-	}
-
-	std::cout << std::endl;
-
-	return;
-}
+// void results (void) {
+// 	if (global.run_check == 0) {
+// 		printf ("No simulation results.\n");
+// 		return;
+// 	}
+//
+// 	printf (ANSI_REVRS "\n\t>>--- Simulation Results ---<<\n" ANSI_RESET
+// 		"\n\t\tFitness Table\n"
+// 		"  Gen | Maximum | Minimum | Median | Average\n"
+// 		"--------------------------------------------\n");
+// 	for (uint32_t i=0; i<global.stats.gen; i++) {
+// 		printf(" %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
+// 		global.stats.max [i], global.stats.min [i],
+// 		global.stats.med [i], global.stats.avg [i]);
+// 	}
+//
+// 	cout << endl;
+//
+// 	return;
+// }
 
 void inspect (void) {
 
+	/* Fail Conditions */
+	if (global.tt_init == 0) {
+		printf (ANSI_RED "No truth table defined.\n" ANSI_RESET);
+		return;
+	}
+
+	if ( fpga_is_init () == 0 ) {
+		printf (ANSI_RED "FPGA not initialized.\n" ANSI_RESET);
+		return;
+	}
+
+	if ( ca_is_init () == 0 ) {
+		printf (ANSI_RED "CA not initialized.\n" ANSI_RESET);
+		return;
+	}
+
 	printf (ANSI_REVRS "\n\tDNA Inspection\n" ANSI_RESET);
+
 
 	unsigned int color, nb;
 	char *buffer;
@@ -504,153 +537,145 @@ void inspect (void) {
 		dna [i] = buffer [i] - 48;
 
 		if (dna [i] >= color) {
-			std::cout << "\e[41;97m^" << ANSI_RESET;
+			cout << "\e[41;97m^" << ANSI_RESET;
 			printf (ANSI_RED "\nDNA string invalid at position %u\n" ANSI_RESET, i);
 			if (buffer != NULL) free (buffer);
 			if (dna != NULL) free (dna);
 			return;
 		}
 
-		std::cout << " ";
+		cout << " ";
 	}
 	printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
+
+
 
 	/* ===== CELLULAR AUTOMATON ===== */
 
 	/* Initialize Cellular Automaton grid seed */
-	global.CA.SEED = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
+	uint8_t *seed = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
 	unsigned int mid = floor (MAX_CA_DIMX / 2);
-	global.CA.SEED [mid] = 1;
+	seed [mid] = 1;
+
+
 
 	/* ===== FPGA SET GRID ===== */
 
 	/* Generate & Set Grid */
-	ca_gen_grid (grid, dna, global.CA.SEED);
+	ca_gen_grid (grid, dna, seed);
 	ca_gen_grid (grid, dna);
+	fpga_set_grid (grid);
 
-	/* Sets FPGA & Checks Truth Table if FPGA is set */
-	if ((global.fpga_init == 1) && (global.tt_init == 1)) {
+	if (global.truth.f1 == 1)
+		eval_f1_insp (global.truth.input, global.truth.output, global.truth.step);
+	else
+		eval_bc_insp (global.truth.input, global.truth.output, global.truth.step);
 
-		if (global.truth.f1 == 1) {
-			id_evaluate_f1 ();
-		} else {
-			id_evaluate ();
-		}
 
-	/* Print error message if FPGA or Truth Table is not set */
-	} else {
-		if (global.fpga_init == 0) {
-			printf (ANSI_YELLOW "\tFPGA Not Initialized\n" ANSI_RESET);
-		}
-		if (global.tt_init == 0) {
-			printf (ANSI_YELLOW "\tTruth Table Not Initialized\n" ANSI_RESET);
-		}
-		printf (ANSI_YELLOW "\tLogic Table Unavailable\n" ANSI_RESET);
-	}
 
 	/* ===== PRINT CA GRID ===== */
 
 	printf ("\n\e[100m\t\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 
 	/* Print Seed Row */
-	ca_print_row (global.CA.SEED);
+	ca_print_row (seed);
 
 	/* Print CA First Pass */
-	ca_gen_grid (grid, dna, global.CA.SEED);
+	ca_gen_grid (grid, dna, seed);
 	ca_print_grid (grid);
 
 	/* Print Center Marker */
-	std::cout << "\e[103;30m";
+	cout << "\e[103;30m";
 	for (unsigned int x=0; x<MAX_CA_DIMX; x++) {
 		if (x % 4 == 0) {
 			printf ("%X", x/4%16);
 		} else {
-			std::cout << "+";
+			cout << "+";
 		}
 	}
-	std::cout << ANSI_RESET "\n";
+	cout << ANSI_RESET "\n";
 
 	/* Print CA Second Pass */
 	ca_gen_grid (grid, dna);
 	ca_print_grid (grid);
 
-	/* Print Center Marker */
-	std::cout << "\e[103;30m";
+	/* Print Bottom Marker */
+	cout << "\e[103;30m";
 	for (unsigned int x=0; x<MAX_CA_DIMX; x++) {
 		if (x % 4 == 0) {
 			printf ("%X", x/4%16);
 		} else {
-			std::cout << "+";
+			cout << "+";
 		}
 	}
-	std::cout << ANSI_RESET "\n";
+	cout << ANSI_RESET "\n";
 
 	/* Line Break */
-	std::cout << std::endl;
+	cout << endl;
 
 	/* ===== CLEANUP ===== */
 
 	free (buffer);
 	free (dna);
-	free (global.CA.SEED);
+	free (seed);
 	return;
 }
 
-bool export_rpt (void) {
-		FILE *fp;
-		char filename [64];
-
-		/* Get Current Local Time & Convert to Time Struct */
-		time_t raw_time;
-		struct tm *timeinfo;
-		time (&raw_time);
-		timeinfo = localtime (&raw_time);
-		/* Sets filename to YYYYMMDD-HHMMSS format */
-		strftime (filename, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
-
-		printf ("Exporting results as: \"%s\" ...", filename);
-
-		fp = fopen (filename, "w");
-		if (fp == NULL) {
-			printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
-			return 0;
-		}
-
-		/* ===== Write to File ===== */
-
-		fprintf (fp, "Simulation Report: %s\n\n", filename);
-
-		fprintf (fp, ">> Settings:\n"
-			"\tGeneration Limit: %u\n"
-			"\tPopulation Limit: %u\n"
-			"\tX-Axis Dimension: %u\n"
-			"\tY-Axis Dimension: %u\n"
-			"\tCA Color: %u\n"
-			"\tCA Neighbor: %u\n"
-			"\tTime to first Solution: ",
-			global.stats.gen, global.stats.pop,
-			global.stats.dimx, global.stats.dimy,
-			global.stats.color, global.stats.nb );
-
-		if (global.stats.tts != 0) {
-			fprintf (fp, "%u gens\n", global.stats.tts);
-		} else {
-			fprintf (fp, "Not Applicable\n");
-		}
-
-		fprintf (fp, "\nFitness Table\n"
-			"  Gen | Maximum | Minimum | Median | Average\n"
-			"--------------------------------------------\n");
-		for (uint32_t i=0; i<global.stats.gen; i++) {
-			fprintf (fp, " %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
-			global.stats.max [i], global.stats.min [i],
-			global.stats.med [i], global.stats.avg [i]);
-		}
-
-		fclose (fp);
-		printf (ANSI_GREEN " DONE\n" ANSI_RESET);
-		return 1;
-}
+// bool export_rpt (void) {
+// 		FILE *fp;
+// 		char filename [64];
+//
+// 		/* Get Current Local Time & Convert to Time Struct */
+// 		time_t raw_time;
+// 		struct tm *timeinfo;
+// 		time (&raw_time);
+// 		timeinfo = localtime (&raw_time);
+// 		/* Sets filename to YYYYMMDD-HHMMSS format */
+// 		strftime (filename, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
+//
+// 		printf ("Exporting results as: \"%s\" ...", filename);
+//
+// 		fp = fopen (filename, "w");
+// 		if (fp == NULL) {
+// 			printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
+// 			return 0;
+// 		}
+//
+// 		/* ===== Write to File ===== */
+//
+// 		fprintf (fp, "Simulation Report: %s\n\n", filename);
+//
+// 		fprintf (fp, ">> Settings:\n"
+// 			"\tGeneration Limit: %u\n"
+// 			"\tPopulation Limit: %u\n"
+// 			"\tX-Axis Dimension: %u\n"
+// 			"\tY-Axis Dimension: %u\n"
+// 			"\tCA Color: %u\n"
+// 			"\tCA Neighbor: %u\n"
+// 			"\tTime to first Solution: ",
+// 			global.stats.gen, global.stats.pop,
+// 			global.stats.dimx, global.stats.dimy,
+// 			global.stats.color, global.stats.nb );
+//
+// 		if (global.stats.tts != 0) {
+// 			fprintf (fp, "%u gens\n", global.stats.tts);
+// 		} else {
+// 			fprintf (fp, "Not Applicable\n");
+// 		}
+//
+// 		fprintf (fp, "\nFitness Table\n"
+// 			"  Gen | Maximum | Minimum | Median | Average\n"
+// 			"--------------------------------------------\n");
+// 		for (uint32_t i=0; i<global.stats.gen; i++) {
+// 			fprintf (fp, " %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
+// 			global.stats.max [i], global.stats.min [i],
+// 			global.stats.med [i], global.stats.avg [i]);
+// 		}
+//
+// 		fclose (fp);
+// 		printf (ANSI_GREEN " DONE\n" ANSI_RESET);
+// 		return 1;
+// }
 
 
 

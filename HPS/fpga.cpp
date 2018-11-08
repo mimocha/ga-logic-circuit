@@ -1,4 +1,4 @@
-/* Main C++ file for FPGA functions
+/* Main C++ File for FPGA Functions
 
 	MIT License
 
@@ -23,6 +23,28 @@
 	SOFTWARE
 
 */
+
+/* ========== Standard Library Include ========== */
+
+#include <stdio.h>		/* printf */
+#include <stdlib.h>		/* calloc, free */
+#include <stdint.h>		/* uint definitions */
+
+/* ========== Linux API Include ========== */
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
+/* ========== Altera HWLIB Include ========== */
+
+#include "hwlib.h"
+#include "socal/socal.h"
+#include "socal/hps.h"
+#include "socal/alt_gpio.h"
+#include "hps_0.h"
+
+/* ========== Custom Header Include ========== */
 
 #include "fpga.hpp"
 #include "ansi.hpp"
@@ -50,9 +72,13 @@
 #define S2_RANGE 512
 
 /* Avalon Slave Port Data Width (Bits) */
-#define AVALON_PORT_WIDTH	32
+#define AVALON_PORT_WIDTH 32
 
+/* FPGA Array Cell Data Width (Bits) -- fpga_set_grid */
+#define CELL_DATA_WIDTH 4
 
+/* Numbers of Cells able to fit in the buffer -- fpga_set_grid */
+#define CELL_IN_BUFFER (AVALON_PORT_WIDTH / CELL_DATA_WIDTH)
 
 /* ========== FPGA Global Variables ========== */
 
@@ -75,8 +101,8 @@ static int fd;
 static uint16_t dimx;
 static uint16_t dimy;
 
-/* Initialization Flag */
-static bool fpga_init_flag = 0;
+/* Internal Initialization Flag */
+static bool fpga_init_flag;
 
 using namespace std;
 
@@ -88,33 +114,14 @@ using namespace std;
 
 static bool fpga_not_init (void);
 
-/*
-	Fills the grid array with a given uint8_t.
-*/
 static void fpga_test_fill (uint8_t *const *const grid, const uint8_t num);
 
-/* */
 static unsigned int fpga_test (const unsigned int mode);
 
-/* static uint32_t fpga_s1_read (const uint32_t offset)
-	Read 32-bit unsigned int from selected address offset.
-	For S1 Avalon Slave Port
-*/
 static uint32_t fpga_s1_read (const uint32_t offset);
 
-/* static void fpga_s1_write (const uint32_t offset, const uint32_t data)
-	Writes 32-bit unsigned int to selected address offset.
-	For S1 Avalon Slave Port
-*/
 static void fpga_s1_write (const uint32_t offset, const uint32_t data);
 
-/* static void fpga_s2_write (const uint32_t offset, const uint32_t data)
-	Write 32-bit unsigned int to selected address offset.
-	For S2 Avalon Slave Port
-
-	Originally writes twice to the same address, due to FPGA circuit's setup.
-	Was done to reset WREN signal properly, but has since been proven unnecessary.
-*/
 static void fpga_s2_write (const uint32_t offset, const uint32_t data);
 
 
@@ -122,11 +129,11 @@ static void fpga_s2_write (const uint32_t offset, const uint32_t data);
 
 /* ========== Miscellaneous Functions ========== */
 
-bool fpga_init (const unsigned int dimx_in, const unsigned int dimy_in) {
+void fpga_init (const unsigned int dimx_in, const unsigned int dimy_in) {
 	printf ("Initializing FPGA... ");
 
 	/* If FPGA was already initialized, close and reinitialize. */
-	if (fpga_init_flag == 1) close (fd);
+	if ( fpga_init_flag == 1 ) close (fd);
 
 	/* Creates local copy of global parameters for CA functions */
 	dimx = dimx_in;
@@ -138,7 +145,7 @@ bool fpga_init (const unsigned int dimx_in, const unsigned int dimy_in) {
 	/* If failed to open /dev/mem */
 	if (fd == -1) {
 		printf (ANSI_RED "COULD NOT OPEN /dev/mem\n" ANSI_RESET);
-		return 0;
+		return;
 	}
 
 	/* Map Memory for use */
@@ -149,7 +156,7 @@ bool fpga_init (const unsigned int dimx_in, const unsigned int dimy_in) {
 	if (virtual_base == MAP_FAILED) {
 		printf (ANSI_RED "MMAP FAIL\n" ANSI_RESET);
 		close (fd);
-		return 0;
+		return;
 	}
 
 	/* Assign address pointers
@@ -183,10 +190,10 @@ bool fpga_init (const unsigned int dimx_in, const unsigned int dimy_in) {
 
 	/* Prints Message and Returns */
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
-	return 1;
+	return;
 }
 
-bool fpga_cleanup (void) {
+void fpga_cleanup (void) {
 	printf ("Cleaning up FPGA... ");
 
 	/* If FPGA has been initialized, close fd */
@@ -196,7 +203,7 @@ bool fpga_cleanup (void) {
 	fpga_init_flag = 0;
 
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
-	return 0;
+	return;
 }
 
 bool fpga_not_init (void) {
@@ -208,6 +215,10 @@ bool fpga_not_init (void) {
 
 	/* Otherwise, return FALSE */
 	return 0;
+}
+
+bool fpga_is_init (void) {
+	return fpga_init_flag;
 }
 
 
@@ -232,25 +243,25 @@ void fpga_verify (uint8_t *const *const grid) {
 	fpga_clear ();
 
 	/* ===== NULL ===== */
-	printf (ANSI_REVRS "\t\t--- Test NULL ---\n" ANSI_RESET);
+	printf ("\t\t\t   " ANSI_REVRS "----- Test  NULL -----\n" ANSI_RESET);
 	fpga_test_fill (grid, 0);
 	fpga_set_grid (grid);
 	score += fpga_test (0);
 
 	/* ===== Pass A ===== */
-	printf (ANSI_REVRS "\t\t--- Test PASS A ---\n" ANSI_RESET);
+	printf ("\t\t\t   " ANSI_REVRS "---- Test  PASS A ----\n" ANSI_RESET);
 	fpga_test_fill (grid, 1);
 	fpga_set_grid (grid);
 	score += fpga_test (1);
 
 	/* ===== Pass B ===== */
-	printf (ANSI_REVRS "\t\t--- Test PASS B ---\n" ANSI_RESET);
+	printf ("\t\t\t   " ANSI_REVRS "---- Test  PASS B ----\n" ANSI_RESET);
 	fpga_test_fill (grid, 2);
 	fpga_set_grid (grid);
 	score += fpga_test (2);
 
 	/* ===== NAND ===== */
-	printf (ANSI_REVRS "\t\t--- Test NAND ---\n" ANSI_RESET);
+	printf ("\t\t\t   " ANSI_REVRS "----- Test  NAND -----\n" ANSI_RESET);
 	fpga_test_fill (grid, 3);
 	fpga_set_grid (grid);
 	score += fpga_test (3);
@@ -297,9 +308,10 @@ unsigned int fpga_test (const unsigned int mode) {
 	unsigned int results = 0;
 
 	/* Print Table */
-	printf ("\n\t\t\t    \e[100mChecked Logic Table\e[0m\n"
+	printf (
 	"\t             Input |      Expected      | Observed\n"
-	"\t-------------------+--------------------+-------------------\n");
+	"\t-------------------+--------------------+-------------------\n"
+	);
 
 	/* Iterates over each test case -- 3 per mode */
 	for (unsigned int i = 0 ; i < 3 ; i++) {
@@ -307,25 +319,23 @@ unsigned int fpga_test (const unsigned int mode) {
 		/* Set test case input */
 		fpga_set_input (test_input [i]);
 
-		/* Print Table */
-		printf ("\t0x%016llX | 0x%016llX | ", test_input [i], test_output [mode][i]);
-
 		/* Get test case output */
 		uint64_t observed = fpga_get_output ();
 
-		/* Compare result with expectation */
+		/* Compare result with expectation & print table */
 		if ( observed == test_output [mode][i] ) {
-			printf (ANSI_GREEN "0x%016llX\n" ANSI_RESET, observed);
+			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
+					test_input [i], test_output [mode][i], observed );
 			results += 1;
 		} else {
-			printf (ANSI_YELLOW "0x%016llX\n" ANSI_RESET, observed);
+			printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
+			test_input [i], test_output [mode][i], observed );
 		}
 
 	}
 
-	printf ("\n");
-
 	/* Return test results */
+	printf ("\n");
 	return results;
 }
 
@@ -341,7 +351,6 @@ void fpga_set_input (const uint64_t write_data) {
 
 	/* Writes LSB First */
 	for (uint32_t i = 0 ; i < S1_RANGE ; i++) {
-
 		/* Bitshifts data to the appropriate location
 			Input data is wider than the write port (64 bit -> 32 bit).
 			So we shift part of the data, and align it.
@@ -351,6 +360,14 @@ void fpga_set_input (const uint64_t write_data) {
 		/* Writes the bitshifted data to the assigned offset */
 		fpga_s1_write (i, tmp_data);
 	}
+
+	/* Sleep for 1 Microsecond -- 50 FPGA Clock Cycles
+		As writing the input for the FPGA takes multiple actions,
+		it is not required to wait a full 64 FPGA clock cycles for the grid to fully update.
+
+		Empirical evidences show that using usleep(1) is enough for the FPGA grid to update.
+	*/
+	usleep (1);
 }
 
 uint64_t fpga_get_output (void) {
@@ -396,7 +413,7 @@ void fpga_clear (void) {
 
 	/* Iterates over entire CA grid & sets to zero */
 	for (uint32_t i = 0 ; i < S2_RANGE ; i++) {
-		fpga_s2_write (i, 0x00000000);
+		fpga_s2_write (i, 0x0);
 	}
 
 	/* Sets input to zero */
@@ -407,28 +424,42 @@ void fpga_set_grid (const uint8_t *const *const grid) {
 	/* FPGA Uninitialized Error Catch */
 	if ( fpga_not_init () ) return;
 
-	uint32_t data = 0;
+	uint32_t data_buffer = 0;
 	uint32_t offset = S2_RANGE;
 
-	/* This function handles setting the input rows
-		WARNING: If this is not set, the FPGA Cell Array will have no linux input cells set.
-		Output may remain the same, regardless of given input.
-	*/
-	// for (unsigned int x=0; x<dimx; x++) {
-	// 	grid [dimy-1][x] |= 0x8;
-	// }
+	/* Iterates through every row, from bottom to top -- loopvar must be signed */
+	for (int y = dimy - 1 ; y >= 0 ; y--) {
+		/* Iterates through every column, from right to left -- loopvar must be signed */
+		for (int x = dimx - 1 ; x >= 0 ; x--) {
+			/* How this works:
+				Shift bits first, so the LSB would not get displaced.
+				0. [XXXX XXXX XXXX XXXX] << Start
+				1. [XXXX XXXX XXXX 0000] << Bitshift (to the left)
+				2. [XXXX XXXX XXXX CA00] << Set Cell
+				3. [XXXX XXXX CA00 0000] << Bitshift (to the left)
+				4. [XXXX XXXX CA00 CA01] << Set Cell
+				5. Repeat Until Buffer Filled
+				6. [CA00 CA01 CA02 CA03] << Set this to S2 @ Offset
+				7. Repeat for entire grid
+			*/
 
-	for (int y=dimy-1; y>=0; y--) {
-		for (int x=dimx-1; x>=0; x--) {
-			data <<= 4;
-			data |= grid[y][x];
-			if (x % 8 == 0) {
+			/* Shifts one cell worth of data */
+			data_buffer <<= CELL_DATA_WIDTH;
+			/* Sets one cell worth of data */
+			data_buffer |= grid [y][x];
+
+			/* Every 32 bits filled to buffer, write to S2 port */
+			if (x % CELL_IN_BUFFER == 0) {
+				/* Cycles through offset, from 511 to 0
+					Writes from bottom to top, to reduce waiting time
+				*/
 				offset--;
-				fpga_s2_write (offset, data);
-				// printf ("Y: %2d | X: %2d | OFFSET: %d | DATA: %08X\n", y, x, offset, data);
+				/* Writes current buffer to offset */
+				fpga_s2_write (offset, data_buffer);
 			}
 		}
 	}
+
 }
 
 
