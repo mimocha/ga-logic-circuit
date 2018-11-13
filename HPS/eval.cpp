@@ -34,11 +34,8 @@
 /* ========== Custom Header Include ========== */
 
 #include "eval.hpp"
-#include "fpga.hpp"
 #include "ansi.hpp"
-
-/* F1 Score Scaling -- Change from a decimal to an unsigned int */
-#define F1_MAX 10000
+#include "fpga.hpp"
 
 /* FPGA Grid Output Bit Size */
 #define GRID_BIT_SIZE 64
@@ -47,20 +44,17 @@
 	See documentation in header file "eval.hpp"
 */
 
-static uint64_t bitcount64 (const uint64_t input);
+static uint64_t bitcount64 (uint64_t x);
 
 
 
 /* ========== Miscellany Functions ========== */
 
-uint64_t bitcount64 (const uint64_t input) {
+uint64_t bitcount64 (uint64_t x) {
 	// Code shamelessly copied from https://en.wikipedia.org/wiki/Hamming_weight
-	const uint64_t m1  = 0x5555555555555555;
-	const uint64_t m2  = 0x3333333333333333;
-	const uint64_t m4  = 0x0f0f0f0f0f0f0f0f;
-
-	/* Creates temporary working copy, 'x' to keep 'input' untouched. */
-	uint64_t x = input;
+	constexpr uint64_t m1  = 0x5555555555555555;
+	constexpr uint64_t m2  = 0x3333333333333333;
+	constexpr uint64_t m4  = 0x0f0f0f0f0f0f0f0f;
 
 	x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
 	x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits
@@ -77,7 +71,7 @@ uint64_t bitcount64 (const uint64_t input) {
 	Evaluation functions for single values.
 */
 
-uint32_t eval_bc (const uint64_t input, const uint64_t expect) {
+uint32_t eval_bc (const uint64_t &input, const uint64_t &expect) {
 	/* Set FPGA input */
 	fpga_set_input (input);
 
@@ -94,7 +88,7 @@ uint32_t eval_bc (const uint64_t input, const uint64_t expect) {
 	return bitcount64 ( ~( expect ^ observed ) );
 }
 
-uint32_t eval_f1 (const uint64_t input, const uint64_t expect) {
+uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect) {
 	/* Set FPGA input */
 	fpga_set_input (input);
 
@@ -129,7 +123,7 @@ uint32_t eval_f1 (const uint64_t input, const uint64_t expect) {
 */
 
 uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count) {
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
 
 	uint32_t result = 0;
 
@@ -154,7 +148,7 @@ uint32_t eval_bc_array
 }
 
 uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count) {
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
 
 	/* Declares & Defines True Positive, False Positive, False Negative */
 	float tpos = 0;
@@ -197,7 +191,7 @@ uint32_t eval_f1_array
 */
 
 void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count) {
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
 
 	/* Results variable */
 	uint32_t result = 0;
@@ -206,7 +200,7 @@ void eval_bc_insp
 	const uint32_t fit_lim = GRID_BIT_SIZE * count;
 
 	printf (
-		"\n\n\t\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
+		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
 		"\t             Input |      Expected      | Observed\n"
 		"\t-------------------+--------------------+-------------------\n" );
 
@@ -242,7 +236,7 @@ void eval_bc_insp
 }
 
 void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count) {
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
 
 	/* Declares & Defines True Positive, False Positive, False Negative */
 	float tpos = 0;
@@ -250,7 +244,7 @@ void eval_f1_insp
 	float fneg = 0;
 
 	printf (
-		"\n\n\t\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
+		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
 		"\t             Input |      Expected      | Observed\n"
 		"\t-------------------+--------------------+-------------------\n" );
 

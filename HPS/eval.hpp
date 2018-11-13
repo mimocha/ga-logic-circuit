@@ -27,22 +27,27 @@
 #ifndef EVAL_HPP
 #define EVAL_HPP
 
+/* F1 Score Scaling -- Change from a decimal to an unsigned int */
+#define F1_MAX 10000
+
 /* ========== Miscellany Functions ========== */
 
-/* uint64_t bitcount64 (uint64_t x)
+/* static uint64_t bitcount64 (uint64_t x);
 	64-bit Hamming Weight Counting Algorithm
 	https://en.wikipedia.org/wiki/Hamming_weight
 
 	Counts how many bits are set.
 	Input (Expected XNOR Observed) as value to count correct bits.
 */
-// uint64_t bitcount64 (uint64_t x);
+// static uint64_t bitcount64 (uint64_t x);
 
 
 
-/* ========== Basic Evaluation Functions ========== */
+/* ========== Basic Evaluation Functions ==========
+	Evaluation functions for single values.
+*/
 
-/* uint32_t eval_bc (const uint64_t input, const uint64_t expect)
+/* uint32_t eval_bc (const uint64_t &input, const uint64_t &expect);
 	Simple bit counting evaluation.
 
 	Evaluates the FPGA output, given:
@@ -52,9 +57,9 @@
 
 	The number of equivalent bits is returned.
 */
-uint32_t eval_bc (const uint64_t input, const uint64_t expect);
+uint32_t eval_bc (const uint64_t &input, const uint64_t &expect);
 
-/* uint32_t eval_f1 (const uint64_t input, const uint64_t expect)
+/* uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect);
 	Evaluates with F1 scoring.
 	More computationally expensive, but better at discriminating small differences.
 
@@ -66,14 +71,16 @@ uint32_t eval_bc (const uint64_t input, const uint64_t expect);
 
 	uint32_t (F1 score * F1_MAX) is returned.
 */
-uint32_t eval_f1 (const uint64_t input, const uint64_t expect);
+uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect);
 
 
 
-/* ========== Array Evaluation Functions ========== */
+/* ========== Array Evaluation Functions ==========
+	Evaluation function for multiple values at once.
+*/
 
 /* uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count)
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 	Simple bit counting evaluation for arrays.
 
@@ -86,10 +93,10 @@ uint32_t eval_f1 (const uint64_t input, const uint64_t expect);
 	The sum of numbers of equivalent bits is returned.
 */
 uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count);
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 /* uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count)
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 	Evaluates with F1 scoring for arrays.
 	More computationally expensive, but better at discriminating small differences.
@@ -104,13 +111,16 @@ uint32_t eval_bc_array
 	uint32_t (F1 score * F1_MAX) is returned.
 */
 uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count);
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 
-/* ========== Inspect Evaluation Functions ========== */
+/* ========== Inspect Evaluation Functions ==========
+	Array evaluation functions with additional stylized truth table print.
+	Does not return results.
+*/
 
 /* void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count)
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 	Similar to eval_bc_array().
 	Except this function also prints out a stylized truth table.
@@ -118,10 +128,10 @@ uint32_t eval_f1_array
 	Does not return a result.
 */
 void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count);
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 /* void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count);
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 	Similar to eval_f1_array().
 	Except this function also prints out a stylized truth table.
@@ -129,6 +139,6 @@ void eval_bc_insp
 	Does not return a result.
 */
 void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t count);
+	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
 #endif

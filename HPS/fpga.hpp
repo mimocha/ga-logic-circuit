@@ -29,14 +29,14 @@
 
 /* ========== Miscellaneous Functions ========== */
 
-/* void fpga_init (const unsigned int dimx_in, const unsigned int dimy_in)
+/* void fpga_init (void)
 	Initialize FPGA variables and pointers.
 
 	Inputs:
-	dimx_in is a constant unsigned int. The values will not change in this function.
-	dimy_in is a constant unsigned int. The values will not change in this function.
+	dimx_in is a reference to a constant unsigned int. The values may not change in this function.
+	dimy_in is a reference to a constant unsigned int. The values may not change in this function.
 */
-void fpga_init (const unsigned int dimx_in, const unsigned int dimy_in);
+void fpga_init (void);
 
 /* void fpga_cleanup (void)
 	Cleans up initialized FPGA variables.
@@ -76,22 +76,22 @@ bool fpga_is_init (void);
 */
 void fpga_verify (uint8_t *const *const grid);
 
-/* static void fpga_test_fill (uint8_t *const *const grid, const uint8_t num)
+/* static void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num)
 	Fills the grid array with a given uint8_t.
 
 	Inputs:
 	'grid' is a double const pointer to a uint8_t. The values will change, but the pointers won't.
-	'num' is a const uint8_t. The values will not change.
+	'num' is a reference to a const uint8_t. The values may not change in this function.
 
 	This function fills the 2D array grid, with the value num.
 */
-// static void fpga_test_fill (uint8_t *const *const grid, const uint8_t num);
+// static void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num);
 
-/* static unsigned int fpga_test (const unsigned int mode)
+/* static unsigned int fpga_test (const unsigned int &mode)
 	Checks each test case for input / output, for the given setting.
 
 	Input:
-	'mode' is a const unsigned int. Its value will not change in this function.
+	'mode' is reference to a const unsigned int. Its value may change in this function.
 	'mode' is used to select the testing mode.
 
 	Use 'mode' to determine what input / output pair is expected.
@@ -99,7 +99,7 @@ void fpga_verify (uint8_t *const *const grid);
 
 	Returns an unsigned int of numbers of matching observation.
 */
-// static unsigned int fpga_test (const unsigned int mode);
+// static unsigned int fpga_test (const unsigned int &mode);
 
 
 
@@ -107,7 +107,7 @@ void fpga_verify (uint8_t *const *const grid);
 	Handles interactions with S1 port (Linux IO)
 */
 
-/* void fpga_set_input (const uint64_t data)
+/* void fpga_set_input (const uint64_t &data)
 	Sets input for FPGA Cell Array.
 
 	As the slave port only allows 32-bit reads, this function will have to do multiple writes.
@@ -119,7 +119,7 @@ void fpga_verify (uint8_t *const *const grid);
 	FPGA Cell Array updates with clock, and needs a few clock cycle to update completely.
 	Using the two functions back-to-back is shown to cause invalid outputs.
 */
-void fpga_set_input (const uint64_t data);
+void fpga_set_input (const uint64_t &data);
 
 /* uint64_t fpga_get_output (void)
 	Returns output from FPGA Cell Array.
@@ -172,25 +172,25 @@ void fpga_set_grid (const uint8_t *const *const grid);
 	Handles address offsets.
 */
 
-/* static uint32_t fpga_s1_read (const uint32_t offset)
+/* static uint32_t fpga_s1_read (const uint32_t &offset)
 	Read 32-bit unsigned int from selected address offset.
 	For S1 Avalon Slave Port
 */
-// static uint32_t fpga_s1_read (const uint32_t offset);
+// static uint32_t fpga_s1_read (const uint32_t &offset);
 
-/* static void fpga_s1_write (const uint32_t offset, const uint32_t data)
+/* static void fpga_s1_write (const uint32_t &offset, const uint32_t &data)
 	Writes 32-bit unsigned int to selected address offset.
 	For S1 Avalon Slave Port
 */
-// static void fpga_s1_write (const uint32_t offset, const uint32_t data);
+// static void fpga_s1_write (const uint32_t &offset, const uint32_t &data);
 
-/* static void fpga_s2_write (const uint32_t offset, const uint32_t data)
+/* static void fpga_s2_write (const uint32_t &offset, const uint32_t &data)
 	Write 32-bit unsigned int to selected address offset.
 	For S2 Avalon Slave Port
 
 	Originally writes twice to the same address, due to FPGA circuit's setup.
 	Was done to reset WREN signal properly, but has since been proven unnecessary.
 */
-// static void fpga_s2_write (const uint32_t offset, const uint32_t data);
+// static void fpga_s2_write (const uint32_t &offset, const uint32_t &data);
 
 #endif

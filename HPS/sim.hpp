@@ -24,60 +24,35 @@
 
 */
 
-
 #ifndef SIM_HPP
 #define SIM_HPP
 
-/* ========== Standard Library Include ========== */
+/* ========== Simulation Functions ========== */
 
-#include <stdio.h>		/* Standard I/O */
-#include <stdlib.h>		/* calloc, free, rand, srand */
-#include <stdint.h>		/* uint definitions */
-#include <time.h>		/* time */
-#include <math.h>		/* pow, round, ceiling */
-#include <iostream>		/* cin, cout */
-#include <algorithm>	/* sort, find */
-#include <vector>		/* vectors */
-#include <array>		/* arrays */
-#include <cstring>		/* strcmp */
+void sim_init (void);
 
+void sim_cleanup (void);
 
+void sim_run (uint8_t *const *const grid, const uint8_t *const seed);
 
-// --------------------------------------
-// Simulation
-// --------------------------------------
+bool sim_is_done (void);
 
-/*
-	Restricted to "sim.cpp" to prevent confusion with other initialization functions.
-	Created this function because the initialization codes are getting out of hand.
-*/
-static void sim_init (void);
-
-/*
-	Wrapper for running the simulation.
-*/
-bool run_sim (void);
-
-/*
-	Wrapper function for end of simulation cleanups.
-	Dynamically allocated memories are freed here.
-*/
-static void sim_cleanup (void);
+// static unsigned int count_solution (const GeneticAlgorithm *const array);
 
 
 
-// --------------------------------------
-// Report
-// --------------------------------------
+/* ========== Results & Reporting Function ========== */
 
-/* void statistics (GeneticAlgorithm *array, const unsigned int gen)
-	Stores statistics of the current simulation.
-*/
-void statistics (GeneticAlgorithm *array, const unsigned int gen);
+// static void statistics (const GeneticAlgorithm *const array, const unsigned int &gen);
 
-/* void report (void)
-	Wrapper function for end of simulation report.
-*/
-void report (void);
+// static void report (uint8_t *const *const grid, const uint8_t *const seed);
+
+void sim_results (void);
+
+void sim_export (void);
+
+bool export_is_done (void);
+
+
 
 #endif

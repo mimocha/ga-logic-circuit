@@ -1,3 +1,23 @@
+# Dependency Level:
+# 0. ansi.hpp
+# 1. global.cpp
+# 2. ca.cpp fpga.cpp ga.cpp misc.cpp truth.cpp
+# 3. eval.cpp
+# 4. sim.cpp
+# 5. main.cpp
+
+# Compile Status :
+# [OK]		ansi.hpp		NOT REQUIRED
+# [OK]		ca.cpp			PASS
+# [OK]		eval.cpp		PASS
+# [OK]		fpga.cpp		PASS
+# [OK]		ga.cpp			PASS
+# [OK]		global.cpp		PASS
+# [OK]		main.cpp		PASS
+# [OK]		misc.cpp		PASS
+# [OK]		sim.cpp			PASS
+# [OK]		truth.cpp		PASS
+
 # ================================================================
 # VARIABLES
 # ================================================================
@@ -17,24 +37,40 @@ OUTPUT-PC = ga.exe
 # ================================================================
 .PHONY : pc pc-link
 
-# Compile Recipe for X86 PC
-pc : pc-link
+# X86 Compile Recipe
+pc : pc-ca.o pc-eval.o pc-fpga.o pc-ga.o pc-global.o pc-main.o pc-misc.o pc-sim.o pc-truth.o pc-link clean
 
-# Compile CA File
+# Links together all the files
+pc-link :
+	g++ -o $(OUTPUT-PC) pc-main.o pc-sim.o pc-eval.o pc-ca.o pc-fpga.o pc-ga.o pc-misc.o pc-truth.o pc-global.o
+
+# === Compile Recipe for Each File -- Alphabetical Order === #
 pc-ca.o :
 	g++ $(CFLAGS) ca.cpp -o pc-ca.o -c
 
-# Compile FPGA File
+pc-eval.o :
+	g++ $(CFLAGS) eval.cpp -o pc-eval.o -c
+
 pc-fpga.o :
 	g++ $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o pc-fpga.o -c
 
-# Compile GA Main File
+pc-ga.o :
+	g++ $(CFLAGS) ga.cpp -o pc-ga.o -c
+
+pc-global.o :
+	g++ $(CFLAGS) global.cpp -o pc-global.o -c
+
 pc-main.o :
 	g++ $(CFLAGS) $(ALT_INCLUDE) ga-main.cpp -o pc-main.o -c
 
-# Links together all the files
-pc-link : pc-main.o pc-fpga.o pc-ca.o
-	g++ -o $(OUTPUT-PC) pc-main.o pc-fpga.o pc-ca.o
+pc-misc.o :
+	g++ $(CFLAGS) misc.cpp -o pc-misc.o -c
+
+pc-sim.o :
+	g++ $(CFLAGS) sim.cpp -o pc-sim.o -c
+
+pc-truth.o :
+	g++ $(CFLAGS) truth.cpp -o pc-truth.o -c
 
 # ================================================================
 # ARM COMPILATION
@@ -42,36 +78,44 @@ pc-link : pc-main.o pc-fpga.o pc-ca.o
 .PHONY : arm arm-link
 
 # Cross Compile Recipe for ARM
-arm : arm-link
+arm : arm-ca.o arm-eval.o arm-fpga.o arm-ga.o arm-global.o arm-main.o arm-misc.o arm-sim.o arm-truth.o arm-link clean
 
-# Compile CA File
+# Links together all the files -- Order Matters --
+arm-link :
+	$(CC) -o $(OUTPUT-ARM) arm-main.o arm-sim.o arm-eval.o arm-ca.o arm-fpga.o arm-ga.o arm-misc.o arm-truth.o arm-global.o
+
+# === Compile Recipe for Each File -- Alphabetical Order === #
 arm-ca.o :
 	$(CC) $(CFLAGS) ca.cpp -o arm-ca.o -c
 
-# Compile FPGA File
-arm-fpga.o :
-	$(CC) $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o arm-fpga.o -c
-
-# Compile Eval File
 arm-eval.o :
 	$(CC) $(CFLAGS) eval.cpp -o arm-eval.o -c
 
-# Compile Sim File
-arm-sim.o :
-	$(CC) $(CFLAGS) sim.cpp -o arm-sim.o -c
+arm-fpga.o :
+	$(CC) $(CFLAGS) $(ALT_INCLUDE) fpga.cpp -o arm-fpga.o -c
 
-# Compile GA Main File
+arm-ga.o :
+	$(CC) $(CFLAGS) ga.cpp -o arm-ga.o -c
+
+arm-global.o :
+	$(CC) $(CFLAGS) global.cpp -o arm-global.o -c
+
 arm-main.o :
 	$(CC) $(CFLAGS) $(ALT_INCLUDE) ga-main.cpp -o arm-main.o -c
 
-# Links together all the files
-arm-link : arm-main.o arm-eval.o arm-fpga.o arm-ca.o
-	$(CC) -o $(OUTPUT-ARM) arm-main.o arm-eval.o arm-fpga.o arm-ca.o
+arm-misc.o :
+	$(CC) $(CFLAGS) misc.cpp -o arm-misc.o -c
+
+arm-sim.o :
+	$(CC) $(CFLAGS) sim.cpp -o arm-sim.o -c
+
+arm-truth.o :
+	$(CC) $(CFLAGS) truth.cpp -o arm-truth.o -c
 
 # ================================================================
 # OTHER OPTIONS
 # ================================================================
-
 .PHONY: clean
+
 clean :
 	rm -f $(TARGET) *.a *.o

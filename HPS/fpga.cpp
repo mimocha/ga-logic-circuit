@@ -48,6 +48,7 @@
 
 #include "fpga.hpp"
 #include "ansi.hpp"
+#include "global.hpp"
 
 /* ========== FPGA Define ========== */
 
@@ -114,30 +115,30 @@ using namespace std;
 
 static bool fpga_not_init (void);
 
-static void fpga_test_fill (uint8_t *const *const grid, const uint8_t num);
+static void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num);
 
-static unsigned int fpga_test (const unsigned int mode);
+static unsigned int fpga_test (const unsigned int &mode);
 
-static uint32_t fpga_s1_read (const uint32_t offset);
+static uint32_t fpga_s1_read (const uint32_t &offset);
 
-static void fpga_s1_write (const uint32_t offset, const uint32_t data);
+static void fpga_s1_write (const uint32_t &offset, const uint32_t &data);
 
-static void fpga_s2_write (const uint32_t offset, const uint32_t data);
+static void fpga_s2_write (const uint32_t &offset, const uint32_t &data);
 
 
 
 
 /* ========== Miscellaneous Functions ========== */
 
-void fpga_init (const unsigned int dimx_in, const unsigned int dimy_in) {
+void fpga_init (void) {
 	printf ("Initializing FPGA... ");
 
 	/* If FPGA was already initialized, close and reinitialize. */
 	if ( fpga_init_flag == 1 ) close (fd);
 
 	/* Creates local copy of global parameters for CA functions */
-	dimx = dimx_in;
-	dimy = dimy_in;
+	dimx = GlobalSettings::get_ca_dimx ();
+	dimy = GlobalSettings::get_ca_dimy ();
 
 	/* Read Device Memory */
 	fd = open ("/dev/mem", (O_RDWR | O_SYNC));
@@ -281,7 +282,7 @@ void fpga_verify (uint8_t *const *const grid) {
 	return;
 }
 
-void fpga_test_fill (uint8_t *const *const grid, const uint8_t num) {
+void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num) {
 	/* Iterates over every row */
 	for (unsigned int y = 0 ; y < dimy ; y ++) {
 		/* Iterates over every cell */
@@ -291,13 +292,13 @@ void fpga_test_fill (uint8_t *const *const grid, const uint8_t num) {
 	}
 }
 
-unsigned int fpga_test (const unsigned int mode) {
+unsigned int fpga_test (const unsigned int &mode) {
 	/* FPGA Testing Inputs */
-	static const uint64_t test_input [3] =
+	constexpr uint64_t test_input [3] =
 	{ 0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12 };
 
 	/* FPGA Expected Outputs */
-	static const uint64_t test_output [4][3] = {
+	constexpr uint64_t test_output [4][3] = {
 		{0x0000000000000000, 0x0000000000000000, 0x0000000000000000}, // NULL
 		{0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12}, // PASS A
 		{0x0000000000000000, 0x0000000000000000, 0x0000000000000000}, // PASS B
@@ -345,7 +346,7 @@ unsigned int fpga_test (const unsigned int mode) {
 	Handles interactions with S1 port (Linux IO)
 */
 
-void fpga_set_input (const uint64_t write_data) {
+void fpga_set_input (const uint64_t &write_data) {
 	/* FPGA Uninitialized Error Catch */
 	if ( fpga_not_init () ) return;
 
@@ -471,14 +472,14 @@ void fpga_set_grid (const uint8_t *const *const grid) {
 	Handles address offsets.
 */
 
-uint32_t fpga_s1_read (const uint32_t offset) {
+uint32_t fpga_s1_read (const uint32_t &offset) {
 	return alt_read_word (s1_address + offset);
 }
 
-void fpga_s1_write (const uint32_t offset, const uint32_t data) {
+void fpga_s1_write (const uint32_t &offset, const uint32_t &data) {
 	alt_write_word (s1_address + offset, data);
 }
 
-void fpga_s2_write (const uint32_t offset, const uint32_t data) {
+void fpga_s2_write (const uint32_t &offset, const uint32_t &data) {
 	alt_write_word (s2_address + offset, data);
 }

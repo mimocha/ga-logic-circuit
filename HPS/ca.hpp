@@ -46,18 +46,11 @@
 
 /* ========== Miscellaneous Functions ========== */
 
-/* void ca_init (const unsigned int nbin, const unsigned int color_in,
-	const unsigned int dimx_in, const unsigned int dimy_in)
-
+/* void ca_init (void)
 	Initializes CA file's global variable.
 	Done once at the beginning of every simulation.
-
-	Takes in 4 global variables, and creates a copy for CA functions.
-	In this order:
-	Neighbor Count, Color Count, Grid DIMX, Grid DIMY
 */
-void ca_init (const unsigned int nbin, const unsigned int color_in,
-	const unsigned int dimx_in, const unsigned int dimy_in);
+void ca_init (void);
 
 /* void ca_cleanup (void)
 	Cleans up any dynamically allocated memory on the CA global level.
@@ -117,8 +110,8 @@ bool ca_is_init (void);
 void ca_gen_row (const uint8_t *const input, uint8_t *const output,
 	const uint8_t *const DNA);
 
-/* void ca_gen_grid (uint8_t *const *const grid, const uint8_t *const DNA,
-	const uint8_t *const seed = NULL)
+/* void ca_gen_grid
+(uint8_t *const *const grid, const uint8_t *const DNA, const uint8_t *const seed = NULL)
 
 	Generates a 2-Dimensional CA grid, given a dna string.
 	A seed is optional.
@@ -131,22 +124,22 @@ void ca_gen_row (const uint8_t *const input, uint8_t *const output,
 	seed is a const pointer to a const uint8_t. Neither the pointer nor the value will change.
 	If seed is not provided, it is defaulted to NULL.
 */
-void ca_gen_grid (uint8_t *const *const grid, const uint8_t *const DNA,
-	const uint8_t *const seed = NULL);
+void ca_gen_grid
+(uint8_t *const *const grid, const uint8_t *const DNA, const uint8_t *const seed = NULL);
 
 
 
 /* ========== Printing Functions ========== */
 
-/* static void ca_print (const uint8_t cell)
+/* static void ca_print (const uint8_t &cell)
 	Prints a predetermined colored-ASCII character to terminal, based on a cell's value.
 
-	Input is a constant unsigned char 'cell'
-	The value of 'cell' cannot be changed within this function.
+	Input is a reference to a const uint8_t 'cell'
+	The value of 'cell' may not be changed within this function.
 
 	Does not clear styling at the end.
 */
-// static void ca_print (const uint8_t cell);
+// static void ca_print (const uint8_t &cell);
 
 /* void ca_print_row (const uint8_t *const array)
 	Prints a 1-Dimensional CA array.

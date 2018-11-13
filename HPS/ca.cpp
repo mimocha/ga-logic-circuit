@@ -35,10 +35,9 @@
 
 #include "ca.hpp"
 #include "ansi.hpp"
+#include "global.hpp"
 
-/* ===== CA Global Variables =====
-	Creates a local copy of global variables, so functions can have access to some variables immediately, without having to pass them around as argument so often.
-*/
+/* ===== CA Global Variables ===== */
 
 /* Neighbor Cell Array */
 static uint8_t *neighbor;
@@ -56,8 +55,7 @@ static uint16_t nb_count;
 static bool ca_init_flag;
 
 using namespace std;
-
-
+using namespace GlobalSettings;
 
 /* ========== STATIC FUNCTION PROTOYPES ==========
 	See documentation in header file "ca.hpp"
@@ -67,27 +65,26 @@ static bool ca_not_init (void);
 
 static uint8_t ca_func (const uint8_t *const neighbor);
 
-static void ca_print (const uint8_t cell);
+static void ca_print (const uint8_t &cell);
 
 
 
 /* ========== Miscellaneous Functions ========== */
 
-void ca_init (const unsigned int nbin, const unsigned int color_in,
-	const unsigned int dimx_in, const unsigned int dimy_in) {
+void ca_init (void) {
 	printf ("Initializing CA... ");
 
+	/* Creates local copy of global parameters for CA functions */
+	dimx = get_ca_dimx ();
+	dimy = get_ca_dimy ();
+	color = get_ca_color ();
+	nb_count = get_ca_nb ();
+
 	/* Allocate memory for neighbor array */
-	neighbor = (uint8_t *) calloc (nbin, sizeof(uint8_t));
+	neighbor = (uint8_t *) calloc (nb_count, sizeof(uint8_t));
 
 	/* Calculate index offset for neighboring cells. Only work with odd-numbers */
-	offset = ((nbin - 1) / 2);
-
-	/* Creates local copy of global parameters for CA functions */
-	nb_count = nbin;
-	color = color_in;
-	dimx = dimx_in;
-	dimy = dimy_in;
+	offset = ((nb_count - 1) / 2);
 
 	/* Sets initialization flag to TRUE */
 	ca_init_flag = 1;
@@ -174,8 +171,8 @@ void ca_gen_row (const uint8_t *const input, uint8_t *const output,
 	}
 }
 
-void ca_gen_grid (uint8_t *const *const grid, const uint8_t *const DNA,
-	const uint8_t *const seed) {
+void ca_gen_grid
+(uint8_t *const *const grid, const uint8_t *const DNA, const uint8_t *const seed) {
 	/* CA Uninitialized Error Catch */
 	if ( ca_not_init () ) return;
 
@@ -196,7 +193,7 @@ void ca_gen_grid (uint8_t *const *const grid, const uint8_t *const DNA,
 
 /* ========== Printing Functions ========== */
 
-void ca_print (const uint8_t cell) {
+void ca_print (const uint8_t &cell) {
 	/* Sets terminal output according to the cell's value */
 	switch ( cell ) {
 		case 0x0:

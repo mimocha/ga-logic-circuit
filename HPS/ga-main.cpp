@@ -21,70 +21,75 @@
 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE
+
 */
+
+/* ========== Standard Library Include ========== */
+
+#include <stdio.h>		/* Standard I/O */
+#include <stdlib.h>		/* calloc, free */
+#include <stdint.h>		/* uint definitions */
+#include <time.h>		/* time */
+#include <math.h>		/* pow, round, ceiling */
+#include <iostream>		/* cin, cout */
+#include <algorithm>	/* sort, find */
+#include <vector>		/* vectors */
+#include <array>		/* arrays */
+#include <cstring>		/* strcmp */
 
 /* ========== Custom File Header ========== */
 
 #include "ga-main.hpp"	/* Standard Includes & Function Prototypes */
 #include "ansi.hpp"		/* Colored Terminal Outputs */
-#include "globalparm.h"	/* Global Parameters */
-#include "misc.hpp"		/* Miscellaneous Functions */
-#include "ga-class.hpp"	/* Genetics Algorithm Class */
 #include "ca.hpp"		/* Cellular Automaton Functions */
-#include "fpga.hpp"		/* FPGA Related Functions */
-#include "eval.hpp"
-// #include "sim.hpp"		/* Simulation Function Wrapper */
-
-
-
-/* ========== Global Variables ========== */
+#include "eval.hpp"		/* Evaluation Functions */
+#include "fpga.hpp"		/* FPGA Functions */
+#include "global.hpp"	/* Global Parameters */
+#include "misc.hpp"		/* Miscellaneous Functions */
+#include "sim.hpp"		/* Simulation Function Wrapper */
+#include "truth.hpp"	/* Truth Table */
 
 /* Cellular Automaton Virtual Grid */
-// uint8_t **grid;
+static uint8_t **grid;
 
-/* Initializes Global UID Counter */
-uint32_t GeneticAlgorithm::object_count = 0;
+/* Cellular Automaton Seed Array */
+static uint8_t *seed;
 
 using namespace std;
-
-
+using namespace GlobalSettings;
+namespace tt = TruthTable;
 
 /* ========== MAIN ========== */
 
 int main (int argc, char **argv) {
-	/* Variable for selecting menu option */
-	static unsigned int sel;
-
 	/* Main Initialization Function */
 	main_init ();
 
 	/* Initialize FPGA */
-	fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
+	fpga_init ();
 
 	/* Initialize CA */
-	ca_init (global.CA.NB, global.CA.COLOR, global.CA.DIMX, global.CA.DIMY);
+	ca_init ();
 
-
-
-	/* ===== Main Program ===== */
 	while (1) {
-
-		/* Prints available options and get user input */
-		sel = main_menu ();
+		/* Variable for selecting menu option -- Prints available options and get user input */
+		unsigned int sel = main_menu ();
 
 		switch (sel) {
 
 			case 0: /* Exit */
 				printf ("\nExiting Program.\n");
 
-				main_cleanup ();
+				sim_cleanup ();
+				tt::clear_table ();
 				ca_cleanup ();
 				fpga_cleanup ();
+				main_cleanup ();
 
 				return EXIT_SUCCESS;
 
 			case 1: /* About */
-				help_message ();
+				about ();
 				break;
 
 			case 2: /* Settings */
@@ -92,28 +97,36 @@ int main (int argc, char **argv) {
 				break;
 
 			case 3: /* Initialize FPGA */
-				fpga_init (MAX_CA_DIMX, MAX_CA_DIMY);
+				fpga_init ();
 				break;
 
 			case 4: /* FPGA Circuit Verification */
 				fpga_verify (grid);
 				break;
 
-			case 5: /* Read Truth Table CSV */
-				global.tt_init = read_csv ();
+			case 5: /* Read Truth Table File */
+				tt::set_table ();
 				break;
 
 			case 6: /* Run Simulation */
+				sim_init ();
+				sim_run (grid, seed);
 				break;
 
 			case 7: /* Display Previous Results */
+				sim_results ();
 				break;
 
 			case 8: /* Inspect DNA */
-				inspect ();
+				inspect (grid, seed);
 				break;
 
 			case 9: /* Export Results */
+				sim_export ();
+				break;
+
+			case 10: /* Preprogrammed Routine */
+				special ();
 				break;
 
 			default: /* Invalid Input */
@@ -128,34 +141,31 @@ int main (int argc, char **argv) {
 /* ========== Main Menu / Initialize / Cleanup Functions ========== */
 
 void main_init (void) {
-	printf ("Initializing GA Program...\n");
+	printf ("Initializing GA Program...");
 
 	/* Allocates 2D working array for Cellular Automaton
 		WARNING: Make sure CALLOC gets argument 2: sizeof(uint8_t *) and not sizeof(uint8_t)
-		This mistake will cause attempts to free grid[0] at the end to fail, throwing a double free.
-
 		NOTE: **grid will always have the physical dimension allocated, not the user set dimension
 	*/
-	grid = (uint8_t **) calloc (MAX_CA_DIMY, sizeof (uint8_t *));
-	for (unsigned int i=0; i<MAX_CA_DIMY; i++) {
-		grid [i] = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
+	grid = (uint8_t **) calloc (PHYSICAL_DIMY, sizeof (uint8_t *));
+	for (unsigned int i = 0 ; i < PHYSICAL_DIMY ; i++) {
+		grid [i] = (uint8_t *) calloc (PHYSICAL_DIMX, sizeof (uint8_t));
 	}
 
+	/* Initialize Cellular Automaton grid seed */
+	seed = (uint8_t *) calloc (PHYSICAL_DIMX, sizeof (uint8_t));
+	unsigned int mid = floor (PHYSICAL_DIMX / 2);
+	seed [mid] = 1;
+
+	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 }
 
 void main_cleanup (void) {
 	printf ("Cleaning up main... ");
 
-	if (global.stats.avg != NULL) free (global.stats.avg);
-	if (global.stats.med != NULL) free (global.stats.med);
-	if (global.stats.max != NULL) free (global.stats.max);
-	if (global.stats.min != NULL) free (global.stats.min);
-
-	if (global.truth.input != NULL) free (global.truth.input);
-	if (global.truth.output != NULL) free (global.truth.output);
-
+	if (seed != NULL) free (seed);
 	if (grid != NULL) {
-		for (unsigned int y=0; y<MAX_CA_DIMY; y++) {
+		for (unsigned int y = 0 ; y < PHYSICAL_DIMY ; y++) {
 			free (grid[y]);
 		}
 		free (grid);
@@ -174,38 +184,26 @@ unsigned int main_menu (void) {
 			"\t2. Settings\n"
 			"\t3. Initialize FPGA | ");
 
-	if (fpga_is_init () == 1) {
-		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
-	} else {
-		cout << ANSI_RED "FAILED" ANSI_RESET "\n";
-	}
+	if (fpga_is_init () == 1) printf (ANSI_GREEN "DONE\n" ANSI_RESET);
+	else printf (ANSI_RED "FAILED\n" ANSI_RESET);
 
 	printf ("\t4. Verify FPGA\n"
 			"\t5. Set Truth Table | ");
 
-	if (global.tt_init == 1) {
-		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
-	} else {
-		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
-	}
+	if (tt::table_is_init () == 1) printf (ANSI_GREEN "DONE\n" ANSI_RESET);
+	else printf (ANSI_YELLOW "WAITING\n" ANSI_RESET);
 
 	printf ("\t6. Run Simulation\n"
 			"\t7. View Results    | ");
 
-	if (global.run_check == 1) {
-		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
-	} else {
-		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
-	}
+	if (sim_is_done () == 1) printf (ANSI_GREEN "DONE\n" ANSI_RESET);
+	else printf (ANSI_YELLOW "WAITING\n" ANSI_RESET);
 
 	printf ("\t8. Inspect DNA\n"
 			"\t9. Export Results  | ");
 
-	if (global.export_check == 1) {
-		cout << ANSI_GREEN "DONE" ANSI_RESET "\n";
-	} else {
-		cout << ANSI_YELLOW "WAITING" ANSI_RESET "\n";
-	}
+	if (export_is_done () == 1) printf (ANSI_GREEN "DONE\n" ANSI_RESET);
+	else printf (ANSI_YELLOW "WAITING\n" ANSI_RESET);
 
 	printf ("\nWaiting for Input: ");
 
@@ -219,11 +217,10 @@ unsigned int main_menu (void) {
 
 /* ========== Menu Options ========== */
 
-
 void settings (void) {
-	unsigned int var;
-
 	while (true) {
+		unsigned int var;
+
 		/* Prints option list */
 		printf (ANSI_REVRS "\n\t>>--- Settings ---<<\n" ANSI_RESET
 			"\t0. Back\n"
@@ -238,19 +235,16 @@ void settings (void) {
 			"\t7. CA Color Count\t| Current Value: %u\n"
 			"\t8. CA Neighbor Count\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Data Parameters =====\n" ANSI_RESET
-			"\t9.  DATA Fitness Track\t| Current Value: %u\n"
-			"\t10. DATA Time Track\t| Current Value: %u\n"
-			"\t11. DATA CA Print\t| Current Value: %u\n"
-			"\t12. DATA Export\t\t| Current Value: %u\n"
+			"\t9. DATA CA Print\t| Current Value: %u\n"
+			"\t10. DATA Export\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Truth Table Parameters =====\n" ANSI_RESET
-			"\t13. TT Sequential Logic\t| Current Value: %u\n"
-			"\t14. TT Step Count\t| Current Value: %u\n"
-			"\t15. TT F1 Scoring\t| Current Value: %u\n\n"
+			"\t11. TT Row Count\t| Current Value: %u\n"
+			"\t12. TT F1 Scoring\t| Current Value: %u\n\n"
 			"Waiting for Input: ",
-			global.GA.POP, global.GA.GEN, global.GA.MUTP, global.GA.POOL,
-			global.CA.DIMX, global.CA.DIMY, global.CA.COLOR, global.CA.NB,
-			global.DATA.TRACK, global.DATA.TIME, global.DATA.CAPRINT, global.DATA.EXPORT,
-			global.truth.time, global.truth.step, global.truth.f1
+			get_ga_pop(), get_ga_gen(), get_ga_mutp(), get_ga_pool(),
+			get_ca_dimx(), get_ca_dimy(), get_ca_color(), get_ca_nb(),
+			get_data_caprint(), get_data_export(),
+			tt::get_row(), tt::get_f1()
 		);
 
 		/* Sanitized Scan */
@@ -262,133 +256,62 @@ void settings (void) {
 				printf ("Returning to main menu\n");
 				return;
 
-			case 1: /* global.GA.POP */
+			case 1: /* GA.POP */
 				printf ("Input New Value: ");
-				scan_uint (&global.GA.POP);
-				if (global.GA.POP > MAX_GA_POP) {
-					global.GA.POP = MAX_GA_POP;
-					printf ("Value capped at: %u\n", global.GA.POP);
-				} else if (global.GA.POP == 0) {
-					global.GA.POP = 1;
-					printf ("Minimum value: %u\n", global.GA.POP);
-				}
+				set_ga_pop ( scan_uint () );
 				break;
 
-			case 2: /* global.GA.GEN */
+			case 2: /* GA.GEN */
 				printf ("Input New Value: ");
-				scan_uint (&global.GA.GEN);
-				if (global.GA.GEN > MAX_GA_GEN) {
-					global.GA.GEN = MAX_GA_GEN;
-					printf ("Value capped at: %u\n", global.GA.GEN);
-				} else if (global.GA.GEN == 0) {
-					global.GA.GEN = 1;
-					printf ("Minimum value: %u\n", global.GA.GEN);
-				}
+				set_ga_gen ( scan_uint () );
 				break;
 
-			case 3: /* global.GA.MUTP */
+			case 3: /* GA.MUTP */
 				printf ("Input New Value: ");
-				scan_float (&global.GA.MUTP);
+				set_ga_mutp ( scan_float () );
 				break;
 
-			case 4: /* global.GA.POOL */
+			case 4: /* GA.POOL */
 				printf ("Input New Value: ");
-				scan_uint (&global.GA.POOL);
+				set_ga_pool ( scan_uint () );
 				break;
 
-			case 5: /* global.CA.DIMX */
+			case 5: /* CA.DIMX */
 				printf ("Cannot Be Changed\n");
-				/*
-				printf ("Input New Value: ");
-				scan_uint (&global.CA.DIMX);
-				if (global.CA.DIMX > MAX_CA_DIMX) {
-					global.CA.DIMX = MAX_CA_DIMX;
-					printf ("Value capped at: %u\n", global.CA.DIMX);
-				} else if (global.CA.DIMX == 0) {
-					global.CA.DIMX = 1;
-					printf ("Minimum value: %u\n", global.CA.DIMX);
-				}
-				// Affects Truth Table Settings, Force Reinitialization
-				global.tt_init = 0;
-				*/
 				break;
 
-			case 6: /* global.CA.DIMY */
+			case 6: /* CA.DIMY */
 				printf ("Cannot Be Changed\n");
-				/*
-				printf ("Input New Value: ");
-				scan_uint (&global.CA.DIMY);
-				if (global.CA.DIMY > MAX_CA_DIMY) {
-					global.CA.DIMY = MAX_CA_DIMY;
-					printf ("Value capped at: %u\n", global.CA.DIMY);
-				} else if (global.CA.DIMY == 0) {
-					global.CA.DIMY = 1;
-					printf ("Minimum value: %u\n", global.CA.DIMY);
-				}
-				*/
 				break;
 
-			case 7: /* global.CA.COLOR */
+			case 7: /* CA.COLOR */
 				printf ("Input New Value: ");
-				scan_uint (&global.CA.COLOR);
-				if (global.CA.COLOR > MAX_CA_COLOR) {
-					global.CA.COLOR = MAX_CA_COLOR;
-					printf ("Value capped at: %u\n", global.CA.COLOR);
-				} else if (global.CA.COLOR <= 1) {
-					global.CA.COLOR = 2;
-					printf ("Minimum value: %u\n", global.CA.COLOR);
-				}
+				set_ca_color ( scan_uint () );
 				break;
 
-			case 8: /* global.CA.NB */
+			case 8: /* CA.NB */
 				printf ("Input New Value: ");
-				scan_uint (&global.CA.NB);
-				if (global.CA.NB == 0) {
-					global.CA.NB = 1;
-					printf ("Minimal value: %u\n", global.CA.NB);
-				} else if (global.CA.NB % 2 == 0) {
-					global.CA.NB -= 1;
-					printf ("Even values not accepted. Set to %u\n", global.CA.NB);
-				}
+				set_ca_nb ( scan_uint () );
 				break;
 
-			case 9: /* global.DATA.TRACK */
+			case 9: /* DATA.CAPRINT */
 				printf ("Input New Value: ");
-				scan_bool (&global.DATA.TRACK);
+				set_data_caprint ( scan_bool () );
 				break;
 
-			case 10: /* global.DATA.TIME */
+			case 10: /* DATA.EXPORT */
 				printf ("Input New Value: ");
-				scan_bool (&global.DATA.TIME);
+				set_data_export ( scan_bool () );
 				break;
 
-			case 11: /* global.DATA.CAPRINT */
+			case 11: /* TRUTH.ROW */
 				printf ("Input New Value: ");
-				scan_bool (&global.DATA.CAPRINT);
+				tt::set_row ( scan_uint () );
 				break;
 
-			case 12: /* global.DATA.EXPORT */
+			case 12: /* TRUTH.F1 */
 				printf ("Input New Value: ");
-				scan_bool (&global.DATA.EXPORT);
-				break;
-
-			case 13: /* global.truth.time */
-				printf ("Input New Value: ");
-				scan_bool (&global.truth.time);
-				/* Affects Truth Table Settings, Force Reinitialization */
-				global.tt_init = 0;
-				break;
-
-			case 14: /* global.truth.step */
-				printf ("Input New Value: ");
-				scan_uint (&global.truth.step);
-				/* Affects Truth Table Settings, Force Reinitialization */
-				global.tt_init = 0;
-				break;
-
-			case 15: /* global.truth.f1 */
-				printf ("Input New Value: ");
-				scan_bool (&global.truth.f1);
+				tt::set_f1 ( scan_bool () );
 				break;
 
 			default:
@@ -399,94 +322,9 @@ void settings (void) {
 	}
 }
 
-bool read_csv (void) {
-	FILE *fp;
-	char filename [80];
-
-	/* Get filename */
-	printf ("Enter file to read from: ");
-	scanf ("%s", filename);
-
-	/* Open file in read mode */
-	fp = fopen (filename, "r");
-	if (fp == NULL) {
-		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
-		return 0;
-	}
-
-	printf ("Parsing CSV... ");
-
-	/* Checks Header Row */
-	char buffer [16];
-
-	/* Checks input column header */
-	fscanf (fp, "%s", buffer);
-	if ( strcmp(buffer, "input") != 0 ) {
-		printf (ANSI_RED "FAILED -- Missing input column\n" ANSI_RESET);
-		return 0;
-	}
-
-	/* Checks output column header */
-	fscanf (fp, "%s", buffer);
-	if ( strcmp(buffer, "output") != 0 ) {
-		printf (ANSI_RED "FAILED -- Missing output column\n" ANSI_RESET);
-		return 0;
-	}
-
-	/* Gets row count */
-	fscanf (fp, "%u", &global.truth.step);
-
-	/* Clears any previously set truth table, then calloc row number of items */
-	if (global.truth.input != NULL) free (global.truth.input);
-	global.truth.input = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
-	if (global.truth.output != NULL) free (global.truth.output);
-	global.truth.output = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
-
-	/* Gets value, one-by-one */
-	for (unsigned int row = 0; row < global.truth.step; row++) {
-		fscanf (fp, "%llx", &global.truth.input [row]);
-		fscanf (fp, "%llx", &global.truth.output [row]);
-
-		/* Unexpected End of File Error */
-		if ( feof (fp) ) {
-			printf (ANSI_RED "FAILED -- Unexpected End of File. Read %d / %d\n" ANSI_RESET,
-			row, global.truth.step);
-			return 0;
-		}
-	}
-
-	/* Print Completion Message */
-	printf (ANSI_GREEN "DONE. Parsed %d rows.\n" ANSI_RESET, global.truth.step);
-
-	fclose (fp);
-	return 1;
-}
-
-// void results (void) {
-// 	if (global.run_check == 0) {
-// 		printf ("No simulation results.\n");
-// 		return;
-// 	}
-//
-// 	printf (ANSI_REVRS "\n\t>>--- Simulation Results ---<<\n" ANSI_RESET
-// 		"\n\t\tFitness Table\n"
-// 		"  Gen | Maximum | Minimum | Median | Average\n"
-// 		"--------------------------------------------\n");
-// 	for (uint32_t i=0; i<global.stats.gen; i++) {
-// 		printf(" %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
-// 		global.stats.max [i], global.stats.min [i],
-// 		global.stats.med [i], global.stats.avg [i]);
-// 	}
-//
-// 	cout << endl;
-//
-// 	return;
-// }
-
-void inspect (void) {
-
+void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 	/* Fail Conditions */
-	if (global.tt_init == 0) {
+	if ( tt::table_is_init () == 0) {
 		printf (ANSI_RED "No truth table defined.\n" ANSI_RESET);
 		return;
 	}
@@ -503,74 +341,52 @@ void inspect (void) {
 
 	printf (ANSI_REVRS "\n\tDNA Inspection\n" ANSI_RESET);
 
-
-	unsigned int color, nb;
-	char *buffer;
-	uint8_t *dna;
-
-	/* Enter desired settings */
-	printf ("\nDNA color count : ");
-	scan_uint (&color);
-	printf ("Neighbor count : ");
-	scan_uint (&nb);
-
 	/* Enter DNA String in given base / LSB format */
-	unsigned int length = (unsigned int) pow (color, nb);
-	buffer = (char *) calloc (length, sizeof (char));
-	dna = (uint8_t *) calloc (length, sizeof (uint8_t));
-	printf ("Input DNA string in base %u | LSB | Expected length - %u :\n", color, length);
-	scanf ("%s", buffer);
+	const unsigned int length = (unsigned int) pow (get_ca_color(), get_ca_nb());
+
+	/* Temporary array for this function */
+	uint8_t *const dna = (uint8_t *) calloc (length, sizeof (uint8_t));
+
+	printf ("Input DNA string in base %u | LSB | Expected length - %u :\n", get_ca_color(), length);
+	scanf ("%s", dna);
 
 	/* Checks DNA length validity */
-	if ( strlen (buffer) != length) {
+	if ( strlen ((char *)dna) != length) {
 		printf (ANSI_RED "DNA length mismatch. Given length was %u\n" ANSI_RESET,
-		(unsigned int) strlen (buffer));
-		if (buffer != NULL) free (buffer);
-		if (dna != NULL) free (dna);
+			(unsigned int) strlen ((char *)dna));
+		free (dna);
 		return;
 	}
 
-	/* Checks DNA string validity & fixes offset.
-		WARNING: This only works upto base 10. Cannot handle hexadecimals properly yet.
-	*/
-	for (unsigned int i=0; i<length; i++) {
-		dna [i] = buffer [i] - 48;
+	/* Checks DNA string validity & fixes offset. */
+	for (unsigned int i = 0 ; i < length ; i++) {
+		/* Adjusts ASCII input into uint8_t [0,9] */
+		dna [i] -= 48;
 
-		if (dna [i] >= color) {
-			cout << "\e[41;97m^" << ANSI_RESET;
+		if (dna [i] >= get_ca_color()) {
+			printf ("\e[41;97m^");
 			printf (ANSI_RED "\nDNA string invalid at position %u\n" ANSI_RESET, i);
-			if (buffer != NULL) free (buffer);
-			if (dna != NULL) free (dna);
+			free (dna);
 			return;
 		}
 
-		cout << " ";
+		putchar (' ');
 	}
 	printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
 
 
 
-	/* ===== CELLULAR AUTOMATON ===== */
+	/* ===== FPGA SET GRID && EVALUATE ===== */
 
-	/* Initialize Cellular Automaton grid seed */
-	uint8_t *seed = (uint8_t *) calloc (MAX_CA_DIMX, sizeof (uint8_t));
-	unsigned int mid = floor (MAX_CA_DIMX / 2);
-	seed [mid] = 1;
-
-
-
-	/* ===== FPGA SET GRID ===== */
-
-	/* Generate & Set Grid */
 	ca_gen_grid (grid, dna, seed);
 	ca_gen_grid (grid, dna);
 	fpga_set_grid (grid);
 
-	if (global.truth.f1 == 1)
-		eval_f1_insp (global.truth.input, global.truth.output, global.truth.step);
-	else
-		eval_bc_insp (global.truth.input, global.truth.output, global.truth.step);
-
+	if ( tt::get_f1() == 1 ) {
+		eval_f1_insp ( tt::get_input(), tt::get_output(), tt::get_row() );
+	} else {
+		eval_bc_insp ( tt::get_input(), tt::get_output(), tt::get_row() );
+	}
 
 
 	/* ===== PRINT CA GRID ===== */
@@ -585,128 +401,47 @@ void inspect (void) {
 	ca_print_grid (grid);
 
 	/* Print Center Marker */
-	cout << "\e[103;30m";
-	for (unsigned int x=0; x<MAX_CA_DIMX; x++) {
+	printf ("\e[103;30m");
+	for (unsigned int x = 0 ; x < get_ca_dimx() ; x++) {
 		if (x % 4 == 0) {
-			printf ("%X", x/4%16);
+			printf ("%X", x / 4 % 16);
 		} else {
-			cout << "+";
+			putchar ('+');
 		}
 	}
-	cout << ANSI_RESET "\n";
+	printf (ANSI_RESET "\n");
 
 	/* Print CA Second Pass */
 	ca_gen_grid (grid, dna);
 	ca_print_grid (grid);
 
 	/* Print Bottom Marker */
-	cout << "\e[103;30m";
-	for (unsigned int x=0; x<MAX_CA_DIMX; x++) {
+	printf ("\e[103;30m");
+	for (unsigned int x = 0 ; x < get_ca_dimx() ; x++) {
 		if (x % 4 == 0) {
-			printf ("%X", x/4%16);
+			printf ("%X", x / 4 % 16);
 		} else {
 			cout << "+";
 		}
 	}
-	cout << ANSI_RESET "\n";
+	printf (ANSI_RESET "\n");
 
-	/* Line Break */
+	/* Flush Stream */
 	cout << endl;
+
+
 
 	/* ===== CLEANUP ===== */
 
-	free (buffer);
 	free (dna);
-	free (seed);
+
 	return;
 }
 
-// bool export_rpt (void) {
-// 		FILE *fp;
-// 		char filename [64];
-//
-// 		/* Get Current Local Time & Convert to Time Struct */
-// 		time_t raw_time;
-// 		struct tm *timeinfo;
-// 		time (&raw_time);
-// 		timeinfo = localtime (&raw_time);
-// 		/* Sets filename to YYYYMMDD-HHMMSS format */
-// 		strftime (filename, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
-//
-// 		printf ("Exporting results as: \"%s\" ...", filename);
-//
-// 		fp = fopen (filename, "w");
-// 		if (fp == NULL) {
-// 			printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
-// 			return 0;
-// 		}
-//
-// 		/* ===== Write to File ===== */
-//
-// 		fprintf (fp, "Simulation Report: %s\n\n", filename);
-//
-// 		fprintf (fp, ">> Settings:\n"
-// 			"\tGeneration Limit: %u\n"
-// 			"\tPopulation Limit: %u\n"
-// 			"\tX-Axis Dimension: %u\n"
-// 			"\tY-Axis Dimension: %u\n"
-// 			"\tCA Color: %u\n"
-// 			"\tCA Neighbor: %u\n"
-// 			"\tTime to first Solution: ",
-// 			global.stats.gen, global.stats.pop,
-// 			global.stats.dimx, global.stats.dimy,
-// 			global.stats.color, global.stats.nb );
-//
-// 		if (global.stats.tts != 0) {
-// 			fprintf (fp, "%u gens\n", global.stats.tts);
-// 		} else {
-// 			fprintf (fp, "Not Applicable\n");
-// 		}
-//
-// 		fprintf (fp, "\nFitness Table\n"
-// 			"  Gen | Maximum | Minimum | Median | Average\n"
-// 			"--------------------------------------------\n");
-// 		for (uint32_t i=0; i<global.stats.gen; i++) {
-// 			fprintf (fp, " %4u | %7u | %7u | %6.1f | %7.1f \n", i + 1,
-// 			global.stats.max [i], global.stats.min [i],
-// 			global.stats.med [i], global.stats.avg [i]);
-// 		}
-//
-// 		fclose (fp);
-// 		printf (ANSI_GREEN " DONE\n" ANSI_RESET);
-// 		return 1;
-// }
 
 
+/* ========== Special Routine ========== */
 
-// void rand_tt (void) {
-// 	/* Checks & Frees first, just in case */
-// 	if (global.truth.input != NULL) free (global.truth.input);
-// 	global.truth.input = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
-// 	if (global.truth.output != NULL) free (global.truth.output);
-// 	global.truth.output = (uint64_t *) calloc (global.truth.step, sizeof (uint64_t));
-//
-// 	/* Initializing with random number
-// 		RAND_MAX is defined as a 32-bit number.
-// 		Thus, two bit-shifted 32-bit numbers, combine into one, 64-bit random number.
-//
-// 		Its Shit. I know.
-// 	*/
-// 	for (unsigned int i=0; i<global.truth.step; i++) {
-// 		global.truth.input [i] |= rand ();
-// 		global.truth.input [i] <<= 32;
-// 		global.truth.input [i] |= rand ();
-// 		// Right Shifts for grids narrower than 64 bit
-// 		global.truth.input [i] >>= (64 - global.CA.DIMX);
-//
-//
-// 		global.truth.output [i] |= rand ();
-// 		global.truth.output [i] <<= 32;
-// 		global.truth.output [i] |= rand ();
-// 		// Right Shifts for grids narrower than 64 bit
-// 		global.truth.output [i] >>= (64 - global.CA.DIMX);
-// 	}
-//
-// 	global.tt_init = 1;
-// 	printf ( ANSI_GREEN "DONE" ANSI_RESET "\n");
-// }
+void special (void) {
+	printf ("\nNothing Programmed Here Yet.\n");
+}

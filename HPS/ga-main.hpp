@@ -21,26 +21,11 @@
 	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE
+
 */
 
 #ifndef GAMAIN_HPP
 #define GAMAIN_HPP
-
-/* ========== Standard Library Include ========== */
-
-#include <stdio.h>		/* Standard I/O */
-#include <stdlib.h>		/* calloc, free, rand, srand */
-#include <stdint.h>		/* uint definitions */
-#include <stdarg.h>		/* va_list vastart vaend */
-#include <time.h>		/* time */
-#include <math.h>		/* pow, round, ceiling */
-#include <iostream>		/* cin, cout */
-#include <algorithm>	/* sort, find */
-#include <vector>		/* vectors */
-#include <array>		/* arrays */
-#include <cstring>		/* strcmp */
-
-
 
 /* ========== Main Menu / Initialize / Cleanup Functions ========== */
 
@@ -66,46 +51,29 @@ static unsigned int main_menu (void);
 
 
 
-/* ========== Menu Options ========== */
+/* ========== Main Menu Option ========== */
 
-/* void settings (void)
+/* static void settings (void)
 	Handles changing of global parameters.
 */
 static void settings (void);
 
-/* bool read_csv (void)
-	CSV file must be in the following format:
-	-----------------
-	input output <row count>
-	<input value 1> <output value 1>
-	<input value 2> <output value 2>
-	<input value 3> <output value 3>
-	...
-	-----------------
-
-	Spaces and tabs are automatically trimmed.
-	Header row is Case Sensitive!
-	Missing columns will return a failure.
-	Input / Output values are required to be in hexadecimals.
-*/
-static bool read_csv (void);
-
-/* void results (void)
-	Displays results from a previous simulation.
-*/
-// static void results (void);
-
-/* void inspect (void)
+/* static void inspect (uint8_t *const *const grid, const uint8_t *const seed)
 	DNA inspection function.
 	Practically a smaller version of run_sim() on its own.
 	given a DNA string, this function will apply CA to it,
 	generate a logic circuit, and evaluate the circuits truth table.
 */
-static void inspect (void);
-
-/* */
-// static bool export_rpt (void);
+static void inspect (uint8_t *const *const grid, const uint8_t *const seed);
 
 
+
+/* ========== Special Routine ========== */
+
+/* static void special (void)
+	Special pre-programmed routines.
+	Program things here for longer experiments.
+*/
+static void special (void);
 
 #endif
