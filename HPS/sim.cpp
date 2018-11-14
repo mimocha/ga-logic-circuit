@@ -113,7 +113,8 @@ static bool solution_found = 0;
 static bool data_exported = 0;
 static bool sim_done = 0;
 static bool sim_init_flag = 0;
-
+static bool data_track = 1;
+static bool show_status = 1;
 
 
 /* ========== Namespaces ========== */
@@ -174,6 +175,18 @@ void sim_init (void) {
 		get_data_caprint(), get_data_export(),
 		tt::get_row(), tt::get_f1()
 	);
+
+	/* Free array of previously created population
+		WARNING: BUG: Run the simulation once, then changing the population size.
+		This causes either incomplete memory deallocation; orphans.
+		Or causes out-of-bound free attempts; Segmentation Faults.
+	*/
+	if (indv != NULL) {
+		for (unsigned int idx = 0 ; idx < pop_lim ; idx++) {
+			indv[idx].FreeDNA ();
+		}
+		free (indv);
+	}
 
 	/* Allocates an array of individuals (population) */
 	indv = (GeneticAlgorithm *) calloc (pop_lim, sizeof (GeneticAlgorithm));
@@ -246,10 +259,10 @@ void sim_cleanup (void) {
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 }
 
-void sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
+int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 	if ( sim_init_flag == 0 ) {
 		printf (ANSI_RED "\nSimulation Requires Initialization\n" ANSI_RESET);
-		return;
+		return -1;
 	}
 
 	printf ("\tSimulation Progress:\n");
@@ -340,7 +353,11 @@ void sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	report (grid, seed);
 
-	return;
+	if (solution_found == 1) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 bool sim_is_done (void) {
@@ -410,10 +427,10 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 
 
 	printf ("\tFinal Fitness Statistics:\n"
-			"\tAverage Fitness:\t%.1f / %d\n"
-			"\tMedian Fitness: \t%.1f / %d\n"
-			"\tMaximum Fitness:\t%u / %d\n"
-			"\tMinimum Fitness:\t%u / %d\n\n",
+			"\tAverage Fitness: %7.1f / %5d\n"
+			"\tMedian Fitness:  %7.1f / %5d\n"
+			"\tMaximum Fitness: %5u / %5d\n"
+			"\tMinimum Fitness: %5u / %5d\n\n",
 			stats.avg [gen_lim-1], fit_lim,
 			stats.med [gen_lim-1], fit_lim,
 			stats.max [gen_lim-1], fit_lim,
@@ -483,6 +500,7 @@ void sim_results (void) {
 void sim_export (void) {
 	FILE *fp;
 	char filename [64];
+	char buffer [64];
 
 	/* Get Current Local Time & Convert to Time Struct */
 	time_t raw_time;
@@ -490,8 +508,10 @@ void sim_export (void) {
 	time (&raw_time);
 	timeinfo = localtime (&raw_time);
 
-	/* Sets filename to YYYYMMDD-HHMMSS format */
-	strftime (filename, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
+	/* Sets filename to ./rpt/YYYYMMDD-HHMMSS format */
+	strcpy (filename, "./rpt/");
+	strftime (buffer, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
+	strcat (filename, buffer);
 
 	printf ("Exporting results as: \"%s\" ...", filename);
 

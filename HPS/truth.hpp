@@ -49,6 +49,7 @@ namespace TruthTable {
 		Input / Output values are required to be in hexadecimals.
 	*/
 	void set_table (void);
+	void set_table (const int &input);
 
 	/* void clear_table (void)
 		Clears currently set truth table.

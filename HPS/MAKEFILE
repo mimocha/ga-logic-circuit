@@ -38,7 +38,7 @@ OUTPUT-PC = ga.exe
 .PHONY : pc pc-link
 
 # X86 Compile Recipe
-pc : pc-ca.o pc-eval.o pc-fpga.o pc-ga.o pc-global.o pc-main.o pc-misc.o pc-sim.o pc-truth.o pc-link clean
+pc : pc-ca.o pc-eval.o pc-fpga.o pc-ga.o pc-global.o pc-main.o pc-misc.o pc-sim.o pc-truth.o pc-link
 
 # Links together all the files
 pc-link :
@@ -78,7 +78,7 @@ pc-truth.o :
 .PHONY : arm arm-link
 
 # Cross Compile Recipe for ARM
-arm : arm-ca.o arm-eval.o arm-fpga.o arm-ga.o arm-global.o arm-main.o arm-misc.o arm-sim.o arm-truth.o arm-link clean
+arm : arm-ca.o arm-eval.o arm-fpga.o arm-ga.o arm-global.o arm-main.o arm-misc.o arm-sim.o arm-truth.o arm-link
 
 # Links together all the files -- Order Matters --
 arm-link :
@@ -118,4 +118,4 @@ arm-truth.o :
 .PHONY: clean
 
 clean :
-	rm -f $(TARGET) *.a *.o
+	rm -f $(TARGET) *.o

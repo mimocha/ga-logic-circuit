@@ -33,7 +33,7 @@ void sim_init (void);
 
 void sim_cleanup (void);
 
-void sim_run (uint8_t *const *const grid, const uint8_t *const seed);
+int sim_run (uint8_t *const *const grid, const uint8_t *const seed);
 
 bool sim_is_done (void);
 

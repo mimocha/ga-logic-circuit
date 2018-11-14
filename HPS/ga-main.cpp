@@ -205,6 +205,8 @@ unsigned int main_menu (void) {
 	if (export_is_done () == 1) printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 	else printf (ANSI_YELLOW "WAITING\n" ANSI_RESET);
 
+	printf ("\t10. Special Routine\n");
+
 	printf ("\nWaiting for Input: ");
 
 	/* Sanitized Scan */
@@ -344,35 +346,59 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 	/* Enter DNA String in given base / LSB format */
 	const unsigned int length = (unsigned int) pow (get_ca_color(), get_ca_nb());
 
-	/* Temporary array for this function */
-	uint8_t *const dna = (uint8_t *) calloc (length, sizeof (uint8_t));
-
 	printf ("Input DNA string in base %u | LSB | Expected length - %u :\n", get_ca_color(), length);
-	scanf ("%s", dna);
 
-	/* Checks DNA length validity */
-	if ( strlen ((char *)dna) != length) {
+	/* Creates an input buffer
+		BUGFIX:
+		Previously, inputting a string of length "DNA LENGTH + 4" would cause error.
+
+		This was because "uint8_t *dna" only allocated memory for:
+			(uint8_t *) calloc (length, sizeof (uint8_t))
+		But the given string used more memory than was allocated.
+
+		When pointer "*dna" inevitably fails the length validity check,
+		the code attempts to free the size of the input string,
+		and not the size of memory allocated.
+		This would result in either a Segmentation Fault, or a double free.
+
+		Thus, now inputs are first put into a buffer, and the buffer is validated first.
+		If the buffer passes the validation test, then memory is passed into "*dna".
+	*/
+	uint8_t buffer [length*2];
+	scanf ("%s", buffer);
+
+	/* Checks input length validity */
+	if ( strlen ( (char *)buffer ) != length) {
 		printf (ANSI_RED "DNA length mismatch. Given length was %u\n" ANSI_RESET,
-			(unsigned int) strlen ((char *)dna));
-		free (dna);
+			(unsigned int) strlen ( (char *)buffer ));
 		return;
 	}
 
-	/* Checks DNA string validity & fixes offset. */
+	/* Temporary array for this function */
+	uint8_t *const dna = (uint8_t *) calloc (length, sizeof (uint8_t));
+	memcpy (dna, buffer, length);
+
+	/* Checks DNA string validity & Converts ASCII to uint8_t */
+	bool invalid_flag = 0;
 	for (unsigned int i = 0 ; i < length ; i++) {
 		/* Adjusts ASCII input into uint8_t [0,9] */
 		dna [i] -= 48;
 
 		if (dna [i] >= get_ca_color()) {
-			printf ("\e[41;97m^");
-			printf (ANSI_RED "\nDNA string invalid at position %u\n" ANSI_RESET, i);
-			free (dna);
-			return;
+			printf ("\e[41;97m" "^" ANSI_RESET);
+			invalid_flag = 1;
+		} else {
+			putchar (' ');
 		}
-
-		putchar (' ');
 	}
-	printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
+
+	if (invalid_flag) {
+		printf (ANSI_RED "\nDNA string invalid at marked position\n" ANSI_RESET);
+		free (dna);
+		return;
+	} else {
+		printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
+	}
 
 
 
@@ -387,6 +413,7 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 	} else {
 		eval_bc_insp ( tt::get_input(), tt::get_output(), tt::get_row() );
 	}
+
 
 
 	/* ===== PRINT CA GRID ===== */
@@ -443,5 +470,33 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 /* ========== Special Routine ========== */
 
 void special (void) {
-	printf ("\nNothing Programmed Here Yet.\n");
+	unsigned int search;
+	constexpr int MAX = 1000;
+
+	printf (ANSI_REVRS "\n\t>> Special Routine <<\n" ANSI_RESET);
+
+	printf ("What to search for: ");
+	scan_uint (&search);
+
+	set_data_caprint (0);
+
+	int solution_found;
+	tt::set_table (search);
+
+	for (int i = 1; i < MAX; i++) {
+		printf (ANSI_REVRS "\n\tSearching for %0X | Attempt %d / %d\n" ANSI_RESET, search, i, MAX);
+
+		sim_init ();
+		solution_found = sim_run (grid, seed);
+
+		if (solution_found == 1) {
+			sim_export ();
+			break;
+		} else if (solution_found == -1) {
+			printf ("Simulation Failed.\n");
+			break;
+		}
+	}
+
+	printf (ANSI_REVRS "\n\t>> Special Routine Done <<\n\n ANSI_RESET");
 }

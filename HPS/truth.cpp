@@ -141,6 +141,135 @@ void TruthTable::set_table (void) {
 	return;
 }
 
+void TruthTable::set_table (const int &input) {
+	FILE *fp;
+	char filename [128];
+
+	switch (input) {
+		case 0x0:
+			strcpy (filename, "./tt/0");
+			break;
+
+		case 0x1:
+			strcpy (filename, "./tt/1");
+			break;
+
+		case 0x2:
+			strcpy (filename, "./tt/2");
+			break;
+
+		case 0x3:
+			strcpy (filename, "./tt/3");
+			break;
+
+		case 0x4:
+			strcpy (filename, "./tt/4");
+			break;
+
+		case 0x5:
+			strcpy (filename, "./tt/5");
+			break;
+
+		case 0x6:
+			strcpy (filename, "./tt/6");
+			break;
+
+		case 0x7:
+			strcpy (filename, "./tt/7");
+			break;
+
+		case 0x8:
+			strcpy (filename, "./tt/8");
+			break;
+
+		case 0x9:
+			strcpy (filename, "./tt/9");
+			break;
+
+		case 0xA:
+			strcpy (filename, "./tt/a");
+			break;
+
+		case 0xB:
+			strcpy (filename, "./tt/b");
+			break;
+
+		case 0xC:
+			strcpy (filename, "./tt/c");
+			break;
+
+		case 0xD:
+			strcpy (filename, "./tt/d");
+			break;
+
+		case 0xE:
+			strcpy (filename, "./tt/e");
+			break;
+
+		case 0xF:
+			strcpy (filename, "./tt/f");
+			break;
+
+		default:
+			strcpy (filename, "./tt/f");
+			break;
+
+	}
+
+	/* Open file in read mode */
+	fp = fopen (filename, "r");
+	if (fp == NULL) {
+		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
+		return;
+	}
+
+	/* Checks Header Row */
+	char buffer [64];
+
+	/* Checks input column header */
+	fscanf (fp, "%s", buffer);
+	if ( strcmp (buffer, "input") != 0 ) {
+		printf (ANSI_RED "FAILED -- Missing input column\n" ANSI_RESET);
+		fclose (fp);
+		return;
+	}
+
+	/* Checks output column header */
+	fscanf (fp, "%s", buffer);
+	if ( strcmp (buffer, "output") != 0 ) {
+		printf (ANSI_RED "FAILED -- Missing output column\n" ANSI_RESET);
+		fclose (fp);
+		return;
+	}
+
+	/* Gets row count */
+	fscanf (fp, "%u", &ROW);
+
+	/* Clears any previously set truth table, then calloc row number of items */
+	if (INPUT != NULL) free (INPUT);
+	INPUT = (uint64_t *) calloc (ROW, sizeof (uint64_t));
+	if (OUTPUT != NULL) free (OUTPUT);
+	OUTPUT = (uint64_t *) calloc (ROW, sizeof (uint64_t));
+
+	/* Gets value, one-by-one */
+	for (unsigned int i = 0; i < ROW; i++) {
+		fscanf (fp, "%llx", &INPUT [i]);
+		fscanf (fp, "%llx", &OUTPUT [i]);
+
+		/* Unexpected End-of-File Error */
+		if ( feof (fp) ) {
+			printf (ANSI_RED "FAILED -- Unexpected End of File. Read %d / %d\n" ANSI_RESET,
+			i, ROW);
+			fclose (fp);
+			return;
+		}
+	}
+
+	fclose (fp);
+	INIT = 1;
+	return;
+}
+
 void TruthTable::clear_table (void) {
 		if (INPUT != NULL) free (INPUT);
 		if (OUTPUT != NULL) free (OUTPUT);

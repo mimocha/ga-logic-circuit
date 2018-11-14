@@ -37,20 +37,48 @@ HEX | BITS | NAME
   E | 1110 |   OR
   F | 1111 | TRUE
 
-	2-bit input is not enough; For now
-	-> Every other bit is A
-	-> Every other bit is B
-
-	Direction of generation probably doesn't matter
-	-> If you can prove that direction of generation doesn't matter; that might be a plus.
-
 	DNA Strings for primitive operands.
 	Used SOF file: "2018-10-29 64x64 00.sof"
-	Used GA program version: "1.10"
+	Used GA program version: "1.13"
 
-==================================================
+-----------------------------------------------------------------------------------------
 
-Note on change of truth table:
+## Note on change of truth table 2 (2018-11-14):
+Output bits for the old truth table was previously in the middle.
+Unfortunately, the current FPGA grid setup doesn't allow 'sending' signals from LSB to MSB
+
+> Cells take in signals from the cell directly below itself (current column, current row+1)
+> and the cell to the right of that cell (current column+1, current row+1).
+> Furthermore, there is no looping on the current grid.
+> This effectively blocks signals from going from the right (column+1) to the left (column-1).
+
+As a result, half of the circuit was constrained to output zeroes only,
+while the other half had to ignore zero inputs from overflowed cells.
+This was probably why solutions were so hard to come by.
+
+The new format has proved to be more promising.
+So far, NAND function has been discovered after only 3 runs of 200 generations.
+
+Old Output Format: LSB [0000 ... 0000 0001 0000 ...] MSB
+New Output Format: LSB [1000 ... 0000 0000 0000 ...] MSB
+
+Old Truth Table (OR):
+input output 4
+0000000000000000 00000000
+5555555555555555 10000000
+AAAAAAAAAAAAAAAA 10000000
+FFFFFFFFFFFFFFFF 10000000
+
+New Truth Table (OR):
+input output 4
+0000000000000000 0
+5555555555555555 1
+AAAAAAAAAAAAAAAA 1
+FFFFFFFFFFFFFFFF 1
+
+-----------------------------------------------------------------------------------------
+
+## Note on change of truth table (2018-11-12):
 Truth table format has been changed.
 As the old truth table may not have a possible solution (not enough input bits).
 The new truth tables' input utilizes half the bits for INPUT A, the other half for INPUT B:
@@ -72,33 +100,38 @@ input output 4
 AAAAAAAAAAAAAAAA 10000000
 FFFFFFFFFFFFFFFF 10000000
 
-(*) Starred DNAs (*) are the ones found using the old input format.
+-----------------------------------------------------------------------------------------
+
+(*) Starred DNAs (*) are the ones found using old input formats.
 The generated circuits would likely fail with the new input format.
 
-==================================================
-
-	* 0.	0023301200010021011030120203232000303300303213230011222333302020
-			0020002020201130333301321130010310011330310002333310031100003020 *
-	* 1.
+	* 0.	0020002020201130333301321130010310011330310002333310031100003020 *
+	* 1.	2030333323203010233013133233130120031301202202330001220020202012
 	* 2.
-	* 3.
+	* 3.	0021332101032310331031033333000021013033333003030333100000321110
+			0021301131202020333120103203320102323332232301030133022203331000
 	* 4.
-	* 5.
+	* 5.	0200310030333000330102032003033001310300300310031033103300030030
 	* 6.
-	* 7.
-	* 8.
+	* 7.	0330300000201023302330301013233012012330033230332000020100013010
+			0000320300313200000033132300102033330010123031133331330130331003
+	* 8.	1032301222202021000132223122223302200113212011003033003022031133
+			1033302223212121000132123102221332230311202011013032013322031133
 	* 9.
-	* A.	2203220322213303100030102300333200021223102301333333303000300230
-			0000110103131202103003201122300303100310000232033003113210103110 *
+	* A.	0000110103131202103003201122300303100310000232033003113210103110 *
 			0002122021231103300200303131330022310030302331220333302200222102 *
-	* B.
+	* B.	0031300132103123010333022021333220321033220030233010032000303033
 	* C.	2103121301123001130031132211221333332213112233233102031032023122 *
 	* D.
 	* E.
-	* F.	1122232000020232102300012130130300202012022023103032001220011223
+	* F.	0000012011013300230013010320000033310023320033333030032000303010
+			0010330320121031311330321000300330123003020133311030310010322002
+			0100033002333130311233303313130103323203020231003303110033303012
 			0102330300303030100330311002310001123020000301030033302303033330 *
 			2033112303101321001013103130300133131203133320303330133320000001 *
 			1303323032313030131011110000002322321131011033002000002203330003 *
+
+			0000012411013350230013010326000033310723320038333030039000303010
 
 # Interesting DNA list
 Assuming seed is a string of zeroes, with a 1 in the center.
@@ -139,3 +172,9 @@ Assuming seed is a string of zeroes, with a 1 in the center.
 
 	11. Binary Random Triangles | 4 COLOR | 3 NEIGHBOR | LSB | Length 64
 	1000100000011303100101001311100300303123023002311300230001033030
+
+	12. Sierpinski to Line | 4 COLOR | 3 NEIGHBOR | LSB | Length 64
+	0021332101032310331031033333000021013033333003030333100000321110
+
+	13.  | 4 COLOR | 3 NEIGHBOR | LSB | Length 64
+	0021332103202030320330021032030201002133002202200232303003101030

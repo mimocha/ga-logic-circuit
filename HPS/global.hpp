@@ -32,7 +32,7 @@
 /*	Totally arbitrary version number
 	Should be updated every commit.
 */
-#define VERSION 1.12
+#define VERSION 1.13
 
 /* Physical FPGA Cell Array Dimension */
 #define PHYSICAL_DIMX 64

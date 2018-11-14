@@ -103,7 +103,14 @@ uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect) {
 	*/
 
 	/* True Positive, False Positive, False Negative */
-	float tpos = bitcount64 ( ~(expect ^ observed) &    (expect) );
+	float tpos;
+	/* Special case: If no bits are set, True Positive shall always be equal to 1 */
+	if (expect != 0) {
+		tpos = bitcount64 ( ~(expect ^ observed) &    (expect) );
+	} else {
+		tpos = 1;
+	}
+
 	float fpos = bitcount64 (  (expect ^ observed) &  (observed) );
 	float fneg = bitcount64 (  (expect ^ observed) & ~(observed) );
 
