@@ -1,27 +1,6 @@
 /* Main C++ File for Evaluation Functions
-
-	MIT License
-
+	Repo: https://github.com/mimocha/ga-logic-circuit
 	Copyright (c) 2018 Chawit Leosrisook
-
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so, subject to the following conditions:
-
-	The above copyright notice and this permission notice shall be included in all
-	copies or substantial portions of the Software.
-
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-	SOFTWARE
-
 */
 
 /* ========== Standard Library Include ========== */
@@ -98,21 +77,20 @@ uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect) {
 	*/
 	uint64_t observed = fpga_get_output ();
 
-	/* Calculates F1 Score
-	https://en.wikipedia.org/wiki/F1_score
+	/* Calculates F1 Score -- https://en.wikipedia.org/wiki/F1_score */
+
+	/* Sums True Positive, False Positive, False Negative
+		Special case: If no bits are expected (expecting 0x00000000),
+		True Positive shall always be equal to 1
 	*/
-
-	/* True Positive, False Positive, False Negative */
 	float tpos;
-	/* Special case: If no bits are set, True Positive shall always be equal to 1 */
-	if (expect != 0) {
-		tpos = bitcount64 ( ~(expect ^ observed) &    (expect) );
-	} else {
+	if (expect == 0) {
 		tpos = 1;
+	} else {
+		tpos = bitcount64 ( expect & observed ); // ~(expect ^ observed) & (expect)
 	}
-
-	float fpos = bitcount64 (  (expect ^ observed) &  (observed) );
-	float fneg = bitcount64 (  (expect ^ observed) & ~(observed) );
+	float fpos = bitcount64 ( ~expect &  observed ); // (expect ^ observed) & (observed)
+	float fneg = bitcount64 (  expect & ~observed ); // (expect ^ observed) & ~(observed)
 
 	/* Recall, Precision, F1 Score */
 	float precision	= tpos / (tpos + fpos);
@@ -175,10 +153,18 @@ uint32_t eval_f1_array
 
 		/* Calculates F1 Score -- https://en.wikipedia.org/wiki/F1_score */
 
-		/* Sums True Positive, False Positive, False Negative */
-		tpos += bitcount64 ( ~(expect[i] ^ observed) &  (expect[i]) );
-		fpos += bitcount64 (  (expect[i] ^ observed) &  (observed) );
-		fneg += bitcount64 (  (expect[i] ^ observed) & ~(observed) );
+		/* Sums True Positive, False Positive, False Negative
+			Special case: If no bits are expected (expecting 0x00000000),
+			True Positive shall always be equal to 1
+		*/
+		if (expect [i] == 0) {
+			tpos += 1;
+		} else {
+			tpos += bitcount64 ( expect [i] & observed );
+		}
+
+		fpos += bitcount64 ( ~expect [i] &  observed );
+		fneg += bitcount64 (  expect [i] & ~observed );
 	}
 
 	/* Recall, Precision, F1 Score */
@@ -268,10 +254,17 @@ void eval_f1_insp
 
 		/* Calculates F1 Score -- https://en.wikipedia.org/wiki/F1_score */
 
-		/* Sums True Positive, False Positive, False Negative */
-		tpos += bitcount64 ( ~(expect[i] ^ observed) &  (expect[i]) );
-		fpos += bitcount64 (  (expect[i] ^ observed) &  (observed) );
-		fneg += bitcount64 (  (expect[i] ^ observed) & ~(observed) );
+		/* Sums True Positive, False Positive, False Negative
+			Special case: If no bits are expected (expecting 0x00000000),
+			True Positive shall always be equal to 1
+		*/
+		if (expect [i] == 0) {
+			tpos += 1;
+		} else {
+			tpos += bitcount64 ( expect [i] & observed );
+		}
+		fpos += bitcount64 ( ~expect [i] &  observed );
+		fneg += bitcount64 (  expect [i] & ~observed );
 
 		/* Compare result with expectation & print table */
 		if ( observed == expect [i] ) {
