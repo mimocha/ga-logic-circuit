@@ -95,6 +95,30 @@ namespace TruthTable {
 		Sets new unsigned int ROW value.
 	*/
 	void set_row (const unsigned int &set_val);
+
+
+
+	/* ========== Mask ========== */
+
+	/* uint64_t get_mask (void)
+		Returns uint64_t MASK value.
+	*/
+	uint64_t get_mask (void);
+
+	/* void set_mask (const uint64_t &set_val)
+		Sets uint64_t MASK value, and calculates how many bits are set for MASK.
+	*/
+	void set_mask (const uint64_t &set_val);
+
+	/* uint64_t get_mask_bc (const bool &inverse)
+		Returns how many bits are set for MASK.
+
+		Input bool is 0 -> Returns MASK bitcount
+		Input bool is 1 -> Returns ~MASK bitcount (Inversed)
+
+		Default input value is 0. Return normal bitcount.
+	*/
+	uint64_t get_mask_bc (const bool &inverse = 0);
 }
 
 

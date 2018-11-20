@@ -220,12 +220,13 @@ void settings (void) {
 			"\t10. DATA Export\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Truth Table Parameters =====\n" ANSI_RESET
 			"\t11. TT Row Count\t| Current Value: %u\n"
-			"\t12. TT F1 Scoring\t| Current Value: %u\n\n"
+			"\t12. TT F1 Scoring\t| Current Value: %u\n"
+			"\t13. TT Mask\t\t| Current Value: %016llX | (%llu bits)\n\n"
 			"Waiting for Input: ",
 			get_ga_pop(), get_ga_gen(), get_ga_mutp(), get_ga_pool(),
 			get_ca_dimx(), get_ca_dimy(), get_ca_color(), get_ca_nb(),
 			get_data_caprint(), get_data_export(),
-			tt::get_row(), tt::get_f1()
+			tt::get_row(), tt::get_f1(), tt::get_mask(), tt::get_mask_bc()
 		);
 
 		/* Sanitized Scan */
@@ -293,6 +294,11 @@ void settings (void) {
 			case 12: /* TRUTH.F1 */
 				printf ("Input New Value: ");
 				tt::set_f1 ( scan_bool () );
+				break;
+
+			case 13: /* MASK */
+				printf ("Input New Value: ");
+				tt::set_mask ( scan_hex () );
 				break;
 
 			default:
@@ -388,9 +394,9 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 	fpga_set_grid (grid);
 
 	if ( tt::get_f1() == 1 ) {
-		eval_f1_insp ( tt::get_input(), tt::get_output(), tt::get_row() );
+		eval_f1_insp ( tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask() );
 	} else {
-		eval_bc_insp ( tt::get_input(), tt::get_output(), tt::get_row() );
+		eval_bc_insp ( tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask() );
 	}
 
 
@@ -459,19 +465,19 @@ void special (void) {
 
 	set_data_caprint (0);
 
-	int solution_found;
+	int sim_flag;
 	tt::set_table (search);
 
 	for (int i = 1; i < MAX; i++) {
 		printf (ANSI_REVRS "\n\tSearching for %0X | Attempt %d / %d\n" ANSI_RESET, search, i, MAX);
 
 		sim_init ();
-		solution_found = sim_run (grid, seed);
+		sim_flag = sim_run (grid, seed);
 
-		if (solution_found == 1) {
+		if (sim_flag == 1) {
 			sim_export ();
 			break;
-		} else if (solution_found == -1) {
+		} else if (sim_flag == -1) {
 			printf ("Simulation Failed.\n");
 			break;
 		}

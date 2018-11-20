@@ -9,9 +9,10 @@
 /* ----- Global Parameter Definitions ----- */
 
 /*	Totally arbitrary version number
+	Semantic Versioning -- https://semver.org/
 	Should be updated every commit.
 */
-#define VERSION 1.13
+#define VERSION "1.14.01"
 
 /* Physical FPGA Cell Array Dimension */
 #define PHYSICAL_DIMX 64

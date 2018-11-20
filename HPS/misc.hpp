@@ -38,11 +38,14 @@ void input_argument (const int &argc, const char *const *const argv);
 void scan_int (int *const dest);
 int scan_int (void);
 
+
 void scan_uint (unsigned int *const dest);
 unsigned int scan_uint (void);
 
+
 void scan_float (float *const dest);
 float scan_float (void);
+
 
 /* This normally throws a GCC warning on compile time.
 	Due to there not being a bool* type for scanf,
@@ -51,5 +54,9 @@ float scan_float (void);
 */
 void scan_bool (bool *const dest);
 bool scan_bool (void);
+
+
+void scan_hex (uint64_t *const dest);
+uint64_t scan_hex (void);
 
 #endif

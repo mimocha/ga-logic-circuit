@@ -26,6 +26,8 @@
 	Evaluation functions for single values.
 */
 
+/* ===== WITHOUT MASK ===== */
+
 /* uint32_t eval_bc (const uint64_t &input, const uint64_t &expect);
 	Simple bit counting evaluation.
 
@@ -52,11 +54,26 @@ uint32_t eval_bc (const uint64_t &input, const uint64_t &expect);
 */
 uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect);
 
+/* ===== WITH MASK =====
+	Masked functions are overload functions which only evaluates the masked bits.
+	Masked bits are set to 0, and effectively ignored.
+	These bits can express any logical function with no repercussion to the solution fitness.
+
+	Maximum Fitness Values should be adjusted accordingly.
+	ie, Masking 63 bits would leave 1 bit to be evaluated, thus maximum fitness should be out of this single bit.
+*/
+
+uint32_t eval_bc (const uint64_t &input, const uint64_t &expect, const uint64_t &mask);
+
+uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect, const uint64_t &mask);
+
 
 
 /* ========== Array Evaluation Functions ==========
 	Evaluation function for multiple values at once.
 */
+
+/* ===== WITHOUT MASK ===== */
 
 /* uint32_t eval_bc_array
 	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
@@ -92,11 +109,31 @@ uint32_t eval_bc_array
 uint32_t eval_f1_array
 	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
 
+/* ===== WITH MASK =====
+	Masked functions are overload functions which only evaluates the masked bits.
+	Masked bits are set to 0, and effectively ignored.
+	These bits can express any logical function with no repercussion to the solution fitness.
+
+	Maximum Fitness Values should be adjusted accordingly.
+	ie, Masking 63 bits would leave 1 bit to be evaluated, thus maximum fitness should be out of this single bit.
+*/
+
+uint32_t eval_bc_array
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask);
+
+uint32_t eval_f1_array
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask);
+
+
 
 /* ========== Inspect Evaluation Functions ==========
 	Array evaluation functions with additional stylized truth table print.
 	Does not return results.
 */
+
+/* ===== WITHOUT MASK ===== */
 
 /* void eval_bc_insp
 	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
@@ -119,5 +156,22 @@ void eval_bc_insp
 */
 void eval_f1_insp
 	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
+
+/* ===== WITH MASK =====
+	Masked functions are overload functions which only evaluates the masked bits.
+	Masked bits are set to 0, and effectively ignored.
+	These bits can express any logical function with no repercussion to the solution fitness.
+
+	Maximum Fitness Values should be adjusted accordingly.
+	ie, Masking 63 bits would leave 1 bit to be evaluated, thus maximum fitness should be out of this single bit.
+*/
+
+void eval_bc_insp
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask);
+
+void eval_f1_insp
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask);
 
 #endif

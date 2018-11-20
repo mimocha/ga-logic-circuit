@@ -7,13 +7,15 @@
 
 #include <stdio.h>		/* Standard I/O */
 #include <stdint.h>		/* uint definitions */
+#include <stdlib.h>		/* strtoull */
+#include <string.h>		/* strlen */
 
 #include "misc.hpp"
 #include "ansi.hpp"
 #include "global.hpp"
 
 void about (void) {
-	printf ("\n\e[7m\t--- Genetics Algorithm Program Version %4.2f ---\e[0m\n\n", VERSION);
+	printf ("\n\e[7m\t--- Genetics Algorithm Program Version %s ---\e[0m\n\n", VERSION);
 
 	/* Explanation & License */
 	printf (
@@ -56,14 +58,15 @@ void scan_int (int *const dest) {
 }
 
 int scan_int (void) {
-	int dest;
+	int val;
 
 	scanf ("%*[^0-9]");
-	scanf ("%d[0-9]", &dest);
+	scanf ("%d[0-9]", &val);
 	scanf ("%*[^\n]");
 
-	return dest;
+	return val;
 }
+
 
 void scan_uint (unsigned int *const dest) {
 	scanf ("%*[^0-9]");
@@ -72,14 +75,15 @@ void scan_uint (unsigned int *const dest) {
 }
 
 unsigned int scan_uint (void) {
-	unsigned int dest;
+	unsigned int val;
 
 	scanf ("%*[^0-9]");
-	scanf ("%u[0-9]", &dest);
+	scanf ("%u[0-9]", &val);
 	scanf ("%*[^\n]");
 
-	return dest;
+	return val;
 }
+
 
 void scan_float (float *const dest) {
 	scanf ("%*[^0-9]");
@@ -88,14 +92,15 @@ void scan_float (float *const dest) {
 }
 
 float scan_float (void) {
-	float dest;
+	float val;
 
 	scanf ("%*[^0-9]");
-	scanf ("%f", &dest);
+	scanf ("%f", &val);
 	scanf ("%*[^\n]");
 
-	return dest;
+	return val;
 }
+
 
 /* This normally throws a GCC warning on compile time.
 	Due to there not being a bool* type for scanf,
@@ -109,11 +114,26 @@ void scan_bool (bool *const dest) {
 }
 
 bool scan_bool (void) {
-	unsigned int dest;
+	unsigned int val;
 
 	scanf ("%*[^0-1]");
-	scanf ("%1u[0-1]", &dest);
+	scanf ("%1u[0-1]", &val);
 	scanf ("%*[^\n]");
 
-	return (bool) dest;
+	return (bool) val;
+}
+
+
+void scan_hex (uint64_t *const dest) {
+	scanf ("%llx", dest);
+	scanf ("%*[^\n]");
+}
+
+uint64_t scan_hex () {
+	uint64_t val;
+
+	scanf ("%llx", &val);
+	scanf ("%*[^\n]");
+
+	return val;
 }

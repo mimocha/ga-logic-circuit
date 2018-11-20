@@ -49,6 +49,19 @@ static uint64_t *OUTPUT;
 /* Toggle F1 Metric */
 static bool F1 = 1;
 
+/* Truth Table Mask */
+static uint64_t MASK = 0x0;
+
+/* Truth Table Mask Bit Count */
+static uint64_t MASK_BC = 0;
+
+
+/* ========== STATIC FUNCTION PROTOYPES ==========
+	See documentation in header file "truth.hpp"
+*/
+
+static uint64_t bitcount64 (uint64_t x);
+
 
 
 /* ========== Read File / Clear Table / Table Status ========== */
@@ -301,4 +314,42 @@ unsigned int TruthTable::get_row (void) {
 
 void TruthTable::set_row (const unsigned int &set_val) {
 	ROW = set_val;
+}
+
+
+
+/* ========== Mask ========== */
+
+uint64_t TruthTable::get_mask (void) {
+	return MASK;
+}
+
+void TruthTable::set_mask (const uint64_t &set_val) {
+	MASK = set_val;
+
+	/* Counts how many bits are set in MASK */
+	MASK_BC = bitcount64 (MASK);
+}
+
+uint64_t TruthTable::get_mask_bc (const bool &inverse) {
+	if (inverse) {
+		return bitcount64 (~MASK);
+	} else {
+		return MASK_BC;
+	}
+}
+
+uint64_t bitcount64 (uint64_t x) {
+	// Code shamelessly copied from https://en.wikipedia.org/wiki/Hamming_weight
+	constexpr uint64_t m1  = 0x5555555555555555;
+	constexpr uint64_t m2  = 0x3333333333333333;
+	constexpr uint64_t m4  = 0x0f0f0f0f0f0f0f0f;
+
+	x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
+	x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits
+	x = (x + (x >> 4)) & m4;        //put count of each 8 bits into those 8 bits
+	x += x >>  8;	//put count of each 16 bits into their lowest 8 bits
+	x += x >> 16;	//put count of each 32 bits into their lowest 8 bits
+	x += x >> 32;	//put count of each 64 bits into their lowest 8 bits
+	return x & 0x7f;
 }

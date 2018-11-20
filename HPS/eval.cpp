@@ -19,9 +19,9 @@
 /* FPGA Grid Output Bit Size */
 #define GRID_BIT_SIZE 64
 
-/* ========== STATIC FUNCTION PROTOYPES ==========
-	See documentation in header file "eval.hpp"
-*/
+
+
+/* ========== STATIC FUNCTION PROTOYPES ========== */
 
 static uint64_t bitcount64 (uint64_t x);
 
@@ -49,6 +49,8 @@ uint64_t bitcount64 (uint64_t x) {
 /* ========== Basic Evaluation Functions ==========
 	Evaluation functions for single values.
 */
+
+/* ===== WITHOUT MASK ===== */
 
 uint32_t eval_bc (const uint64_t &input, const uint64_t &expect) {
 	/* Set FPGA input */
@@ -101,11 +103,44 @@ uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect) {
 	return (uint32_t) floor (F1_MAX * f1_score);
 }
 
+/* ===== WITH MASK ===== */
+
+uint32_t eval_bc (const uint64_t &input, const uint64_t &expect, const uint64_t &mask) {
+	fpga_set_input (input);
+
+	uint64_t observed = fpga_get_output ();
+
+	return bitcount64 ( ~( expect ^ observed ) & mask );
+}
+
+uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect, const uint64_t &mask) {
+	fpga_set_input (input);
+
+	uint64_t observed = fpga_get_output ();
+
+	float tpos;
+	if (expect == 0) {
+		tpos = 1;
+	} else {
+		tpos = bitcount64 ( (expect & observed) & mask );
+	}
+	float fpos = bitcount64 ( (~expect &  observed) & mask );
+	float fneg = bitcount64 (  (expect & ~observed) & mask );
+
+	float precision	= tpos / (tpos + fpos);
+	float recall	= tpos / (tpos + fneg);
+	float f1_score	= 2 * precision * recall / (precision + recall);
+
+	return (uint32_t) floor (F1_MAX * f1_score);
+}
+
 
 
 /* ========== Array Evaluation Functions ==========
 	Evaluation function for multiple values at once.
 */
+
+/* ===== WITHOUT MASK ===== */
 
 uint32_t eval_bc_array
 	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
@@ -176,12 +211,59 @@ uint32_t eval_f1_array
 	return (uint32_t) floor (F1_MAX * f1_score);
 }
 
+/* ===== WITH MASK ===== */
+
+uint32_t eval_bc_array
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask) {
+	uint32_t result = 0;
+
+	for (unsigned int i = 0 ; i < count ; i++) {
+		fpga_set_input (input [i]);
+		uint64_t observed = fpga_get_output ();
+		result += bitcount64 ( ~( expect [i] ^ observed ) & mask );
+	}
+
+	return result;
+}
+
+uint32_t eval_f1_array
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask) {
+	float tpos = 0;
+	float fpos = 0;
+	float fneg = 0;
+
+	for (unsigned int i = 0 ; i < count ; i++) {
+		fpga_set_input (input [i]);
+
+		uint64_t observed = fpga_get_output ();
+
+		if (expect [i] == 0) {
+			tpos += 1;
+		} else {
+			tpos += bitcount64 ( (expect [i] & observed) & mask );
+		}
+
+		fpos += bitcount64 ( (~expect [i] &  observed) & mask );
+		fneg += bitcount64 (  (expect [i] & ~observed) & mask );
+	}
+
+	float precision	= tpos / (tpos + fpos);
+	float recall	= tpos / (tpos + fneg);
+	float f1_score	= 2 * precision * recall / (precision + recall);
+
+	return (uint32_t) floor (F1_MAX * f1_score);
+}
+
 
 
 /* ========== Inspect Evaluation Functions ==========
 	Array evaluation functions with additional stylized truth table print.
 	Does not return results.
 */
+
+/* ===== WITHOUT MASK ===== */
 
 void eval_bc_insp
 	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
@@ -284,6 +366,82 @@ void eval_f1_insp
 	/* Scales result with F1 score */
 	uint32_t result = (uint32_t) floor (F1_MAX * f1_score);
 	printf ("\n\tFitness: %u / %u\n", result, F1_MAX);
+
+	return;
+}
+
+/* ===== WITH MASK ===== */
+
+void eval_bc_insp
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask) {
+	uint32_t result = 0;
+	const uint32_t fit_lim = (GRID_BIT_SIZE - bitcount64 (~mask)) * count ;
+
+	printf (
+		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
+		"\t             Input |      Expected      | Observed\n"
+		"\t-------------------+--------------------+-------------------\n" );
+
+	for (unsigned int i = 0 ; i < count ; i++) {
+		fpga_set_input (input [i]);
+		uint64_t observed = fpga_get_output ();
+		result += bitcount64 ( ~( expect [i] ^ observed ) & mask );
+
+		if ( (observed & mask) == (expect [i] & mask) ) {
+			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
+				input [i], expect [i], observed & mask );
+		} else {
+			printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
+				input [i], expect [i], observed & mask );
+		}
+	}
+	printf ("\n\tFitness: %u / %u\n", result, fit_lim);
+	printf ("\n\tMask: %016llX (%llu bits)\n", mask, bitcount64(mask) );
+
+	return;
+}
+
+void eval_f1_insp
+	(const uint64_t *const input, const uint64_t *const expect,
+		const uint16_t &count, const uint64_t &mask) {
+	float tpos = 0;
+	float fpos = 0;
+	float fneg = 0;
+
+	printf (
+		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
+		"\t             Input |      Expected      | Observed\n"
+		"\t-------------------+--------------------+-------------------\n" );
+
+	for (unsigned int i = 0 ; i < count ; i++) {
+		fpga_set_input (input [i]);
+		uint64_t observed = fpga_get_output ();
+
+		if (expect [i] == 0) {
+			tpos += 1;
+		} else {
+			tpos += bitcount64 ( (expect [i] & observed) & mask );
+		}
+		fpos += bitcount64 ( (~expect [i] &  observed) & mask );
+		fneg += bitcount64 (  (expect [i] & ~observed) & mask );
+
+		if ( (observed & mask) == (expect [i] & mask) ) {
+			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
+				input [i], expect [i], observed & mask );
+		} else {
+			printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
+				input [i], expect [i], observed & mask );
+		}
+	}
+
+	float precision	= tpos / (tpos + fpos);
+	float recall	= tpos / (tpos + fneg);
+	float f1_score	= 2 * precision * recall / (precision + recall);
+
+	uint32_t result = (uint32_t) floor (F1_MAX * f1_score);
+	printf ("\n\tFitness: %u / %u\n", result, F1_MAX);
+	printf ("\n\tMask: %016llX (%llu bits)\n", mask, bitcount64(mask) );
 
 	return;
 }

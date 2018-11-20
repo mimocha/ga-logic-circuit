@@ -148,11 +148,13 @@ void sim_init (void) {
 		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
 		"\tDIMX = %3u | DIMY = %3u | COLOR = %3u | NEIGHBOR = %2u\n"
 		"\tCAPRINT = %1u | EXPORT = %1u\n"
-		"\tROW = %1u | F1 SCORING = %1u\n\n",
+		"\tROW = %1u | F1 SCORING = %1u\n"
+		"\tTT MASK = 0x%016llX (%llu bits)\n\n",
 		pop_lim, gen_lim, get_ga_mutp(), get_ga_pool(),
 		dimx, dimy, color, nb,
 		get_data_caprint(), get_data_export(),
-		tt::get_row(), tt::get_f1()
+		tt::get_row(), tt::get_f1(),
+		tt::get_mask(), tt::get_mask_bc()
 	);
 
 	/* Free array of previously created population
@@ -195,7 +197,7 @@ void sim_init (void) {
 	if (tt::get_f1() == 1) {
 		fit_lim = F1_MAX;
 	} else {
-		fit_lim = dimx * tt::get_row();
+		fit_lim = (dimx - tt::get_mask_bc(1)) * tt::get_row();
 	}
 
 	/* Calculate time estimate */
@@ -279,11 +281,11 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 			/* Evaluate Circuit */
 			if (tt::get_f1() == 1) {
 				indv[idx].set_fit (
-					eval_f1_array (tt::get_input(), tt::get_output(), tt::get_row())
+					eval_f1_array (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask())
 				);
 			} else {
 				indv[idx].set_fit (
-					eval_bc_array (tt::get_input(), tt::get_output(), tt::get_row())
+					eval_bc_array (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask())
 				);
 			}
 
@@ -440,9 +442,9 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	/* Evaluate Circuit */
 	if ( tt::get_f1() == 1 ) {
-		eval_f1_insp (tt::get_input(), tt::get_output(), tt::get_row());
+		eval_f1_insp (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
 	} else {
-		eval_bc_insp (tt::get_input(), tt::get_output(), tt::get_row());
+		eval_bc_insp (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
 	}
 
 	/* Optional Print of Fittest Solution */
