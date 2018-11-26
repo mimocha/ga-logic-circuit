@@ -5,15 +5,17 @@
 
 /* ========== Standard Library Include ========== */
 
-#include <stdio.h>		/* printf */
-#include <stdlib.h>		/* calloc, free */
-#include <stdint.h>		/* uint definitions */
+#include <stdio.h>		// printf
+#include <stdlib.h>		// calloc, free
+#include <stdint.h>		// uint definitions
+
 
 /* ========== Linux API Include ========== */
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+
 
 /* ========== Altera HWLIB Include ========== */
 
@@ -23,11 +25,13 @@
 #include "socal/alt_gpio.h"
 #include "hps_0.h"
 
+
 /* ========== Custom Header Include ========== */
 
 #include "fpga.hpp"
 #include "ansi.hpp"
 #include "global.hpp"
+
 
 /* ========== FPGA Define ========== */
 
@@ -41,34 +45,35 @@
 	Port S2 -- RAM
 */
 
-/* --- Linux In / Out --- */
+// --- Linux In / Out --- //
 #define S1_ADDRESS		0x1000
 #define S1_ADDRESS_MAX	0x1007
 #define S1_RANGE 2
 
-/* --- Cell Row RAM --- */
+// --- Cell Row RAM --- //
 #define S2_ADDRESS		0x0000
 #define S2_ADDRESS_MAX	0x07FF
 #define S2_RANGE 512
 
-/* Avalon Slave Port Data Width (Bits) */
+// Avalon Slave Port Data Width (Bits)
 #define AVALON_PORT_WIDTH 32
 
-/* FPGA Array Cell Data Width (Bits) -- fpga_set_grid */
+// FPGA Array Cell Data Width (Bits) -- fpga_set_grid
 #define CELL_DATA_WIDTH 4
 
-/* Numbers of Cells able to fit in the buffer -- fpga_set_grid */
+// Numbers of Cells able to fit in the buffer -- fpga_set_grid
 #define CELL_IN_BUFFER (AVALON_PORT_WIDTH / CELL_DATA_WIDTH)
+
 
 /* ========== FPGA Global Variables ========== */
 
-/* Virtual Memory Pointer Base */
+// Virtual Memory Pointer Base
 static void *virtual_base;
 
-/* DEV/MEM/ */
+// DEV/MEM/
 static int fd;
 
-/* Pointer for Avalon Slave Devices */
+// Pointer for Avalon Slave Devices
 #if (AVALON_PORT_WIDTH == 32)
 	static uint32_t *s1_address;
 	static uint32_t *s2_address;
@@ -77,11 +82,11 @@ static int fd;
 	static uint64_t *s2_address;
 #endif
 
-/* Local Copy of Global Parameters */
+// Local Copy of Global Parameters
 static uint16_t dimx;
 static uint16_t dimy;
 
-/* Internal Initialization Flag */
+// Internal Initialization Flag
 static bool fpga_init_flag;
 
 using namespace std;
@@ -112,27 +117,27 @@ static void fpga_s2_write (const uint32_t &offset, const uint32_t &data);
 void fpga_init (void) {
 	printf ("Initializing FPGA... ");
 
-	/* If FPGA was already initialized, close and reinitialize. */
+	// If FPGA was already initialized, close and reinitialize.
 	if ( fpga_init_flag == 1 ) close (fd);
 
-	/* Creates local copy of global parameters for CA functions */
+	// Creates local copy of global parameters for CA functions
 	dimx = GlobalSettings::get_ca_dimx ();
 	dimy = GlobalSettings::get_ca_dimy ();
 
-	/* Read Device Memory */
+	// Read Device Memory
 	fd = open ("/dev/mem", (O_RDWR | O_SYNC));
 
-	/* If failed to open /dev/mem */
+	// If failed to open /dev/mem
 	if (fd == -1) {
 		printf (ANSI_RED "COULD NOT OPEN /dev/mem\n" ANSI_RESET);
 		return;
 	}
 
-	/* Map Memory for use */
+	// Map Memory for use
 	virtual_base = mmap
 	(NULL, HW_REGS_SPAN, (PROT_READ | PROT_WRITE), MAP_SHARED, fd, HW_REGS_BASE);
 
-	/* If failed to map memory */
+	// If failed to map memory
 	if (virtual_base == MAP_FAILED) {
 		printf (ANSI_RED "MMAP FAIL\n" ANSI_RESET);
 		close (fd);
@@ -162,13 +167,8 @@ void fpga_init (void) {
 			+ ((ALT_LWFPGASLVS_OFST + S2_ADDRESS) & HW_REGS_MASK) );
 	#endif
 
-	/* Sets Initialization Flag */
 	fpga_init_flag = 1;
-
-	/* Clears FPGA Grid & Input -- Prepares for usage */
 	fpga_clear ();
-
-	/* Prints Message and Returns */
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 	return;
 }
@@ -176,24 +176,22 @@ void fpga_init (void) {
 void fpga_cleanup (void) {
 	printf ("Cleaning up FPGA... ");
 
-	/* If FPGA has been initialized, close fd */
+	// If FPGA has been initialized, close fd
 	if (fpga_init_flag == 1) close (fd);
 
-	/* Reset initialization flag */
 	fpga_init_flag = 0;
-
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 	return;
 }
 
 bool fpga_not_init (void) {
-	/* Returns TRUE if FPGA is uninitialized */
+	// Returns TRUE if FPGA is uninitialized
 	if (fpga_init_flag == 0) {
 		printf (ANSI_RED "FPGA Uninitialized\n" ANSI_RESET);
 		return 1;
 	}
 
-	/* Otherwise, return FALSE */
+	// Otherwise, return FALSE
 	return 0;
 }
 
@@ -206,7 +204,7 @@ bool fpga_is_init (void) {
 /* ========== FPGA Verification ========== */
 
 void fpga_verify (uint8_t *const *const grid) {
-	/* FPGA Uninitialized Error Catch */
+	// FPGA Uninitialized Error Catch
 	if ( fpga_not_init () ) return;
 
 	printf (ANSI_REVRS "\tVerifying FPGA Cell Array\n\n" ANSI_RESET
@@ -214,42 +212,42 @@ void fpga_verify (uint8_t *const *const grid) {
 			"\tUtilized Cell Count: %d\n\n",
 			dimx, dimy, dimx * dimy);
 
-	/* Test Score -- Test cases passed */
+	// Test Score -- Test cases passed
 	unsigned int score = 0;
-	/* Maximum Score -- Numbers of test cases to be checked */
+	// Maximum Score -- Numbers of test cases to be checked
 	const unsigned int score_max = 12;
 
-	/* Clears FPGA grid and IO */
+	// Clears FPGA grid and IO
 	fpga_clear ();
 
-	/* ===== NULL ===== */
+	// ===== NULL ===== //
 	printf ("\t\t\t   " ANSI_REVRS "----- Test  NULL -----\n" ANSI_RESET);
 	fpga_test_fill (grid, 0);
 	fpga_set_grid (grid);
 	score += fpga_test (0);
 
-	/* ===== Pass A ===== */
+	// ===== Pass A ===== //
 	printf ("\t\t\t   " ANSI_REVRS "---- Test  PASS A ----\n" ANSI_RESET);
 	fpga_test_fill (grid, 1);
 	fpga_set_grid (grid);
 	score += fpga_test (1);
 
-	/* ===== Pass B ===== */
+	// ===== Pass B ===== //
 	printf ("\t\t\t   " ANSI_REVRS "---- Test  PASS B ----\n" ANSI_RESET);
 	fpga_test_fill (grid, 2);
 	fpga_set_grid (grid);
 	score += fpga_test (2);
 
-	/* ===== NAND ===== */
+	// ===== NAND ===== //
 	printf ("\t\t\t   " ANSI_REVRS "----- Test  NAND -----\n" ANSI_RESET);
 	fpga_test_fill (grid, 3);
 	fpga_set_grid (grid);
 	score += fpga_test (3);
 
-	/* Clears FPGA grid and IO */
+	// Clears FPGA grid and IO
 	fpga_clear ();
 
-	/* Print Results */
+	// Print Results
 	printf ("\n\tResults: %u / %u", score, score_max);
 
 	if (score == score_max) {
@@ -262,9 +260,9 @@ void fpga_verify (uint8_t *const *const grid) {
 }
 
 void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num) {
-	/* Iterates over every row */
+	// Iterates over every row
 	for (unsigned int y = 0 ; y < dimy ; y ++) {
-		/* Iterates over every cell */
+		// Iterates over every cell
 		for (unsigned int x = 0 ; x < dimx ; x ++) {
 			grid [y][x] = num;
 		}
@@ -272,11 +270,11 @@ void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num) {
 }
 
 unsigned int fpga_test (const unsigned int &mode) {
-	/* FPGA Testing Inputs */
+	// FPGA Testing Inputs
 	constexpr uint64_t test_input [3] =
 	{ 0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12 };
 
-	/* FPGA Expected Outputs */
+	// FPGA Expected Outputs
 	constexpr uint64_t test_output [4][3] = {
 		{0x0000000000000000, 0x0000000000000000, 0x0000000000000000}, // NULL
 		{0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12}, // PASS A
@@ -284,25 +282,23 @@ unsigned int fpga_test (const unsigned int &mode) {
 		{0x8000000000000000, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFDE0DBEEF}  // NAND
 	};
 
-	/* Test results -- Numbers of passed test */
+	// Test results -- Numbers of passed test
 	unsigned int results = 0;
-
-	/* Print Table */
 	printf (
 	"\t             Input |      Expected      | Observed\n"
 	"\t-------------------+--------------------+-------------------\n"
 	);
 
-	/* Iterates over each test case -- 3 per mode */
+	// Iterates over each test case -- 3 per mode
 	for (unsigned int i = 0 ; i < 3 ; i++) {
 
-		/* Set test case input */
+		// Set test case input
 		fpga_set_input (test_input [i]);
 
-		/* Get test case output */
+		// Get test case output
 		uint64_t observed = fpga_get_output ();
 
-		/* Compare result with expectation & print table */
+		// Compare result with expectation & print table
 		if ( observed == test_output [mode][i] ) {
 			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
 					test_input [i], test_output [mode][i], observed );
@@ -314,7 +310,6 @@ unsigned int fpga_test (const unsigned int &mode) {
 
 	}
 
-	/* Return test results */
 	printf ("\n");
 	return results;
 }
@@ -326,10 +321,10 @@ unsigned int fpga_test (const unsigned int &mode) {
 */
 
 void fpga_set_input (const uint64_t &write_data) {
-	/* FPGA Uninitialized Error Catch */
+	// FPGA Uninitialized Error Catch
 	if ( fpga_not_init () ) return;
 
-	/* Writes LSB First */
+	// Writes LSB First
 	for (uint32_t i = 0 ; i < S1_RANGE ; i++) {
 		/* Bitshifts data to the appropriate location
 			Input data is wider than the write port (64 bit -> 32 bit).
@@ -337,7 +332,7 @@ void fpga_set_input (const uint64_t &write_data) {
 		*/
 		const uint32_t tmp_data = (uint32_t) (write_data >> (AVALON_PORT_WIDTH * i) );
 
-		/* Writes the bitshifted data to the assigned offset */
+		// Writes the bitshifted data to the assigned offset
 		fpga_s1_write (i, tmp_data);
 	}
 
@@ -351,10 +346,10 @@ void fpga_set_input (const uint64_t &write_data) {
 }
 
 uint64_t fpga_get_output (void) {
-	/* FPGA Uninitialized Error Catch */
+	// FPGA Uninitialized Error Catch
 	if ( fpga_not_init () ) return 0;
 
-	/* Output buffer variable */
+	// Output buffer variable
 	uint64_t results = 0;
 
 	/* Reads MSB first, then bitshifts to make room for LSB
@@ -373,11 +368,10 @@ uint64_t fpga_get_output (void) {
 		*/
 		results <<=  AVALON_PORT_WIDTH;
 
-		/* Bitwise OR to set bits */
+		// Bitwise OR to set bits
 		results |= fpga_s1_read (i);
 	}
 
-	/* Return finished reading buffer */
 	return results;
 }
 
@@ -388,28 +382,28 @@ uint64_t fpga_get_output (void) {
 */
 
 void fpga_clear (void) {
-	/* FPGA Uninitialized Error Catch */
+	// FPGA Uninitialized Error Catch
 	if ( fpga_not_init () ) return;
 
-	/* Iterates over entire CA grid & sets to zero */
+	// Iterates over entire CA grid & sets to zero
 	for (uint32_t i = 0 ; i < S2_RANGE ; i++) {
 		fpga_s2_write (i, 0x0);
 	}
 
-	/* Sets input to zero */
+	// Sets input to zero
 	fpga_set_input (0x0);
 }
 
 void fpga_set_grid (const uint8_t *const *const grid) {
-	/* FPGA Uninitialized Error Catch */
+	// FPGA Uninitialized Error Catch
 	if ( fpga_not_init () ) return;
 
 	uint32_t data_buffer = 0;
 	uint32_t offset = S2_RANGE;
 
-	/* Iterates through every row, from bottom to top -- loopvar must be signed */
+	// Iterates through every row, from bottom to top -- loopvar must be signed
 	for (int y = dimy - 1 ; y >= 0 ; y--) {
-		/* Iterates through every column, from right to left -- loopvar must be signed */
+		// Iterates through every column, from right to left -- loopvar must be signed
 		for (int x = dimx - 1 ; x >= 0 ; x--) {
 			/* How this works:
 				Shift bits first, so the LSB would not get displaced.
@@ -423,18 +417,18 @@ void fpga_set_grid (const uint8_t *const *const grid) {
 				7. Repeat for entire grid
 			*/
 
-			/* Shifts one cell worth of data */
+			// Shifts one cell worth of data
 			data_buffer <<= CELL_DATA_WIDTH;
-			/* Sets one cell worth of data */
+			// Sets one cell worth of data
 			data_buffer |= grid [y][x];
 
-			/* Every 32 bits filled to buffer, write to S2 port */
+			// Every 32 bits filled to buffer, write to S2 port
 			if (x % CELL_IN_BUFFER == 0) {
 				/* Cycles through offset, from 511 to 0
 					Writes from bottom to top, to reduce waiting time
 				*/
 				offset--;
-				/* Writes current buffer to offset */
+				// Writes current buffer to offset
 				fpga_s2_write (offset, data_buffer);
 			}
 		}

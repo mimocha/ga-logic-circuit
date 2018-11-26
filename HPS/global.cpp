@@ -6,12 +6,15 @@
 /* ========== Standard Library Include ========== */
 
 #include <stdio.h>		/* Standard I/O */
-#include <math.h>		/* pow */
+#include <stdint.h>		/* uint definitions */
+
+
 
 /* ========== Custom File Header ========== */
 
 #include "global.hpp"
 #include "ansi.hpp"
+#include "fast.hpp"
 
 
 
@@ -59,7 +62,7 @@ static param_ca CA;
 static param_data DATA;
 
 /* DNA Length Variable */
-static unsigned int dna_length = pow (CA.COLOR, CA.NB);
+static unsigned int dna_length = fast_pow (CA.COLOR, CA.NB);
 
 /* ========== Static Boundary Function ==========
 	Compares the input value with the upper and lower boundaries.
@@ -109,10 +112,8 @@ float bound (const float &input, const float &upper, const float &lower) {
 	Should reduce time spent on certain more expensive calculations.
 */
 
-static void update (void);
-
 void update (void) {
-	dna_length = pow (CA.COLOR, CA.NB);
+	dna_length = fast_pow (CA.COLOR, CA.NB);
 }
 
 

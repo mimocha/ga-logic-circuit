@@ -3,8 +3,8 @@
 	Copyright (c) 2018 Chawit Leosrisook
 */
 
-#ifndef GAMAIN_HPP
-#define GAMAIN_HPP
+#ifndef MAIN_HPP
+#define MAIN_HPP
 
 /* ========== Main Menu / Initialize / Cleanup Functions ========== */
 

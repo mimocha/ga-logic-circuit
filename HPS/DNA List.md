@@ -38,8 +38,6 @@ HEX | BITS | NAME
   F | 1111 | TRUE
 
 	DNA Strings for primitive operands.
-	Used SOF file: "2018-10-29 64x64 00.sof"
-	Used GA program version: "1.13.X"
 
 -----------------------------------------------------------------------------------------
 
@@ -48,8 +46,14 @@ Truth Table masking is now implemented.
 Masked bits are set to 0, and has no effect on the evaluations of a circuit.
 They are effectively ignored. Should ease constraints on search by a lot.
 
+## Note on change of CA format (2018-11-25):
+CA now loops.
+Previous results would now most likely become incompatible.
 
 ### Solution DNAs found with this setting
+
+Used SOF file: "2018-11-25 64x64.sof"
+Used GA program version: "2.00.00"
 
 * 0.
 
@@ -121,6 +125,9 @@ FFFFFFFFFFFFFFFF 1
 
 ### Solution DNAs found with this setting
 
+Used SOF file: "2018-10-29 64x64 00.sof"
+Used GA program version: "1.13"
+
 * 0.	0112022300103010030333030200033030230330100132120031121122033310
 
 * 1.	2030333323203010233013133233130120031301202202330001220020202012
@@ -189,6 +196,9 @@ FFFFFFFFFFFFFFFF 10000000
 
 ### Solution DNAs found with this setting
 
+Used SOF file: "2018-10-29 64x64 00.sof"
+Used GA program version: "1.10"
+
  * 0.	0020002020201130333301321130010310011330310002333310031100003020
 
  * A.	0000110103131202103003201122300303100310000232033003113210103110
@@ -248,3 +258,6 @@ Assuming seed is a string of zeroes, with a 1 in the center.
 
 	13. Glider Gun | 4 COLOR | 3 NEIGHBOR | LSB | Length 64
 	0021332103202030320330021032030201002133002202200232303003101030
+
+	14. Purple Pattern | 4 COLOR | 3 NEIGHBOR | LSB | Length 64
+	3333323332233003231301333010100323003003330010323332131303113333

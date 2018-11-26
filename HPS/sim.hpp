@@ -60,7 +60,6 @@ bool sim_is_done (void);
 
 	Returns the number of solutions within the current population.
 */
-// static unsigned int count_solution (const GeneticAlgorithm *const array);
 
 
 
@@ -70,14 +69,12 @@ bool sim_is_done (void);
 	Statistics tracking function.
 	Tracks statistical data: Maximum, Minimum, Median, and Average values of fitness.
 */
-// static void statistics (const GeneticAlgorithm *const array, const unsigned int &gen);
 
 /* static void report (uint8_t *const *const grid, const uint8_t *const seed)
 	Wrapper for results printing at the end of the simulation.
 	Prints pretty tables and CA grid.
 	Also inspects the top individual, and print its truth table.
 */
-// static void report (uint8_t *const *const grid, const uint8_t *const seed);
 
 /* void sim_results (void)
 	Prints simulation results table.

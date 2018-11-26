@@ -12,7 +12,7 @@
 	Semantic Versioning -- https://semver.org/
 	Should be updated every commit.
 */
-#define VERSION "1.14.01"
+#define VERSION "1.15.00"
 
 /* Physical FPGA Cell Array Dimension */
 #define PHYSICAL_DIMX 64
@@ -76,7 +76,7 @@
 #define MIN_GA_POOL 1
 
 /* Estimated Number of Individuals Evaluated per Second */
-#define INDV_PER_SEC 355
+#define INDV_PER_SEC 430
 
 
 
@@ -108,6 +108,7 @@ namespace GlobalSettings {
 	void set_ga_mutp (const float &set_val);
 	void set_ga_pool (const unsigned int &set_val);
 
+	// Although unused now, left in for future usage
 	void set_ca_dimx (const unsigned int &set_val);
 	void set_ca_dimy (const unsigned int &set_val);
 	void set_ca_color (const unsigned int &set_val);

@@ -47,10 +47,10 @@ static uint64_t *INPUT;
 static uint64_t *OUTPUT;
 
 /* Toggle F1 Metric */
-static bool F1 = 1;
+static bool F1 = 0;
 
 /* Truth Table Mask */
-static uint64_t MASK = 0x0;
+static uint64_t MASK = 0x1;
 
 /* Truth Table Mask Bit Count */
 static uint64_t MASK_BC = 0;
@@ -293,7 +293,7 @@ uint64_t *TruthTable::get_input (void) {
 }
 
 void TruthTable::set_input (const uint64_t *const set_val) {
-
+	// Dummy
 }
 
 uint64_t *TruthTable::get_output (void) {
@@ -301,7 +301,7 @@ uint64_t *TruthTable::get_output (void) {
 }
 
 void TruthTable::set_output (const uint64_t *const set_val) {
-
+	// Dummy
 }
 
 
@@ -326,8 +326,7 @@ uint64_t TruthTable::get_mask (void) {
 
 void TruthTable::set_mask (const uint64_t &set_val) {
 	MASK = set_val;
-
-	/* Counts how many bits are set in MASK */
+	// Counts how many bits are set in MASK
 	MASK_BC = bitcount64 (MASK);
 }
 

@@ -5,16 +5,15 @@
 
 /* ========== Standard Library Include ========== */
 
-#include <stdio.h>		/* Standard I/O */
-#include <stdlib.h>		/* calloc, free, rand, srand */
-#include <stdint.h>		/* uint definitions */
-#include <time.h>		/* time */
-#include <math.h>		/* pow, round, ceiling */
-#include <iostream>		/* cin, cout */
-#include <algorithm>	/* sort, find */
-#include <vector>		/* vectors */
-#include <array>		/* arrays */
-#include <cstring>		/* strcmp */
+#include <stdio.h>		// Standard I/O
+#include <stdlib.h>		// calloc, free
+#include <stdint.h>		// uint definitions
+#include <time.h>		// time
+#include <iostream>		// cin, cout
+#include <algorithm>	// sort, find
+#include <cstring>		// strcmp
+
+
 
 /* ========== Custom Header Include ========== */
 
@@ -22,6 +21,7 @@
 #include "ansi.hpp"
 #include "ca.hpp"
 #include "eval.hpp"
+#include "fast.hpp"
 #include "fpga.hpp"
 #include "ga.hpp"
 #include "global.hpp"
@@ -57,8 +57,8 @@ static unsigned int  dna_length;
 static uint32_t fit_lim;
 
 /* Timer Variable */
-static time_t timer_begin;
-static time_t timer_end;
+static time_t time_start;
+static time_t time_now;
 
 /* Time Estimate */
 static float time_est;
@@ -92,8 +92,9 @@ static bool solution_found = 0;
 static bool data_exported = 0;
 static bool sim_done = 0;
 static bool sim_init_flag = 0;
-static bool data_track = 1;
-static bool show_status = 1;
+// static bool data_track = 1;
+// static bool show_status = 1;
+
 
 
 /* ========== Namespaces ========== */
@@ -117,8 +118,7 @@ static void report (uint8_t *const *const grid, const uint8_t *const seed);
 /* ========== Simulation Functions ========== */
 
 void sim_init (void) {
-
-	/* Checks Conditions */
+	// Checks Conditions
 	if ( tt::table_is_init () == 0) {
 		printf (ANSI_RED "Truth table not defined.\n" ANSI_RESET);
 		return;
@@ -134,7 +134,9 @@ void sim_init (void) {
 		return;
 	}
 
-	/* Creates a local copy for sim.cpp file */
+
+
+	// Creates a local copy for sim.cpp file
 	pop_lim = get_ga_pop ();
 	gen_lim = get_ga_gen ();
 	dimx = get_ca_dimx ();
@@ -143,7 +145,6 @@ void sim_init (void) {
 	nb = get_ca_nb ();
 	dna_length = get_dna_length ();
 
-	/* Prints Parameter List */
 	printf (ANSI_REVRS "\n\t>>>-- Initializing Simulation --<<<\n" ANSI_RESET
 		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
 		"\tDIMX = %3u | DIMY = %3u | COLOR = %3u | NEIGHBOR = %2u\n"
@@ -157,37 +158,24 @@ void sim_init (void) {
 		tt::get_mask(), tt::get_mask_bc()
 	);
 
-	/* Free array of previously created population
-		BUG: Run the simulation once, then changing the population size.
-		This causes either incomplete memory deallocation; orphans.
-		Or causes out-of-bound free attempts; Segmentation Faults.
-	*/
-	if (indv != NULL) {
-		for (unsigned int idx = 0 ; idx < pop_lim ; idx++) {
-			indv[idx].FreeDNA ();
-		}
-		free (indv);
-	}
 
-	/* Allocates an array of individuals (population) */
+	/* Allocates an array of individuals (population)
+		new / delete unavailable for struct and classes
+		/lib/libstdc++.so.6: version `CXXABI_1.3.8' not found
+	*/
 	indv = (GeneticAlgorithm *) calloc (pop_lim, sizeof (GeneticAlgorithm));
 	for (unsigned int i = 0 ; i < pop_lim ; i++) {
 		indv [i] = GeneticAlgorithm (dna_length);
 	}
 
-	/* Free data array -- if not empty */
-	if (stats.avg != NULL) free (stats.avg);
-	if (stats.med != NULL) free (stats.med);
-	if (stats.max != NULL) free (stats.max);
-	if (stats.min != NULL) free (stats.min);
-	if (stats.sol_count != NULL) free (stats.sol_count);
 
-	/* Allocate memory for data array */
-	stats.avg = (float *) calloc (gen_lim, sizeof (float));
-	stats.med = (float *) calloc (gen_lim, sizeof (float));
-	stats.max = (unsigned int *) calloc (gen_lim, sizeof (unsigned int));
-	stats.min = (unsigned int *) calloc (gen_lim, sizeof (unsigned int));
-	stats.sol_count = (unsigned int *) calloc (gen_lim, sizeof (unsigned int));
+	// Allocate memory for data array
+	stats.avg =  (float *) calloc (pop_lim, sizeof (float));
+	stats.med =  (float *) calloc (pop_lim, sizeof (float));
+	stats.max =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
+	stats.min =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
+	stats.sol_count =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
+
 
 	/* Maxmimum fitness possible
 		Calculated as: (Output bit width) * (Truth Table Steps)
@@ -200,37 +188,46 @@ void sim_init (void) {
 		fit_lim = (dimx - tt::get_mask_bc(1)) * tt::get_row();
 	}
 
-	/* Calculate time estimate */
+	// Seed RNG
+	seed_rng32();
+
+	// Calculate time estimate
 	time_est = ((float) gen_lim * pop_lim / INDV_PER_SEC);
 
+	// Clear FPGA LGA
 	fpga_clear ();
 
-	/* Set Flags */
+	// Set Flags
 	data_exported = 0;
 	solution_found = 0;
 	sim_done = 0;
 	sim_init_flag = 1;
 
-	time (&timer_begin);
+	time (&time_start);
 	return;
 }
+
 
 void sim_cleanup (void) {
 	printf ("Cleaning up sim... ");
 
-	/* Clear Flags */
+	// Clear Flags
 	data_exported = 0;
 	solution_found = 0;
 	sim_done = 0;
 	sim_init_flag = 0;
 
-	/* Free GA Class Objects */
-	for (unsigned int idx = 0 ; idx < pop_lim ; idx++) {
-		indv[idx].FreeDNA ();
-	}
-	free (indv);
 
-	/* Free data array */
+	// Free GA Class Objects
+	if (indv != NULL) {
+		for (unsigned int idx = 0 ; idx < pop_lim ; idx++) {
+			indv[idx].FreeDNA ();
+		}
+		free (indv);
+	}
+
+
+	// Free data array
 	if (stats.avg != NULL) free (stats.avg);
 	if (stats.med != NULL) free (stats.med);
 	if (stats.max != NULL) free (stats.max);
@@ -240,6 +237,7 @@ void sim_cleanup (void) {
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 }
 
+
 int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 	if ( sim_init_flag == 0 ) {
 		printf (ANSI_RED "\nSimulation Requires Initialization\n" ANSI_RESET);
@@ -248,37 +246,31 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	printf ("\tSimulation Progress:\n");
 
-
-
 	/* ===== MAIN SIMULATION LOOP ===== */
 
-	/* Loop over each generation */
+	// Loop over each generation
 	for (unsigned int gen = 0 ; gen < gen_lim ; gen++) {
-		/* Perform selection, reproduction, crossover, and mutation */
+		// Perform selection, reproduction, crossover, and mutation
 		GeneticAlgorithm::Selection (indv);
 		GeneticAlgorithm::Repopulate (indv);
 
-		/* Loop over each individual */
+		// Loop over each individual
 		for (unsigned int idx = 0 ; idx < pop_lim ; idx++) {
-			/* Automatically ages an individual */
+
+			// Automatically ages an individual
 			indv[idx].set_age();
 
-			/* Skips evaluation, if already done for this individual */
+			// Skips evaluation, if already done for this individual
 			if ( indv[idx].get_eval() == 1 ) continue;
 
-			/* Generate CA Array
-				1. Generate first row, with SEED
-				2. Iterate over entire grid once; generate current row with previous row.
-				3. Generate first row again, with last row of grid
-				4. Iterate over entire grid again, same as step 2.
-			*/
+			// Generate CA Array
 			ca_gen_grid (grid, indv[idx].get_dna(), seed);
 			ca_gen_grid (grid, indv[idx].get_dna());
 
-			/* Edit FPGA RAM */
+			// Edit FPGA RAM
 			fpga_set_grid (grid);
 
-			/* Evaluate Circuit */
+			// Evaluate Circuit
 			if (tt::get_f1() == 1) {
 				indv[idx].set_fit (
 					eval_f1_array (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask())
@@ -293,27 +285,26 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 			fpga_clear ();
 		}
 
-		/* Sort population by fitness -- descending order, highest fitness first */
+		// Sort population by fitness -- descending order, highest fitness first
 		GeneticAlgorithm::Sort (indv);
 
-		/* Track Statistics && Checks for solution */
+		// Track Statistics && Checks for solution
 		statistics (indv, gen);
-
 
 
 		/* ===== Report ===== */
 
 		if (gen % 10 == 0) {
-			/* Current Progress */
+			// Current Progress
 			printf ("\t%4u / %4u ", gen, gen_lim);
 
-			/* Estimate Time Arrival */
-			time (&timer_end);
-			float eta = time_est - difftime (timer_end, timer_begin);
+			// Estimate Time Arrival
+			time (&time_now);
+			float eta = time_est - difftime (time_now, time_start);
 			if (eta > 0) printf (" | ETA: %6.0f s", eta);
 			else printf (" | ETA: < 0 s ...");
 
-			/* Flags / Warnings / Notes */
+			// Flags / Warnings / Notes
 			if (solution_found) {
 				printf (ANSI_GREEN " << Solution Found! (%u)" ANSI_RESET, stats.sol_count[gen]);
 			}
@@ -323,15 +314,10 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 	}
 
 
-
 	/* ===== END SIMULATION LOOP ===== */
 
-	fpga_clear ();
-
 	sim_done = 1;
-
-	/* ===== REPORT FINAL RESULTS ===== */
-
+	fpga_clear ();
 	report (grid, seed);
 
 	if (solution_found == 1) {
@@ -341,12 +327,14 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 	}
 }
 
+
 bool sim_is_done (void) {
 	return sim_done;
 }
 
+
 unsigned int count_solution (GeneticAlgorithm *const array) {
-	/* Count of how many solutions exist in current population */
+	// Count of how many solutions exist in current population
 	unsigned int count = 0;
 
 	for (unsigned int i = 0 ; i < pop_lim ; i++) {
@@ -361,7 +349,7 @@ unsigned int count_solution (GeneticAlgorithm *const array) {
 /* ========== Results & Reporting Function ========== */
 
 void statistics (GeneticAlgorithm *const array, const unsigned int &gen) {
-	/* Get average value */
+	// Get average value
 	float average = 0.0;
 	for (uint32_t i = 0 ; i < pop_lim ; i++) {
 		average += array[i].get_fit();
@@ -369,7 +357,7 @@ void statistics (GeneticAlgorithm *const array, const unsigned int &gen) {
 	average /= pop_lim;
 	stats.avg [gen] = average;
 
-	/* Get median value (list is presorted) */
+	// Get median value (list is presorted)
 	float median = 0;
 	if (pop_lim % 2 == 0) {
 		median = array[pop_lim/2].get_fit() + array[(pop_lim/2)-1].get_fit();
@@ -378,27 +366,28 @@ void statistics (GeneticAlgorithm *const array, const unsigned int &gen) {
 		stats.med [gen] = array[pop_lim/2].get_fit();
 	}
 
-	/* Get max value (list is presorted) */
+	// Get max value (list is presorted)
 	stats.max [gen] = array[0].get_fit();
 
-	/* Get min value (list is presorted) */
+	// Get min value (list is presorted)
 	stats.min [gen] = array[pop_lim-1].get_fit();
 
-	/* Check for solutions found */
+	// Check for solutions found
 	stats.sol_count [gen] = count_solution (indv);
 
-	/* Checks for first solution */
+	// Checks for first solution
 	if ((solution_found == 0) && (stats.sol_count[gen] != 0)) {
 		stats.tts = gen;
 		solution_found = 1;
 	}
 }
 
+
 void report (uint8_t *const *const grid, const uint8_t *const seed) {
-	/* How many top individuals to display at the end */
+	// How many top individuals to display at the end
 	constexpr unsigned int N = 10;
 
-	printf (ANSI_GREEN "\tDONE : %.1f s\n" ANSI_RESET, difftime (timer_end, timer_begin));
+	printf (ANSI_GREEN "\tDONE : %.f s\n" ANSI_RESET, difftime (time_now, time_start) );
 
 	if (solution_found) {
 		printf (ANSI_GREEN "\tFirst solution found in: %u gen\n\n" ANSI_RESET, stats.tts);
@@ -419,7 +408,7 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 	);
 
 
-	/* Displays top 'N' individuals */
+	// Displays top 'N' individuals
 	printf ("\nTop %u Individuals:\n", N);
 	for (unsigned int i = 0 ; i < N ; i++) {
 		printf ("[%1u] UID: %u | FIT: %u | DNA: ", i, indv[i].get_uid(), indv[i].get_fit() );
@@ -435,19 +424,19 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 	indv[0].print_dna( dna_length );
 	printf ("\n");
 
-	/* Generate & Set Grid */
+	// Generate & Set Grid
 	ca_gen_grid (grid, indv[0].get_dna(), seed);
 	ca_gen_grid (grid, indv[0].get_dna());
 	fpga_set_grid (grid);
 
-	/* Evaluate Circuit */
+	// Evaluate Circuit
 	if ( tt::get_f1() == 1 ) {
 		eval_f1_insp (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
 	} else {
 		eval_bc_insp (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
 	}
 
-	/* Optional Print of Fittest Solution */
+	// Optional Print of Fittest Solution
 	if ( get_data_caprint() == 1 ) {
 		printf ("\n\e[100m\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 		ca_print_grid (grid);
@@ -456,6 +445,7 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	return;
 }
+
 
 void sim_results (void) {
 	if (sim_done == 0) {
@@ -478,18 +468,19 @@ void sim_results (void) {
 	return;
 }
 
+
 void sim_export (void) {
 	FILE *fp;
 	char filename [64];
 	char buffer [64];
 
-	/* Get Current Local Time & Convert to Time Struct */
+	// Get Current Local Time & Convert to Time Struct
 	time_t raw_time;
 	struct tm *timeinfo;
 	time (&raw_time);
 	timeinfo = localtime (&raw_time);
 
-	/* Sets filename to ./rpt/YYYYMMDD-HHMMSS format */
+	// Sets filename to ./rpt/YYYYMMDD-HHMMSS format
 	strcpy (filename, "./rpt/");
 	strftime (buffer, 64, "%Y%m%d-%H%M%S.rpt", timeinfo);
 	strcat (filename, buffer);
@@ -559,6 +550,7 @@ void sim_export (void) {
 
 	return;
 }
+
 
 bool export_is_done (void) {
 	return data_exported;

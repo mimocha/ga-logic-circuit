@@ -5,47 +5,38 @@
 
 /* ========== Standard Library Include ========== */
 
-#include <stdio.h>		/* printf, perror */
-#include <stdlib.h>		/* calloc, free */
-#include <stdint.h>		/* uint definitions */
-#include <iostream>		/* cout */
-#include <math.h>		/* pow */
+#include <stdio.h>		// printf, perror
+#include <stdint.h>		// uint definitions
+#include <iostream>		// cout
+
+
 
 /* ========== Custom Header Include ========== */
 
 #include "ca.hpp"
 #include "ansi.hpp"
+#include "fast.hpp"
 #include "global.hpp"
 
-/* ===== CA Global Variables ===== */
 
-/* Neighbor Cell Array */
-static uint8_t *neighbor;
 
-/* Neighboring Cell Offset */
-static int offset;
+/* ========== CA Global Variables ========== */
 
-/* Local Copy of Global Parameters */
-static uint16_t color;
-static uint16_t dimx;
-static uint16_t dimy;
-static uint16_t nb_count;
+// Made constant for now, can be changed back later
+// Local Copy of Global Parameters
+constexpr uint16_t color = 4;
+constexpr uint16_t dimx = 64;
+constexpr uint16_t dimy = 64;
+constexpr uint16_t nb_count = 3;
 
-/* Internal Initialization Flag */
-static bool ca_init_flag;
+// Neighboring Cell Offset
+constexpr int offset = 1;
+
+// Internal Initialization Flag
+static bool ca_init_flag = 1;
 
 using namespace std;
 using namespace GlobalSettings;
-
-/* ========== STATIC FUNCTION PROTOYPES ==========
-	See documentation in header file "ca.hpp"
-*/
-
-static bool ca_not_init (void);
-
-static uint8_t ca_func (const uint8_t *const neighbor);
-
-static void ca_print (const uint8_t &cell);
 
 
 
@@ -54,22 +45,19 @@ static void ca_print (const uint8_t &cell);
 void ca_init (void) {
 	printf ("Initializing CA... ");
 
-	/* Creates local copy of global parameters for CA functions */
-	dimx = get_ca_dimx ();
-	dimy = get_ca_dimy ();
-	color = get_ca_color ();
-	nb_count = get_ca_nb ();
+	// Creates local copy of global parameters for CA functions
+	// dimx = get_ca_dimx ();
+	// dimy = get_ca_dimy ();
+	// color = get_ca_color ();
+	// nb_count = get_ca_nb ();
 
-	/* Allocate memory for neighbor array */
-	neighbor = (uint8_t *) calloc (nb_count, sizeof(uint8_t));
+	// Calculate index offset for neighboring cells. Only work with odd-numbers
+	// offset = ((nb_count - 1) / 2);
 
-	/* Calculate index offset for neighboring cells. Only work with odd-numbers */
-	offset = ((nb_count - 1) / 2);
-
-	/* Sets initialization flag to TRUE */
+	// Sets initialization flag to TRUE
 	ca_init_flag = 1;
 
-	/* Prints Message and Returns */
+	// Prints Message and Returns
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 	return;
 }
@@ -77,28 +65,11 @@ void ca_init (void) {
 void ca_cleanup (void) {
 	printf ("Cleaning up CA... ");
 
-	/* Deallocate memory for neighbor array */
-	if (neighbor != NULL) free (neighbor);
-
-	/* Sets initialization flag to FALSE
-		ca_init() needs to be ran again after this,
-		before using CA functions again.
-	*/
+	// Practically does nothing at this point
 	ca_init_flag = 0;
 
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 	return;
-}
-
-bool ca_not_init (void) {
-	/* Returns TRUE if CA is uninitialized */
-	if (ca_init_flag == 0) {
-		printf (ANSI_RED "CA Uninitialized\n" ANSI_RESET);
-		return 1;
-	}
-
-	/* Otherwise, return FALSE */
-	return 0;
 }
 
 bool ca_is_init (void) {
@@ -109,61 +80,59 @@ bool ca_is_init (void) {
 
 /* ========== Generation Functions ========== */
 
-uint8_t ca_func (const uint8_t *const neighbor) {
-	/* DNA index number */
+uint8_t ca_func (const uint8_t *const input) {
+	// DNA index number
 	uint32_t idx = 0;
 
-	/* Calculates index number value */
-	for (unsigned int c = 0; c < nb_count; c++) {
-		idx = idx + (neighbor [c] * pow (color, c));
+	// Calculates index number value
+	for (uint16_t c = 0; c < nb_count; c++) {
+		idx = idx + (input [c] * fast_pow (color, c));
 	}
 
-	/* Returns the index number */
+	// Returns the index number
 	return idx;
 }
 
-void ca_gen_row (const uint8_t *const input, uint8_t *const output,
-	const uint8_t *const DNA) {
-	/* CA Uninitialized Error Catch */
-	if ( ca_not_init () ) return;
 
-	/* Iterate over entire row */
-	for (unsigned int x = 0 ; x < dimx ; x++) {
+void ca_gen_row
+(const uint8_t *const input, uint8_t *const output, const uint8_t *const DNA) {
+	// Iterate over entire row
+	for (uint16_t x = 0 ; x < dimx ; x++) {
+		// Declare Neighbor Array
+		uint8_t neighbor [nb_count];
 
-		/* Load Neighbor Array && Check Out Of Bound */
 		for (uint16_t n = 0 ; n < nb_count ; n++) {
-			/* Calculate the index location -- Can be negative */
-			int idx = x - offset + n;
+			// Calculate the index location -- Can be negative
+			int16_t idx = x - offset + n;
 
-			/* If index location is out of bound, set to 0, otherwise return normal values */
-			if (idx < 0 || idx >= (int) dimx) {
-				neighbor [n] = 0;
-			} else {
-				neighbor [n] = input [idx];
-			}
+			// Index looping
+			// Guarantees index of range (0,DIMX]
+			// (INDEX + DIMX) % DIMX == LOOPED INDEX
+			idx = idx + dimx;
+			idx = idx % dimx;
+
+			neighbor [n] = input [idx];
 		}
 
-		/* Call function ca_func() to generate a DNA index */
+		// Call function ca_func() to generate a DNA index
 		const unsigned int dna_index = ca_func (neighbor);
 
-		/* Use the index to access value from DNA string */
+		// Use the index to access value from DNA string
 		output [x] = DNA [ dna_index ];
 	}
 }
 
+
 void ca_gen_grid
 (uint8_t *const *const grid, const uint8_t *const DNA, const uint8_t *const seed) {
-	/* CA Uninitialized Error Catch */
-	if ( ca_not_init () ) return;
-
-	/* Generates first row from seed, if provided */
+	// Generates first row from seed; if not provided, use bottom row as seed
 	if ( seed != NULL ) {
 		ca_gen_row (seed, grid [0], DNA);
 	} else {
 		ca_gen_row (grid [dimy-1], grid [0], DNA);
 	}
 
-	/* Iterates over row in grid */
+	// Iterates over row in grid
 	for (uint16_t y = 0 ; y < (dimy-1) ; y++) {
 		ca_gen_row (grid [y], grid [y+1], DNA);
 	}
@@ -174,7 +143,7 @@ void ca_gen_grid
 /* ========== Printing Functions ========== */
 
 void ca_print (const uint8_t &cell) {
-	/* Sets terminal output according to the cell's value */
+	// Sets terminal output according to the cell's value
 	switch ( cell ) {
 		case 0x0:
 			cout << ANSI_RED;
@@ -205,29 +174,61 @@ void ca_print (const uint8_t &cell) {
 			break;
 	}
 
-	/* Prints the cell value in hexadecimal */
 	printf("%X", cell);
 }
 
-void ca_print_row (const uint8_t *const array) {
-	/* CA Uninitialized Error Catch */
-	if ( ca_not_init () ) return;
 
-	/* Iterate over each cell in row */
+void ca_print_row (const uint8_t *const array) {
+	// Iterate over each cell in row
 	for (unsigned int x = 0 ; x < dimx ; x++) {
 		ca_print ( array [x] );
 	}
 
-	/* Clears output color */
+	// Clears output color
 	cout << ANSI_RESET << '\n';
 }
 
-void ca_print_grid (const uint8_t *const *const grid) {
-	/* CA Uninitialized Error Catch */
-	if ( ca_not_init () ) return;
 
-	/* Iterate over row in grid */
-	for (unsigned int y = 0 ; y < dimy ; y++) {
-		ca_print_row ( grid [y] );
+void ca_print_grid (const uint8_t *const *const grid, const bool &invert) {
+	// Iterate over row in grid
+	if (invert == 0) {
+		for (unsigned int y = 0 ; y < dimy ; y++)
+			ca_print_row ( grid [y] );
+	} else {
+		for (int y = dimy-1 ; y > 0 ; y--)
+			ca_print_row ( grid [y] );
 	}
 }
+
+
+
+/* ========== Neigbor Calculation Reference ==========
+
+int16_t idx_zero (const uint16_t &n, const uint16_t &x) {
+	// Calculate the index location -- Can be negative
+	int16_t idx = x - offset + n;
+
+	// If index location is out of bound, set to 0, otherwise return normal values
+	if (idx < 0 || idx >= (int) dimx) {
+		return 0;
+	} else {
+		return idx;
+	}
+}
+
+
+int16_t idx_loop (const uint16_t &n, const uint16_t &x) {
+	// Calculate the index location -- Can be negative
+	int16_t idx = x - offset + n;
+
+	// Index looping
+	// Guarantees index of range (0,DIMX]
+	// (INDEX + DIMX) % DIMX == LOOPED INDEX
+
+	idx = idx + dimx;
+	idx = idx % dimx;
+
+	return idx;
+}
+
+*/

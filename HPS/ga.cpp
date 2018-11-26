@@ -5,19 +5,24 @@
 
 /* ========== Standard Library Include ========== */
 
-#include <stdio.h>		/* Standard I/O */
-#include <stdlib.h>		/* calloc, free */
-#include <stdint.h>		/* uint definitions */
-#include <math.h>		/* pow */
-#include <algorithm>	/* sort */
-#include <vector>		/* vectors */
-#include <iostream>		/* cout */
+#include <stdio.h>		// Standard I/O
+#include <stdlib.h>		// calloc, free
+#include <stdint.h>		// uint definitions
+#include <math.h>		// floor
+#include <algorithm>	// sort
+#include <vector>		// vectors
+#include <iostream>		// cout
+
+
 
 /* ========== Custom File Header ========== */
 
 #include "ga.hpp"
 #include "ansi.hpp"
 #include "global.hpp"
+#include "fast.hpp"
+
+
 
 using namespace std;
 using namespace GlobalSettings;
@@ -31,35 +36,8 @@ using namespace GlobalSettings;
 */
 #define P_MAX 100000
 
-/* Global Object Counter for UID */
+// Global Object Counter for UID
 static uint32_t object_count = 0;
-
-
-
-/* ========== Fast RNG ========== */
-
-/* uint32_t xor128 (void)
-	XORShift algorithm by George Marsaglia.
-	https://codingforspeed.com/using-faster-psudo-random-generator-xorshift/
-
-	A fast random number generator. Atleast twice faster than std::rand()
-	Should speed up simulation significantly.
-	Period 2^128 - 1
-
-	TODO: Consider Mersenne Twister RNG -- Heavier, but more reliable?
-*/
-static uint32_t xor128 (void);
-
-uint32_t xor128 (void) {
-  static uint32_t x = 123456789;
-  static uint32_t y = 362436069;
-  static uint32_t z = 521288629;
-  static uint32_t w = 88675123;
-  uint32_t t;
-  t = x ^ (x << 11);
-  x = y; y = z; z = w;
-  return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
-}
 
 
 
@@ -102,7 +80,8 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 }
 
 void GeneticAlgorithm::FreeDNA (void) {
-	free (this->dna);
+	// free (this->dna);
+	delete [] this->dna;
 }
 
 
@@ -143,8 +122,7 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 	*/
 
 	for (unsigned int rank = 0 ; rank < pop ; rank++) {
-		// uint32_t rng = xor128 () % pop + array[i].age;
-		uint32_t rng = xor128 () % pop;
+		uint32_t rng = fast_rng32 () % pop;
 
 		/* Checks if an individual dies
 			Use the RNG to pick a number between [0,POP)
@@ -218,7 +196,7 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 			/* Tournament Pool Loop */
 			for (unsigned int i = 0 ; i < pool ; i++) {
 				/* Pick a random live individual */
-				pnew = live [ xor128 () % live.size() ];
+				pnew = live [ fast_rng32 () % live.size() ];
 
 				/* Compare by fitness -- fittest wins */
 				if ( array[pnew].fit > array[pcur].fit ) {
@@ -239,7 +217,7 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 					} else {
 
 						/* Pick one by random */
-						if ( xor128() % 1 ) {
+						if ( fast_rng32() % 1 ) {
 							/* Keep new pick */
 							pcur = pnew;
 						} else {
@@ -284,7 +262,7 @@ void GeneticAlgorithm::Crossover
 (const uint8_t *const dna_a, const uint8_t *const dna_b, const unsigned int &dna_length) {
 	/* Using RNG, determine which DNA comes from which parent */
 	for (uint16_t i = 0 ; i < dna_length ; i++) {
-		if ( (xor128 () % 1) )
+		if ( (fast_rng32 () % 1) )
 			this->dna [i] = dna_a [i];
 		else
 			this->dna [i] = dna_b [i];
@@ -297,7 +275,7 @@ void GeneticAlgorithm::Mutate
 (const float &mutp, const unsigned int &color, const unsigned int &dna_length) {
 	/* Iterates over each DNA  */
 	for (uint32_t i = 0 ; i < dna_length ; i++) {
-		uint16_t rng = xor128 () % P_MAX;
+		uint16_t rng = fast_rng32 () % P_MAX;
 
 		/* Do Nothing | 1 - MUTP probability */
 		if (rng > floor (mutp * P_MAX) ) {
@@ -314,7 +292,7 @@ void GeneticAlgorithm::Mutate
 					this->dna [i] = color - 1;
 					break;
 				case 2:
-					this->dna [i] = xor128 () % color;
+					this->dna [i] = fast_rng32 () % color;
 					break;
 				case 3:
 					if (this->dna [i] > 0) {
@@ -332,7 +310,7 @@ void GeneticAlgorithm::Mutate
 
 		/* Swap Mutation | 20% of all mutations */
 		if (rng > floor (mutp * P_MAX * 0.05) ) {
-			uint16_t dest = xor128 () % dna_length;
+			uint16_t dest = fast_rng32 () % dna_length;
 			uint8_t tmp = this->dna [i];
 			this->dna [i] = this->dna [dest];
 			this->dna [dest] = tmp;
@@ -342,10 +320,10 @@ void GeneticAlgorithm::Mutate
 		/* Scramble (Least Likely) | 5%  of all mutation
 			Picks two anchor points,
 			The first is the current DNA index (i)
-			The second is a random point within the DNA string (xor128 () % dna_length)
+			The second is a random point within the DNA string (fast_rng32 () % dna_length)
 
 		*/
-		uint16_t anchor = xor128 () % dna_length;
+		uint16_t anchor = fast_rng32 () % dna_length;
 		if (i > anchor) {
 			random_shuffle (&dna [anchor], &dna [i]);
 		} else if (anchor > i) {
@@ -371,46 +349,46 @@ void GeneticAlgorithm::Reset (void) {
 }
 
 uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t &dna_length) {
-	/* Allocates memory for DNA string */
-	uint8_t *dna = (uint8_t *) calloc (dna_length, sizeof (uint8_t) );
+	// Allocates memory for DNA string
+	// uint8_t *dna = (uint8_t *) calloc (dna_length, sizeof (uint8_t) );
+	uint8_t *dna = new (nothrow) uint8_t [dna_length] ();
 
-	/* If Memory Allocation Failed */
+	// If Memory Allocation Failed
 	if (dna == NULL) {
 		printf (ANSI_RED "\nERROR: DNA CALLOC FAILED\n" ANSI_RESET);
 		return nullptr;
 	}
 
-	/* Return final result */
 	return dna;
 }
 
 void GeneticAlgorithm::dna_rand_fill (const uint32_t &dna_length) {
-	/* Checks if DNA is NULL */
+	// Checks if DNA is NULL
 	if (this -> dna == NULL) {
 		printf (ANSI_RED "\nERROR: DNA IS NULLPTR\n" ANSI_RESET);
 		return;
 	}
 
-	/* Fills DNA with Random Number, modulo CA Color Count */
+	// Fills DNA with Random Number, modulo CA Color Count
 	const unsigned int ca_color = get_ca_color();
 	for (uint32_t i = 0 ; i < dna_length ; i++) {
-		this -> dna [i] = xor128 () % ca_color;
+		this -> dna [i] = fast_rng32 () % ca_color;
 	}
 
 	return;
 }
 
 void GeneticAlgorithm::dna_rand_fill (uint8_t *const dna, const uint32_t &dna_length) {
-	/* Checks if DNA is NULL */
+	// Checks if DNA is NULL
 	if (dna == NULL) {
 		printf (ANSI_RED "\nERROR: DNA IS NULLPTR\n" ANSI_RESET);
 		return;
 	}
 
-	/* Fills DNA with Random Number, modulo CA Color Count */
+	// Fills DNA with Random Number, modulo CA Color Count
 	const unsigned int ca_color = get_ca_color();
 	for (uint32_t i = 0 ; i < dna_length ; i++) {
-		dna [i] = xor128 () % ca_color;
+		dna [i] = fast_rng32 () % ca_color;
 	}
 
 	return;
@@ -426,25 +404,21 @@ void GeneticAlgorithm::Sort (GeneticAlgorithm *const array) {
 /* ========== Print Functions ========== */
 
 void GeneticAlgorithm::print_dna (const uint32_t &dna_length) {
-	/* Iterates over entire DNA length */
+	// Iterates over entire DNA length
 	for (uint32_t i = 0; i < dna_length; i++) {
-		/* Prints DNA to terminal */
+		// Prints DNA to terminal
 		cout << (unsigned int) dna [i];
 	}
-
-	return;
 }
 
 void GeneticAlgorithm::fprint_dna (FILE *const fp, const uint32_t &dna_length) {
-	/* Iterates over entire DNA length */
+	// Iterates over entire DNA length
 	for (uint32_t i = 0; i < dna_length; i++) {
-		/* Adjusts each character from uint8_t to an ASCII number */
+		// Adjusts each character from uint8_t to an ASCII number
 		char buff = dna [i] + 48;
-		/* Writes to file */
+		// Writes to file
 		fputc (buff, fp);
 	}
-
-	return;
 }
 
 

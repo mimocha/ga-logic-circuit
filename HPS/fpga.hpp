@@ -31,7 +31,6 @@ void fpga_cleanup (void);
 	Use this function as an internal roadblock,
 	to prevent usage of certain FPGA functions before proper initialization.
 */
-// static bool fpga_not_init (void);
 
 /* bool fpga_is_init (void)
 	Returns FPGA initialization status.
@@ -64,7 +63,6 @@ void fpga_verify (uint8_t *const *const grid);
 
 	This function fills the 2D array grid, with the value num.
 */
-// static void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num);
 
 /* static unsigned int fpga_test (const unsigned int &mode)
 	Checks each test case for input / output, for the given setting.
@@ -78,7 +76,6 @@ void fpga_verify (uint8_t *const *const grid);
 
 	Returns an unsigned int of numbers of matching observation.
 */
-// static unsigned int fpga_test (const unsigned int &mode);
 
 
 
@@ -155,13 +152,11 @@ void fpga_set_grid (const uint8_t *const *const grid);
 	Read 32-bit unsigned int from selected address offset.
 	For S1 Avalon Slave Port
 */
-// static uint32_t fpga_s1_read (const uint32_t &offset);
 
 /* static void fpga_s1_write (const uint32_t &offset, const uint32_t &data)
 	Writes 32-bit unsigned int to selected address offset.
 	For S1 Avalon Slave Port
 */
-// static void fpga_s1_write (const uint32_t &offset, const uint32_t &data);
 
 /* static void fpga_s2_write (const uint32_t &offset, const uint32_t &data)
 	Write 32-bit unsigned int to selected address offset.
@@ -170,6 +165,5 @@ void fpga_set_grid (const uint8_t *const *const grid);
 	Originally writes twice to the same address, due to FPGA circuit's setup.
 	Was done to reset WREN signal properly, but has since been proven unnecessary.
 */
-// static void fpga_s2_write (const uint32_t &offset, const uint32_t &data);
 
 #endif

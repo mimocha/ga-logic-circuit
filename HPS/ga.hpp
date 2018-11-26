@@ -12,12 +12,12 @@ private:
 
 	/* ========== Properties ========== */
 
-	uint32_t uid;	/* Unique id for tracking the individual */
-	uint8_t *dna;	/* DNA sequence (Cellular Automaton Rule) */
-	uint32_t fit;	/* Fitness score of the individual */
-	uint32_t age;	/* For how long the individual has been alive for */
-	bool eval;		/* Evaluation Flag | 0 = Not Evaluated | 1 = Evaluated */
-	bool alive;		/* Alive Flag | 0 = Dead | 1 = Alive */
+	uint32_t uid;	// Unique id for tracking the individual
+	uint8_t *dna;	// DNA sequence (Cellular Automaton Rule)
+	uint32_t fit;	// Fitness score of the individual
+	uint32_t age;	// For how long the individual has been alive for
+	bool eval;		// Evaluation Flag | 0 = Not Evaluated | 1 = Evaluated
+	bool alive;		// Alive Flag | 0 = Dead | 1 = Alive
 
 	/* ========== Compare Functions ========== */
 
@@ -204,12 +204,5 @@ public:
 	void set_age (void);
 
 };
-
-
-
-/* ========== Other Functions ========== */
-
-/* Future Function Placeholder For Reseeding RNG */
-// void reseed_rng ()
 
 #endif
