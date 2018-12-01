@@ -47,7 +47,7 @@ static uint64_t *INPUT;
 static uint64_t *OUTPUT;
 
 /* Toggle F1 Metric */
-static bool F1 = 0;
+static bool F1 = 1;
 
 /* Truth Table Mask */
 static uint64_t MASK = 0x1;

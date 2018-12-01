@@ -44,7 +44,6 @@ int main (int argc, char **argv) {
 	// Initialization Functions
 	main_init ();
 	fpga_init ();
-	ca_init ();
 
 	while (1) {
 		// Variable for selecting menu option -- Prints available options and get user input

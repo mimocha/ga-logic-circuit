@@ -31,7 +31,7 @@
 
 /* ========== Simulation Variables ========== */
 
-/* Genetic Algorithm Population Array */
+// Genetic Algorithm Population Array
 static GeneticAlgorithm *indv;
 
 /* General Settings
@@ -48,19 +48,23 @@ static unsigned int  nb;
 
 static unsigned int  dna_length;
 
-/* Maxmimum fitness score possible
-	Calculated as: (Output bit width) * (Truth Table Steps)
-	Or F1_MAX for F1 Scores.
+/*	Solution Fitness Value & Fitness Limit
+	Solution Fitness 'sol_fit'
+	Defined as: (Output bit width) * (Truth Table Rows)
+		Or as defined by F1_MAX
+	Defines the fitness value of a solution (produces the exact desired truth table)
 
-	Used to determine if a solution has been found.
+	Fitness Limit 'fit_lim'
+	Defined as: 'sol_fit' + EFFICIENCY_MAX
 */
+static uint32_t sol_fit;
 static uint32_t fit_lim;
 
-/* Timer Variable */
+// Timer Variable
 static time_t time_start;
 static time_t time_now;
 
-/* Time Estimate */
+// Time Estimate
 static float time_est;
 
 
@@ -177,16 +181,13 @@ void sim_init (void) {
 	stats.sol_count =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
 
 
-	/* Maxmimum fitness possible
-		Calculated as: (Output bit width) * (Truth Table Steps)
-		Or as defined by F1_MAX
-		F1 Scoring in computationally expensive, takes more time
-	*/
+	// Set solution fitness value & fitness limit
 	if (tt::get_f1() == 1) {
-		fit_lim = F1_MAX;
+		sol_fit = get_f1_max();
 	} else {
-		fit_lim = (dimx - tt::get_mask_bc(1)) * tt::get_row();
+		sol_fit = (dimx - tt::get_mask_bc(1)) * tt::get_row();
 	}
+	fit_lim = sol_fit + get_efficiency_max ();
 
 	// Seed RNG
 	seed_rng32();
@@ -246,6 +247,8 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	printf ("\tSimulation Progress:\n");
 
+
+
 	/* ===== MAIN SIMULATION LOOP ===== */
 
 	// Loop over each generation
@@ -270,22 +273,31 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 			// Edit FPGA RAM
 			fpga_set_grid (grid);
 
-			// Evaluate Circuit
+			// Evaluate Circuit Truth Table
+			uint32_t score;
 			if (tt::get_f1() == 1) {
-				indv[idx].set_fit (
-					eval_f1_array (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask())
-				);
+				score = eval_f1_array
+					(tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
 			} else {
-				indv[idx].set_fit (
-					eval_bc_array (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask())
-				);
+				score = eval_bc_array
+					(tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
 			}
 
-			indv[idx].set_eval();
+			// Flags this as a viable solution
+			if (score == sol_fit) {
+				indv[idx].set_sol ();
+			}
+
+			// Evaluate Gate Efficiency
+			score += eval_efficiency (grid);
+
+			indv[idx].set_fit (score);
+			indv[idx].set_eval ();
 			fpga_clear ();
 		}
 
-		// Sort population by fitness -- descending order, highest fitness first
+		// Sort population by fitness & solution
+		// Descending order, Solutions first, highest fitness first
 		GeneticAlgorithm::Sort (indv);
 
 		// Track Statistics && Checks for solution
@@ -314,6 +326,7 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 	}
 
 
+
 	/* ===== END SIMULATION LOOP ===== */
 
 	sim_done = 1;
@@ -338,7 +351,7 @@ unsigned int count_solution (GeneticAlgorithm *const array) {
 	unsigned int count = 0;
 
 	for (unsigned int i = 0 ; i < pop_lim ; i++) {
-		if ( array[i].get_fit() >= fit_lim ) count++;
+		if ( array[i].get_sol() ) count++;
 	}
 
 	return count;

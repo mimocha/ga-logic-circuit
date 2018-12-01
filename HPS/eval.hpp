@@ -6,8 +6,7 @@
 #ifndef EVAL_HPP
 #define EVAL_HPP
 
-/* F1 Score Scaling -- Change from a decimal to an unsigned int */
-#define F1_MAX 10000
+
 
 /* ========== Miscellany Functions ========== */
 
@@ -18,7 +17,16 @@
 	Counts how many bits are set.
 	Input (Expected XNOR Observed) as value to count correct bits.
 */
-// static uint64_t bitcount64 (uint64_t x);
+
+/* uint16_t get_f1_max (void)
+	Return F1 maximum score
+*/
+uint16_t get_f1_max (void);
+
+/* uint16_t get_efficiency_max (void)
+	Returns the maximum efficiency score
+*/
+uint16_t get_efficiency_max (void);
 
 
 
@@ -173,5 +181,11 @@ void eval_bc_insp
 void eval_f1_insp
 	(const uint64_t *const input, const uint64_t *const expect,
 		const uint16_t &count, const uint64_t &mask);
+
+
+
+/* ========== Efficiency Evaluation Functions ========== */
+
+uint32_t eval_efficiency (const uint8_t *const *const grid);
 
 #endif

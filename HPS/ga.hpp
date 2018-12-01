@@ -18,6 +18,8 @@ private:
 	uint32_t age;	// For how long the individual has been alive for
 	bool eval;		// Evaluation Flag | 0 = Not Evaluated | 1 = Evaluated
 	bool alive;		// Alive Flag | 0 = Dead | 1 = Alive
+	bool sol;		// Solution Flag | 0 = Not a solution | 1 = Is a solution
+
 
 	/* ========== Compare Functions ========== */
 
@@ -30,6 +32,7 @@ private:
 		Helper function for Sort(). Sorts by fitness in ascending order.
 	*/
 	static bool compfit_ascend (const GeneticAlgorithm &a, const GeneticAlgorithm &b);
+
 
 	/* ========== Genetic Algorithm Operations ========== */
 
@@ -51,6 +54,7 @@ private:
 	*/
 	void Mutate
 	(const float &mutp, const unsigned int &color, const unsigned int &dna_length);
+
 
 	/* ========== Other Miscellany Operations ========== */
 
@@ -108,6 +112,7 @@ public:
 	*/
 	void FreeDNA (void);
 
+
 	/* ========== Genetic Algorithm Operations ========== */
 
 	/* static void Selection (GeneticAlgorithm *const array)
@@ -164,12 +169,14 @@ public:
 	*/
 	static void Repopulate (GeneticAlgorithm *const array);
 
+
 	/* ========== Other Miscellany Operations ========== */
 
 	/* static void Sort (GeneticAlgorithm *array)
 		Sorts the entire population by fitness value, in decreasing order.
 	*/
 	static void Sort (GeneticAlgorithm *array);
+
 
 	/* ========== Print Functions ========== */
 
@@ -183,6 +190,7 @@ public:
 	*/
 	void fprint_dna (FILE *const fp, const uint32_t &dna_length);
 
+
 	/* ========== Get Functions ========== */
 
 	uint32_t get_uid (void);
@@ -195,6 +203,9 @@ public:
 
 	bool get_eval (void);
 
+	bool get_sol (void);
+
+
 	/* ========== Set Functions ========== */
 
 	void set_fit (const uint32_t &set_val);
@@ -202,6 +213,8 @@ public:
 	void set_eval (void);
 
 	void set_age (void);
+
+	void set_sol (void);
 
 };
 

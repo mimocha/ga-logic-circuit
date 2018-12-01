@@ -66,6 +66,7 @@ GeneticAlgorithm::GeneticAlgorithm (void) {
 	age = 0;
 	eval = 0;
 	alive = 1;
+	sol = 0;
 }
 
 GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
@@ -76,6 +77,7 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 	age = 0;
 	eval = 0;
 	alive = 1;
+	sol = 0;
 	object_count++;
 }
 
@@ -345,12 +347,12 @@ void GeneticAlgorithm::Reset (void) {
 	age = 0;
 	eval = 0;
 	alive = 1;
+	sol = 0;
 	object_count++;
 }
 
 uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t &dna_length) {
-	// Allocates memory for DNA string
-	// uint8_t *dna = (uint8_t *) calloc (dna_length, sizeof (uint8_t) );
+	// Allocates memory for DNA string -- Possible Bug?
 	uint8_t *dna = new (nothrow) uint8_t [dna_length] ();
 
 	// If Memory Allocation Failed
@@ -445,6 +447,10 @@ bool GeneticAlgorithm::get_eval (void) {
 	return this -> eval;
 }
 
+bool GeneticAlgorithm::get_sol (void) {
+	return this -> sol;
+}
+
 
 
 /* ========== Set Functions ========== */
@@ -459,4 +465,8 @@ void GeneticAlgorithm::set_eval (void) {
 
 void GeneticAlgorithm::set_age (void) {
 	this -> age++;
+}
+
+void GeneticAlgorithm::set_sol (void) {
+	this -> sol = 1;
 }

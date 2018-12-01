@@ -14,20 +14,12 @@
 	Sets local copies of current settings.
 	Frees and Allocates memory for GA class and stats tracking.
 	Sets sim_init_flag = 1 at end of successful initialization.
-
-	BUG: Free array of previously created population
-	Run the simulation once, then changing the population size.
-	This causes either incomplete memory deallocation; orphans.
-	Or causes out-of-bound free attempts; Segmentation Faults.
-	To be fixed.
 */
 void sim_init (void);
 
 /* void sim_cleanup (void)
-	Clears allocated memories.
-
-	Causes problem if done multiple times in one session.
-	Need to work on memory allocation and deallocation.
+	Clears allocated memories
+	Done before initializing simulations
 */
 void sim_cleanup (void);
 
