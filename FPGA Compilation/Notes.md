@@ -66,8 +66,8 @@ Notes on each version of the SOF (SRAM Object File) or JIC (JTAG Indirect Conver
 
 -----
 
-# TBD
-## 64x64 Torus Loop Grid | 2 Input | 4-bit RAM | No size reconfiguration
+# 2018-12-02
+## 64x64 Torus Loop Grid | 2 Input | 4-bit RAM | No size reconfiguration | Windup-Clock
 
 ### Grid Size:	64 x 64
 
@@ -77,9 +77,13 @@ Notes on each version of the SOF (SRAM Object File) or JIC (JTAG Indirect Conver
 * S1 Port Width = 32 bit
 * S1 Read Slot = 2
 
-* S2 - RAM	0x0000 - 0x07FF
+* S2 - RAM	0x2000 - 0x27FF
 * S2 Port Width = 32 bit
 * S2 Read Slot = 512
+
+* S3 - Windup Clock 0x0000 - 0x0001
+
+* Version ROM - 0x1_0000 - 0x1_000f
 
 ### Remarks:
 
@@ -100,3 +104,7 @@ Notes on each version of the SOF (SRAM Object File) or JIC (JTAG Indirect Conver
  Inputs for the bottom most row has also changed - they now connect to the outputs of the cells on the top row. (More on this)
 
  * Bottom most row inputs are now connected to both Linux IO and neighbor cells (the topmost row cells). The bottom row cells are each connected to inputs of the same index (ie, Cell[0] connects to input[0], and Cell[20] connects to input[20]), and is connected to the top row cells of index+1 (ie, Bottom Cell[0] is also connected to Top Cell[1], and Bottom Cell[63] is connected to Top Cell[0]).
+
+ * Use Windup Clock to control how many clock pulse to give to the Cell Array. Precisely controls logic updating, and fixes unstable result state.
+
+ * Version ROM implemented. Contains 16 character of version id.

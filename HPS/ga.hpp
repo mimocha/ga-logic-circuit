@@ -203,6 +203,8 @@ public:
 
 	bool get_eval (void);
 
+	bool get_alive (void);
+
 	bool get_sol (void);
 
 

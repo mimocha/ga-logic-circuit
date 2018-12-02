@@ -53,7 +53,7 @@ static bool F1 = 1;
 static uint64_t MASK = 0x1;
 
 /* Truth Table Mask Bit Count */
-static uint64_t MASK_BC = 0;
+static uint64_t MASK_BC = 1;
 
 
 /* ========== STATIC FUNCTION PROTOYPES ==========

@@ -41,6 +41,11 @@ HEX | BITS | NAME
 
 -----------------------------------------------------------------------------------------
 
+## Note on clock winding (2018-12-02):
+Introducing new controller module for 'winding up clock'.
+Basically controls how many time the clock pulses.
+This should completely solve the timing problem for looping circuits.
+
 ## Note on change of truth table 2 (2018-11-21):
 Truth Table masking is now implemented.
 Masked bits are set to 0, and has no effect on the evaluations of a circuit.
@@ -52,8 +57,8 @@ Previous results would now most likely become incompatible.
 
 ### Solution DNAs found with this setting
 
-Used SOF file: "2018-11-25 64x64.sof"
-Used GA program version: "2.00.00"
+Used SOF file: "2018-12-02 64x64.sof"
+Used GA program version: "2.05.04"
 
 * 0.
 
@@ -87,6 +92,10 @@ Used GA program version: "2.00.00"
 
 * F.
 
+* 1-bit counter.
+	3322003330332113000222010021332222220020202230211333121320100110
+
+* 4-bit counter.
 
 -----------------------------------------------------------------------------------------
 

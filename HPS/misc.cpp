@@ -10,9 +10,13 @@
 #include <stdlib.h>		/* strtoull */
 #include <string.h>		/* strlen */
 
+/* ========== Custom Header Include ========== */
+
 #include "misc.hpp"
 #include "ansi.hpp"
 #include "global.hpp"
+
+
 
 void about (void) {
 	printf ("\n\e[7m\t--- Genetics Algorithm Program Version %s ---\e[0m\n\n", VERSION);

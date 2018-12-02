@@ -89,7 +89,14 @@ module cell_array
 		All the other SLOTS have Write_en = 0, and ignores the data.
 		
 	*/
-	parameter SLOTS = (DIMX * 4 / PORT_WIDTH)
+	parameter SLOTS = (DIMX * 4 / PORT_WIDTH),
+	
+	/* Wind-Up Clock Counter Bit 
+		
+		How many bit the wind-up clock counter has.
+		
+	*/
+	parameter COUNTER_BIT = 16
 )
 
 
@@ -99,7 +106,7 @@ module cell_array
 //==================================================================================
 (
 	// Clock
-	input wire	clk,
+	input wire	clk_in,
 
 	// Reset
 	input wire	rst,
@@ -133,7 +140,16 @@ module cell_array
 	input wire	[S2_ADDRESS_WIDTH-1 : 0]	s2_address,
 
 	// S2 Write Data
-	input wire	[PORT_WIDTH-1 : 0]	s2_writedata
+	input wire	[PORT_WIDTH-1 : 0]	s2_writedata,
+	
+// ========== Avalon Slave Port S3 ============ //
+
+	// S2 Write Enable
+	input wire	s3_write,
+
+	// S2 Write Data
+	input wire	[COUNTER_BIT-1 : 0]	s3_writedata
+	
 	
 );
 
@@ -198,6 +214,13 @@ module cell_array
 	wire		[(DIMY*SLOTS)-1 : 0]	write_en;
 	
 	
+	/* Controlled clock signal
+		Uses the windup_clock module to control the clock given to the Cell Array.
+		Can control precisely how many clock cycles to run.
+	*/
+	wire	clk_out;
+	
+	
 // =================================================================== //
 // ======================= Generate Cell Array ======================= //
 // =================================================================== //
@@ -210,7 +233,7 @@ module cell_array
 			begin	// Top & Middle rows
 				cell_row		#(.DIMX(DIMX), .PORT_WIDTH(PORT_WIDTH))
 				top_row (
-					.clk		( clk ),
+					.clk		( clk_out ),
 					.rst		( rst ),
 					.in_cell	( internal_wire [(y+1)*DIMX +: DIMX] ),	// Cell input comes from the next row
 					.we_ram		( write_en [y*SLOTS +: SLOTS] ),
@@ -223,7 +246,7 @@ module cell_array
 			begin	// Bottom-most row, special module, loop from top & linux inputs
 				cell_row_lin	#(.DIMX(DIMX), .PORT_WIDTH(PORT_WIDTH))
 				bot_row (
-					.clk		( clk ),
+					.clk		( clk_out ),
 					.rst		( rst ),
 					.in_cell	( internal_wire	[0 +: DIMX] ),		// Cell input comes from the top-most row
 					.in_linux	( linux_in ),						// Connected to Linux Input Port
@@ -246,7 +269,7 @@ module cell_array
 
 // -------------- S1 --------------
 
-	always @ (posedge clk or posedge s1_read or posedge s1_write or posedge rst) begin
+	always @ (posedge s1_read or posedge s1_write or posedge rst) begin
 	
 		// s1_readdata <= linux_out [s1_address]
 		if (s1_read == 1'b1) begin
@@ -268,11 +291,24 @@ module cell_array
 	
 // -------------- S2 --------------
 
-	decoder		#(.IN_WIDTH(S2_ADDRESS_WIDTH))
+	decoder		#(.IN(S2_ADDRESS_WIDTH))
 	decoder_inst (
 		.enable			( s2_write ),
 		.binary_in		( s2_address ),		// 9-bit
 		.decoder_out	( write_en )		// 512-bit
 	);
+	
+	
+// -------------- S3 --------------
+	
+	windup_clock	#(.BIT(COUNTER_BIT))
+	c0 (
+		.clk_in		( clk_in ),
+		.rst		( rst ),
+		.wr_en		( s3_write ),
+		.wind		( s3_writedata ),
+		.clk_out	( clk_out )
+	);
+	
 	
 endmodule

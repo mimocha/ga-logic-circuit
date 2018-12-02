@@ -6,37 +6,82 @@
 #ifndef FPGA_HPP
 #define FPGA_HPP
 
-/* ========== Miscellaneous Functions ========== */
+
+
+/* ========== Primitive Avalon Port Read / Write Functions ==========
+	Low level read / write functions. Static.
+	Limited to usage by other FPGA functions only.
+	Handles simple interaction with Altera read / write functions.
+	Handles address offsets.
+
+	Reference for Altera Functions:
+	 * This section implements read and write functionality for various
+	 * memory untis. The memory unit terms used for these functions are
+	 * consistent with those used in the ARM Architecture Reference Manual
+	 * ARMv7-A and ARMv7-R edition manual. The terms used for units of memory are:
+	 *
+	 *  Unit of Memory | Abbreviation | Size in Bits
+	 * :---------------|:-------------|:------------:
+	 *  Byte           | byte         |       8
+	 *  Half Word      | hword        |      16
+	 *  Word           | word         |      32
+	 *  Double Word    | dword        |      64
+	 *
+*/
+
+/* uint32_t fpga_s1_read (const uint32_t &offset)
+	Read 32-bit unsigned int from selected address offset of the Cell Array module
+*/
+
+/* void fpga_s1_write (const uint32_t &offset, const uint32_t &data)
+	Writes 32-bit unsigned int to selected address offset of the Cell Array module
+*/
+
+/* void fpga_s2_write (const uint32_t &offset, const uint32_t &data)
+	Write 32-bit unsigned int to selected address offset of the RAM module
+*/
+
+/* void fpga_s3_write (const uint16_t &data)
+	Write 16-bit unsigned int to the windup_clock module
+*/
+
+/* uint8_t fpga_vrom_read (const uint32_t &offset)
+	Readds 8-bit unsigned char from the Version ROM module
+*/
+
+
+
+/* ========== Main Functions ========== */
 
 /* void fpga_init (void)
-	Initialize FPGA variables and pointers.
+	Initialize FPGA address pointers and variables.
 
-	Inputs:
-	dimx_in is a reference to a constant unsigned int. The values may not change in this function.
-	dimy_in is a reference to a constant unsigned int. The values may not change in this function.
+	Sets the flag 'fpga_init_flag' to 1, if successful.
+	Otherwise, set flag to 0.
 */
 void fpga_init (void);
 
 /* void fpga_cleanup (void)
-	Cleans up initialized FPGA variables.
+	Cleans up initialized FPGA pointers
+	Practically does nothing, kept for furture usage.
 */
 void fpga_cleanup (void);
 
-/* static bool fpga_not_init (void)
-	Checks if FPGA is not initialized.
+/* bool fpga_not_init (void)
+	Checks if FPGA is NOT initialized.
 
 	Returns TRUE if it is NOT initialized, and prints error message.
 	Returns FALSE if it IS initialized.
 
-	Use this function as an internal roadblock,
+	Use this function as an error catch function,
 	to prevent usage of certain FPGA functions before proper initialization.
 */
 
 /* bool fpga_is_init (void)
 	Returns FPGA initialization status.
 
-	This function is created for access control of the varuable 'fpga_init_flag'.
-	The variable should only be available within this compilation unit, and not to other files.
+	This function is created for access control of the variable 'fpga_init_flag'.
+	Encapsulates the variable.
 */
 bool fpga_is_init (void);
 
@@ -47,29 +92,17 @@ bool fpga_is_init (void);
 /* void fpga_verify (uint8_t *const *const grid)
 	FPGA verification function.
 	Runs a short test to determine if INPUT / OUTPUT is as expected.
-
-	Takes in a double const pointer array 'grid'.
-	'grid' is a double const pointer to a uint8_t.
-	The values of the array will change. The pointers will not.
 */
 void fpga_verify (uint8_t *const *const grid);
 
-/* static void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num)
-	Fills the grid array with a given uint8_t.
-
-	Inputs:
-	'grid' is a double const pointer to a uint8_t. The values will change, but the pointers won't.
-	'num' is a reference to a const uint8_t. The values may not change in this function.
-
+/* void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num)
 	This function fills the 2D array grid, with the value num.
+	Used in fpga_test function.
 */
 
-/* static unsigned int fpga_test (const unsigned int &mode)
+/* unsigned int fpga_test (const unsigned int &mode)
 	Checks each test case for input / output, for the given setting.
-
-	Input:
-	'mode' is reference to a const unsigned int. Its value may change in this function.
-	'mode' is used to select the testing mode.
+	Expected Input / Output pair is hardcoded.
 
 	Use 'mode' to determine what input / output pair is expected.
 	The function will then check if the observed results match with expectation.
@@ -141,29 +174,25 @@ void fpga_set_grid (const uint8_t *const *const grid);
 
 
 
-/* ========== Avalon Port Read / Write Functions ==========
-	Low level read / write functions. Static.
-	Limited to usage by other FPGA functions only.
-	Handles simple interaction with Altera read / write functions.
-	Handles address offsets.
-*/
+/* ========== AVALON S3 Functions ========== */
 
-/* static uint32_t fpga_s1_read (const uint32_t &offset)
-	Read 32-bit unsigned int from selected address offset.
-	For S1 Avalon Slave Port
+/* void fpga_wind_clock (const uint16_t &cycles)
+	Runs the specified number of clock cycles for the Cell Array.
+	Should fix the problem of unreliability and irreproducibility in timing.
 */
+void fpga_wind_clock (const uint16_t &cycles);
 
-/* static void fpga_s1_write (const uint32_t &offset, const uint32_t &data)
-	Writes 32-bit unsigned int to selected address offset.
-	For S1 Avalon Slave Port
+
+
+/* ========== Version ROM Functions ========== */
+
+/* void fpga_config_version (void)
+	Prints current FPGA Configuration Version.
 */
+void fpga_config_version (void);
 
-/* static void fpga_s2_write (const uint32_t &offset, const uint32_t &data)
-	Write 32-bit unsigned int to selected address offset.
-	For S2 Avalon Slave Port
 
-	Originally writes twice to the same address, due to FPGA circuit's setup.
-	Was done to reset WREN signal properly, but has since been proven unnecessary.
-*/
+
+
 
 #endif

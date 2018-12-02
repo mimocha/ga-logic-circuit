@@ -317,8 +317,8 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 			else printf (" | ETA: < 0 s ...");
 
 			// Flags / Warnings / Notes
-			if (solution_found) {
-				printf (ANSI_GREEN " << Solution Found! (%u)" ANSI_RESET, stats.sol_count[gen]);
+			if (stats.sol_count[gen] > 0) {
+				printf (ANSI_GREEN " << Solutions Found! (%u)" ANSI_RESET, stats.sol_count[gen]);
 			}
 
 			putchar ('\n');

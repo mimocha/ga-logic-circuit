@@ -6,19 +6,6 @@
 # 4. sim.cpp
 # 5. main.cpp
 
-# Compile Status :
-# [OK]		ansi.hpp		NOT REQUIRED
-# [OK]		ca.cpp			PASS
-# [OK]		eval.cpp		PASS
-# [OK]		fast.cpp		PASS
-# [OK]		fpga.cpp		PASS
-# [OK]		ga.cpp			PASS
-# [OK]		global.cpp		PASS
-# [OK]		main.cpp		PASS
-# [OK]		misc.cpp		PASS
-# [OK]		sim.cpp			PASS
-# [OK]		truth.cpp		PASS
-
 # ================================================================
 # VARIABLES
 # ================================================================

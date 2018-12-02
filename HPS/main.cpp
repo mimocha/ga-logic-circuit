@@ -367,11 +367,12 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	if (invalid_flag) {
 		printf (ANSI_RED "\nDNA string invalid at marked position\n" ANSI_RESET);
-		delete[] dna;
-		return;
+		goto END;
 	} else {
 		printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
 	}
+
+	fpga_clear ();
 
 
 
@@ -390,6 +391,8 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 
 
 	/* ===== PRINT CA GRID ===== */
+
+	if ( get_data_caprint () == 0 ) goto END;
 
 	printf ("\n\e[100m\t\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 
@@ -433,8 +436,9 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	/* ===== CLEANUP ===== */
 
+	END:
 	delete[] dna;
-
+	fpga_clear ();
 	return;
 }
 

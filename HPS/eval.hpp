@@ -30,53 +30,6 @@ uint16_t get_efficiency_max (void);
 
 
 
-/* ========== Basic Evaluation Functions ==========
-	Evaluation functions for single values.
-*/
-
-/* ===== WITHOUT MASK ===== */
-
-/* uint32_t eval_bc (const uint64_t &input, const uint64_t &expect);
-	Simple bit counting evaluation.
-
-	Evaluates the FPGA output, given:
-		const uint64_t input -- 64-bit value to set the FPGA input
-		const uint64_t expect -- 64-bit expected output from the FPGA
-	Reads a 64-bit output from the FPGA, and compares 'output' with 'expect'.
-
-	The number of equivalent bits is returned.
-*/
-uint32_t eval_bc (const uint64_t &input, const uint64_t &expect);
-
-/* uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect);
-	Evaluates with F1 scoring.
-	More computationally expensive, but better at discriminating small differences.
-
-	Evaluates the FPGA output, given:
-		const uint64_t input -- 64-bit value to set the FPGA input
-		const uint64_t expect -- 64-bit expected output from the FPGA
-	Reads a 64-bit output from the FPGA, and compares 'output' with 'expect' using F1 scoring.
-		https://en.wikipedia.org/wiki/F1_score
-
-	uint32_t (F1 score * F1_MAX) is returned.
-*/
-uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect);
-
-/* ===== WITH MASK =====
-	Masked functions are overload functions which only evaluates the masked bits.
-	Masked bits are set to 0, and effectively ignored.
-	These bits can express any logical function with no repercussion to the solution fitness.
-
-	Maximum Fitness Values should be adjusted accordingly.
-	ie, Masking 63 bits would leave 1 bit to be evaluated, thus maximum fitness should be out of this single bit.
-*/
-
-uint32_t eval_bc (const uint64_t &input, const uint64_t &expect, const uint64_t &mask);
-
-uint32_t eval_f1 (const uint64_t &input, const uint64_t &expect, const uint64_t &mask);
-
-
-
 /* ========== Array Evaluation Functions ==========
 	Evaluation function for multiple values at once.
 */

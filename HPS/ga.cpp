@@ -82,8 +82,7 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 }
 
 void GeneticAlgorithm::FreeDNA (void) {
-	// free (this->dna);
-	delete [] this->dna;
+	free (this->dna);
 }
 
 
@@ -142,17 +141,22 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 }
 
 void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
-	/* Vector of who live or dies -- contains population array index */
+	// Vector of who live or dies -- contains population array index
+	// BUG : memory corruption
+	// When population is small (10), these vectors often fail to .push_back()
+	// Problem likely stemming from other source
+	// Problem is related to pop_lim somehow...
+	// Main suspect : stats struct or DNA pointer
 	vector <uint16_t> live, dead;
 
-	/* Gets the variable values once -- per individual */
+	// Gets the variable values once -- per individual
 	const unsigned int pop = get_ga_pop ();
 	const unsigned int pool = get_ga_pool ();
 	const unsigned int dna_length = get_dna_length();
 	const float mutp = get_ga_mutp ();
 	const unsigned int color = get_ca_color ();
 
-	/* Puts the array index of alive / dead individuals into their respective vectors  */
+	// Puts the array index of alive / dead individuals into their respective vectors
 	for (unsigned int i = 0 ; i < pop ; i++) {
 		if ( array[i].alive ) {
 			live.push_back ( i );
@@ -341,7 +345,7 @@ void GeneticAlgorithm::Mutate
 /* ========== Other Miscellany Operations ========== */
 
 void GeneticAlgorithm::Reset (void) {
-	/* TODO: DNA REALLOC - If DNA length has changed, reallocate *dna */
+	// TODO: DNA REALLOC - If DNA length has changed, reallocate *dna
 	uid = object_count;
 	fit = 0;
 	age = 0;
@@ -352,8 +356,8 @@ void GeneticAlgorithm::Reset (void) {
 }
 
 uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t &dna_length) {
-	// Allocates memory for DNA string -- Possible Bug?
-	uint8_t *dna = new (nothrow) uint8_t [dna_length] ();
+	// Allocates memory for DNA string
+	uint8_t *dna = (uint8_t *) calloc (dna_length, sizeof (uint8_t));
 
 	// If Memory Allocation Failed
 	if (dna == NULL) {
@@ -445,6 +449,10 @@ uint32_t GeneticAlgorithm::get_age (void) {
 
 bool GeneticAlgorithm::get_eval (void) {
 	return this -> eval;
+}
+
+bool GeneticAlgorithm::get_alive (void) {
+	return this -> alive;
 }
 
 bool GeneticAlgorithm::get_sol (void) {
