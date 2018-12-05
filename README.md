@@ -34,7 +34,7 @@ Cross-compiler package used is `gcc-arm-linux-gnueabihf/xenial,now 4:5.3.1-1ubun
 1. Cross-compile for ARM Cortex A9 with `make arm`
 2. Copy binary file `ga.prog` to the HPS with `scp`
 
- `scp <local directory>/ga.prog <Username>@<HPS Local IP>:/home/<Username>/`
+ `scp <local directory>/ga.prog <Username>@<Remote IP>:/<Remote Directory>`
 
 3. Run the binary file on the HPS
 4. Clear old object files with `make clean`

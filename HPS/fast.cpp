@@ -5,9 +5,9 @@
 
 /* ========== Standard Library Include ========== */
 
-#include <stdint.h>		/* uint definitions */
-#include <stdlib.h>		/* rand, srand */
-#include <time.h>		/* time */
+#include <stdint.h>		// uint definitions
+#include <stdlib.h>		// rand, srand
+#include <time.h>		// time
 
 
 

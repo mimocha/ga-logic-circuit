@@ -48,17 +48,8 @@ static unsigned int  nb;
 
 static unsigned int  dna_length;
 
-/*	Solution Fitness Value & Fitness Limit
-	Solution Fitness 'sol_fit'
-	Defined as: (Output bit width) * (Truth Table Rows)
-		Or as defined by F1_MAX
-	Defines the fitness value of a solution (produces the exact desired truth table)
-
-	Fitness Limit 'fit_lim'
-	Defined as: 'sol_fit' + EFFICIENCY_MAX
-*/
-static uint32_t sol_fit;
-static uint32_t fit_lim;
+// Fitness Limit
+static unsigned int fit_lim;
 
 // Timer Variable
 static time_t time_start;
@@ -96,7 +87,7 @@ static bool solution_found = 0;
 static bool data_exported = 0;
 static bool sim_done = 0;
 static bool sim_init_flag = 0;
-// static bool data_track = 1;
+static bool optimize = 0;
 // static bool show_status = 1;
 
 
@@ -116,6 +107,43 @@ static unsigned int count_solution (GeneticAlgorithm *const array);
 static void statistics (GeneticAlgorithm *const array, const unsigned int &gen);
 
 static void report (uint8_t *const *const grid, const uint8_t *const seed);
+
+
+
+/* ========== Miscellany Functions ========== */
+
+unsigned int count_solution (GeneticAlgorithm *const array) {
+	// Count of how many solutions exist in current population
+	// 'Solutions' refer to valid solutions, individuals which produces the expected logic
+	unsigned int count = 0;
+
+	for (unsigned int i = 0 ; i < pop_lim ; i++) {
+		if ( array[i].get_sol() == 1 ) count++;
+	}
+
+	return count;
+}
+
+void status_print (const unsigned int &gen) {
+	// What interval to print status updates at
+	constexpr unsigned int interval = 10;
+
+	if (gen % interval == 0) {
+		printf ("\t%4u / %4u ", gen, gen_lim);
+
+		// Estimate Time Arrival
+		time (&time_now);
+		float eta = time_est - difftime (time_now, time_start);
+		printf (" | ETA: %6.0f s", eta);
+
+		// Flags / Warnings / Notes
+		if (stats.sol_count[gen] > 0) {
+			printf (ANSI_GREEN " << Solutions Found! (%u)" ANSI_RESET, stats.sol_count[gen]);
+		}
+
+		putchar ('\n');
+	}
+}
 
 
 
@@ -153,15 +181,20 @@ void sim_init (void) {
 		"\tPOP = %4u | GEN = %4u | MUT = %0.3f | POOL = %4u\n"
 		"\tDIMX = %3u | DIMY = %3u | COLOR = %3u | NEIGHBOR = %2u\n"
 		"\tCAPRINT = %1u | EXPORT = %1u\n"
-		"\tROW = %1u | F1 SCORING = %1u\n"
-		"\tTT MASK = 0x%016llX (%llu bits)\n\n",
+		"\tROW = %1u | MODE : ",
 		pop_lim, gen_lim, get_ga_mutp(), get_ga_pool(),
 		dimx, dimy, color, nb,
 		get_data_caprint(), get_data_export(),
-		tt::get_row(), tt::get_f1(),
-		tt::get_mask(), tt::get_mask_bc()
+		tt::get_row()
 	);
 
+	if (tt::get_mode() == 1) {
+		printf (ANSI_REVRS "SEQUENTIAL" ANSI_RESET "\n");
+	} else {
+		printf (ANSI_REVRS "COMBINATIONAL" ANSI_RESET "\n");
+	}
+
+	printf ("\tTT MASK = 0x%016llX (%llu bits)\n\n", tt::get_mask(), tt::get_mask_bc());
 
 	/* Allocates an array of individuals (population)
 		new / delete unavailable for struct and classes
@@ -180,14 +213,8 @@ void sim_init (void) {
 	stats.min =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
 	stats.sol_count =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
 
-
-	// Set solution fitness value & fitness limit
-	if (tt::get_f1() == 1) {
-		sol_fit = get_f1_max();
-	} else {
-		sol_fit = (dimx - tt::get_mask_bc(1)) * tt::get_row();
-	}
-	fit_lim = sol_fit + get_efficiency_max ();
+	// Set fitness limit
+	fit_lim = get_score_max();
 
 	// Seed RNG
 	seed_rng32();
@@ -195,7 +222,7 @@ void sim_init (void) {
 	// Calculate time estimate
 	time_est = ((float) gen_lim * pop_lim / INDV_PER_SEC);
 
-	// Clear FPGA LGA
+	// Clear FPGA LCA
 	fpga_clear ();
 
 	// Set Flags
@@ -204,7 +231,6 @@ void sim_init (void) {
 	sim_done = 0;
 	sim_init_flag = 1;
 
-	time (&time_start);
 	return;
 }
 
@@ -218,34 +244,32 @@ void sim_cleanup (void) {
 	sim_done = 0;
 	sim_init_flag = 0;
 
-
 	// Free GA Class Objects
-	if (indv != NULL) {
-		for (unsigned int idx = 0 ; idx < pop_lim ; idx++) {
-			indv[idx].FreeDNA ();
-		}
-		free (indv);
+	for (unsigned int i = 0 ; i < pop_lim ; i++) {
+		indv[i].FreeDNA ();
 	}
-
+	free (indv);
 
 	// Free data array
-	if (stats.avg != NULL) free (stats.avg);
-	if (stats.med != NULL) free (stats.med);
-	if (stats.max != NULL) free (stats.max);
-	if (stats.min != NULL) free (stats.min);
-	if (stats.sol_count != NULL) free (stats.sol_count);
+	free (stats.avg);
+	free (stats.med);
+	free (stats.max);
+	free (stats.min);
+	free (stats.sol_count);
 
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 }
 
 
 int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
+
 	if ( sim_init_flag == 0 ) {
 		printf (ANSI_RED "\nSimulation Requires Initialization\n" ANSI_RESET);
 		return -1;
 	}
 
 	printf ("\tSimulation Progress:\n");
+	time (&time_start);
 
 
 
@@ -258,71 +282,83 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 		GeneticAlgorithm::Repopulate (indv);
 
 		// Loop over each individual
-		for (unsigned int idx = 0 ; idx < pop_lim ; idx++) {
+		for (unsigned int i = 0 ; i < pop_lim ; i++) {
 
 			// Automatically ages an individual
-			indv[idx].set_age();
+			indv[i].set_age();
 
 			// Skips evaluation, if already done for this individual
-			if ( indv[idx].get_eval() == 1 ) continue;
+			// if ( indv[i].get_eval() == 1 ) continue;
 
 			// Generate CA Array
-			ca_gen_grid (grid, indv[idx].get_dna(), seed);
-			ca_gen_grid (grid, indv[idx].get_dna());
+			ca_gen_grid (grid, indv[i].get_dna(), seed);
+			ca_gen_grid (grid, indv[i].get_dna());
 
 			// Edit FPGA RAM
 			fpga_set_grid (grid);
 
 			// Evaluate Circuit Truth Table
-			uint32_t score;
-			if (tt::get_f1() == 1) {
-				score = eval_f1_array
-					(tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
+			uint32_t score = 0;
+
+			// Sequential or Combinational Logic
+			if (tt::get_mode() == 0) {
+				// Resets circuit inbetween each test case
+				score += eval_com (0);
+				fpga_clear ();
+				fpga_set_grid (grid);
+				score += eval_com (1);
+				fpga_clear ();
+				fpga_set_grid (grid);
+				score += eval_com (2);
+				// Get the average score
+				score /= 3;
 			} else {
-				score = eval_bc_array
-					(tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
+				score = eval_seq ();
 			}
 
 			// Flags this as a viable solution
-			if (score == sol_fit) {
-				indv[idx].set_sol ();
+			if (score == fit_lim) {
+				indv[i].set_sol (1);
+
+				// Print dna of first solution found
+				if (solution_found == 0) {
+					solution_found = 1;
+					stats.tts = gen;
+
+					printf ("\tFirst Solutions: ");
+					indv[i].print_dna (get_dna_length());
+					putchar ('\n');
+				}
+			} else {
+				indv[i].set_sol (0);
 			}
 
 			// Evaluate Gate Efficiency
-			score += eval_efficiency (grid);
+			if (optimize == 1) {
+				score += eval_efficiency (grid);
+			}
 
-			indv[idx].set_fit (score);
-			indv[idx].set_eval ();
+			indv[i].set_fit (score);
+			// indv[i].set_eval (1);
 			fpga_clear ();
 		}
 
 		// Sort population by fitness & solution
-		// Descending order, Solutions first, highest fitness first
+		// Descending order, highest fitness first
 		GeneticAlgorithm::Sort (indv);
 
 		// Track Statistics && Checks for solution
 		statistics (indv, gen);
 
-
-		/* ===== Report ===== */
-
-		if (gen % 10 == 0) {
-			// Current Progress
-			printf ("\t%4u / %4u ", gen, gen_lim);
-
-			// Estimate Time Arrival
-			time (&time_now);
-			float eta = time_est - difftime (time_now, time_start);
-			if (eta > 0) printf (" | ETA: %6.0f s", eta);
-			else printf (" | ETA: < 0 s ...");
-
-			// Flags / Warnings / Notes
-			if (stats.sol_count[gen] > 0) {
-				printf (ANSI_GREEN " << Solutions Found! (%u)" ANSI_RESET, stats.sol_count[gen]);
-			}
-
-			putchar ('\n');
+		// Controlled optimization
+		if (stats.sol_count [gen] > 5) {
+			optimize = 1;
+		} else {
+			optimize = 0;
 		}
+
+		// Status Update
+		status_print (gen);
 	}
 
 
@@ -333,11 +369,7 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 	fpga_clear ();
 	report (grid, seed);
 
-	if (solution_found == 1) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return solution_found;
 }
 
 
@@ -346,22 +378,11 @@ bool sim_is_done (void) {
 }
 
 
-unsigned int count_solution (GeneticAlgorithm *const array) {
-	// Count of how many solutions exist in current population
-	unsigned int count = 0;
-
-	for (unsigned int i = 0 ; i < pop_lim ; i++) {
-		if ( array[i].get_sol() ) count++;
-	}
-
-	return count;
-}
-
-
 
 /* ========== Results & Reporting Function ========== */
 
 void statistics (GeneticAlgorithm *const array, const unsigned int &gen) {
+
 	// Get average value
 	float average = 0.0;
 	for (uint32_t i = 0 ; i < pop_lim ; i++) {
@@ -387,12 +408,6 @@ void statistics (GeneticAlgorithm *const array, const unsigned int &gen) {
 
 	// Check for solutions found
 	stats.sol_count [gen] = count_solution (indv);
-
-	// Checks for first solution
-	if ((solution_found == 0) && (stats.sol_count[gen] != 0)) {
-		stats.tts = gen;
-		solution_found = 1;
-	}
 }
 
 
@@ -408,7 +423,6 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 		printf (ANSI_RED "\tNo solution has been found\n\n" ANSI_RESET);
 	}
 
-
 	printf ("\tFinal Fitness Statistics:\n"
 			"\tAverage Fitness: %7.1f / %5d\n"
 			"\tMedian Fitness:  %7.1f / %5d\n"
@@ -419,7 +433,6 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 			stats.max [gen_lim-1], fit_lim,
 			stats.min [gen_lim-1], fit_lim
 	);
-
 
 	// Displays top 'N' individuals
 	printf ("\nTop %u Individuals:\n", N);
@@ -443,41 +456,28 @@ void report (uint8_t *const *const grid, const uint8_t *const seed) {
 	fpga_set_grid (grid);
 
 	// Evaluate Circuit
-	if ( tt::get_f1() == 1 ) {
-		eval_f1_insp (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
+	if (tt::get_mode() == 0) {
+
+		// Check each case independently
+		eval_com_insp (0);
+		fpga_clear ();
+		fpga_set_grid (grid);
+		eval_com_insp (1);
+		fpga_clear ();
+		fpga_set_grid (grid);
+		eval_com_insp (2);
+
 	} else {
-		eval_bc_insp (tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask());
+		eval_seq_insp ();
 	}
 
-	// Optional Print of Fittest Solution
+	// Grid Print of Fittest Solution
 	if ( get_data_caprint() == 1 ) {
 		printf ("\n\e[100m\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 		ca_print_grid (grid);
 		cout << endl;
 	}
 
-	return;
-}
-
-
-void sim_results (void) {
-	if (sim_done == 0) {
-		printf ("No simulation results.\n");
-		return;
-	}
-
-	printf (ANSI_REVRS "\n\t>>--- Simulation Results ---<<\n" ANSI_RESET
-		"\n\t\tFitness Table\n"
-		"  Gen | Maximum | Minimum | Median | Average | Solutions\n"
-		"--------------------------------------------------------\n");
-	for (unsigned int i = 0 ; i < gen_lim; i++) {
-		printf(" %4u | %7u | %7u | %6.1f | %7.1f | %5u\n",
-			i + 1, stats.max [i], stats.min [i],
-			stats.med [i], stats.avg [i], stats.sol_count [i]
-		);
-	}
-
-	cout << endl;
 	return;
 }
 
@@ -543,22 +543,22 @@ void sim_export (void) {
 
 
 	/* ===== Final Population Results ===== */
-	constexpr int N = 10;
+	// How many individuals to print details of.
+	constexpr int N = 30;
 
 	fprintf (fp, "\n\n Top %u Individuals\n"
 			"UID | FITNESS | DNA \n", N
 	);
 
-	for (unsigned int i = 0 ; i < N ; i++) {
+	// Prints N or the current pop size, which ever is smaller
+	for (unsigned int i = 0 ; i < pop_lim ; i++) {
 		fprintf (fp, " %u | %u | ", indv[i].get_uid(), indv[i].get_fit());
 		indv[i].fprint_dna (fp, dna_length);
 		fputc ('\n', fp);
 	}
 
 	fclose (fp);
-
 	data_exported = 1;
-
 	printf (ANSI_GREEN " DONE\n" ANSI_RESET);
 
 	return;

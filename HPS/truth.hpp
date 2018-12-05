@@ -8,6 +8,19 @@
 
 namespace TruthTable {
 
+	/* ========== Helper Functions ========== */
+
+	/* uint64_t bitcount64 (uint64_t x);
+		64-bit Hamming Weight Counting Algorithm
+		https://en.wikipedia.org/wiki/Hamming_weight
+
+		Counts how many bits are set.
+		Input (Expected XNOR Observed) as value to count correct bits.
+	*/
+	uint64_t bitcount64 (uint64_t x);
+
+
+
 	/* ========== Read File / Clear Table / Table Status ========== */
 
 	/* void set_table (void)
@@ -28,7 +41,6 @@ namespace TruthTable {
 		Input / Output values are required to be in hexadecimals.
 	*/
 	void set_table (void);
-	void set_table (const int &input);
 
 	/* void clear_table (void)
 		Clears currently set truth table.
@@ -44,17 +56,21 @@ namespace TruthTable {
 
 
 
-	/* ========== F1 ========== */
+	/* ========== Mode ========== */
 
-	/* bool get_f1 (void)
-		Returns bool for current F1 setting.
+	/* bool get_mode (void)
+		Returns bool for current mode setting, combinational or sequential.
+		0 == Combinational
+		1 == Sequential
 	*/
-	bool get_f1 (void);
+	bool get_mode (void);
 
-	/* void set_f1 (const bool &set_val)
-		Sets F1 toggle.
+	/* void set_mode (const bool &set_val)
+		Toggles between combinational and sequential logic mode.
+		0 == Combinational
+		1 == Sequential
 	*/
-	void set_f1 (const bool &set_val);
+	void set_mode (const bool &set_val);
 
 
 
@@ -119,6 +135,16 @@ namespace TruthTable {
 		Default input value is 0. Return normal bitcount.
 	*/
 	uint64_t get_mask_bc (const bool &inverse = 0);
+
+
+
+	/* ========== Max Bit Score ========== */
+
+	/* unsigned int get_max_bit (void)
+		Returns maximum bitcount score.
+		Calculated as (Number of truth table rows) * (Mask bitcount)
+	*/
+	unsigned int get_max_bit (void);
 }
 
 

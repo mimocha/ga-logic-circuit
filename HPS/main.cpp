@@ -20,6 +20,7 @@
 #include "ansi.hpp"		// Colored Terminal Outputs
 #include "ca.hpp"		// Cellular Automaton Functions
 #include "eval.hpp"		// Evaluation Functions
+#include "fast.hpp"		// Initialize RNG Seed
 #include "fpga.hpp"		// FPGA Functions
 #include "global.hpp"	// Global Parameters
 #include "misc.hpp"		// Miscellaneous Functions
@@ -44,9 +45,9 @@ int main (int argc, char **argv) {
 	// Initialization Functions
 	main_init ();
 	fpga_init ();
+	ca_init ();
 
 	while (1) {
-		// Variable for selecting menu option -- Prints available options and get user input
 		unsigned int sel = main_menu ();
 
 		switch (sel) {
@@ -68,8 +69,9 @@ int main (int argc, char **argv) {
 				settings ();
 				break;
 
-			case 3: // Initialize FPGA
+			case 3: // Initialize other modules
 				fpga_init ();
+				ca_init ();
 				break;
 
 			case 4: // FPGA Circuit Verification
@@ -86,15 +88,15 @@ int main (int argc, char **argv) {
 				sim_run (grid, seed);
 				break;
 
-			case 7: // Display Previous Results
-				sim_results ();
+			case 7: // Export CA Grid
+				export_ca_grid ();
 				break;
 
 			case 8: // Inspect DNA
-				inspect (grid, seed);
+				inspect ();
 				break;
 
-			case 9: // Export Results
+			case 9:
 				sim_export ();
 				break;
 
@@ -117,15 +119,17 @@ void main_init (void) {
 	printf ("Initializing GA Program...");
 
 	// Allocates 2-dimensional array pointer for grid and initializes to zero
-	grid = new uint8_t* [PHYSICAL_DIMY];
+	grid = (uint8_t **) calloc (PHYSICAL_DIMY, sizeof (uint8_t *));
 	for (uint16_t y = 0 ; y < PHYSICAL_DIMY ; y++) {
-		grid [y] = new uint8_t [PHYSICAL_DIMX] ();
+		grid [y] = (uint8_t *) calloc (PHYSICAL_DIMX, sizeof (uint8_t));
 	}
 
 	// Allocates CA seed and initializes to zero
-	seed = new uint8_t [PHYSICAL_DIMX] ();
+	seed = (uint8_t *) calloc (PHYSICAL_DIMX, sizeof (uint8_t));
 	uint16_t mid = floor (PHYSICAL_DIMX / 2);
-	seed [ mid ] = 1;
+	seed [mid] = 1;
+
+	seed_rng32 ();
 
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 }
@@ -133,12 +137,12 @@ void main_init (void) {
 void main_cleanup (void) {
 	printf ("Cleaning up main... ");
 
-	delete[] seed;
+	free (seed);
 
 	for (uint16_t y = 0 ; y < PHYSICAL_DIMY ; y++) {
-		delete[] grid[y];
+		free (grid[y]);
 	}
-	delete[] grid;
+	free (grid);
 
 	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
 }
@@ -151,10 +155,21 @@ unsigned int main_menu (void) {
 			"\t0. Exit Program\n"
 			"\t1. About\n"
 			"\t2. Settings\n"
-			"\t3. Initialize FPGA | ");
+			"\t3. Initialize Modules | ");
 
-	if (fpga_is_init () == 1) printf (ANSI_GREEN "DONE\n" ANSI_RESET);
-	else printf (ANSI_RED "FAILED\n" ANSI_RESET);
+	if (fpga_is_init () == 1) {
+		printf (ANSI_GREEN "FPGA OK" ANSI_RESET);
+	} else {
+		printf (ANSI_RED "FPGA NO" ANSI_RESET);
+	}
+
+	printf (" | ");
+
+	if (ca_is_init () == 1) {
+		printf (ANSI_GREEN "CA OK\n" ANSI_RESET);
+	} else {
+		printf (ANSI_RED "CA NO\n" ANSI_RESET);
+	}
 
 	printf ("\t4. Verify FPGA\n"
 			"\t5. Set Truth Table | ");
@@ -163,10 +178,7 @@ unsigned int main_menu (void) {
 	else printf (ANSI_YELLOW "WAITING\n" ANSI_RESET);
 
 	printf ("\t6. Run Simulation\n"
-			"\t7. View Results    | ");
-
-	if (sim_is_done () == 1) printf (ANSI_GREEN "DONE\n" ANSI_RESET);
-	else printf (ANSI_YELLOW "WAITING\n" ANSI_RESET);
+			"\t7. Export CA Grid as CSV and NetPBM file\n");
 
 	printf ("\t8. Inspect DNA\n"
 			"\t9. Export Results  | ");
@@ -201,22 +213,22 @@ void settings (void) {
 			"\t3. GA Mutation Prob\t| Current Value: %.3f\n"
 			"\t4. GA Pool Size\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Cellular Automaton Parameters =====\n" ANSI_RESET
-			ANSI_GRAY "\t5. CA X Axis Dimension\t| Current Value: %u\n" ANSI_RESET
-			ANSI_GRAY "\t6. CA Y Axis Dimension\t| Current Value: %u\n" ANSI_RESET
-			ANSI_GRAY "\t7. CA Color Count\t| Current Value: %u\n" ANSI_RESET
-			ANSI_GRAY "\t8. CA Neighbor Count\t| Current Value: %u\n" ANSI_RESET
+			"\t5. CA X Axis Dimension\t| Current Value: %u\n"
+			"\t6. CA Y Axis Dimension\t| Current Value: %u\n"
+			"\t7. CA Color Count\t| Current Value: %u\n"
+			"\t8. CA Neighbor Count\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Data Parameters =====\n" ANSI_RESET
 			"\t9. DATA CA Print\t| Current Value: %u\n"
 			"\t10. DATA Export\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Truth Table Parameters =====\n" ANSI_RESET
 			"\t11. TT Row Count\t| Current Value: %u\n"
-			"\t12. TT F1 Scoring\t| Current Value: %u\n"
+			"\t12. TT Mode (0 Combinational | 1 Sequential) | Current Value: %u\n"
 			"\t13. TT Mask\t\t| Current Value: %016llX | (%llu bits)\n\n"
 			"Waiting for Input: ",
 			get_ga_pop(), get_ga_gen(), get_ga_mutp(), get_ga_pool(),
 			get_ca_dimx(), get_ca_dimy(), get_ca_color(), get_ca_nb(),
 			get_data_caprint(), get_data_export(),
-			tt::get_row(), tt::get_f1(), tt::get_mask(), tt::get_mask_bc()
+			tt::get_row(), tt::get_mode(), tt::get_mask(), tt::get_mask_bc()
 		);
 
 		// Sanitized Scan
@@ -249,19 +261,27 @@ void settings (void) {
 				break;
 
 			case 5: // CA.DIMX
-				printf ("Cannot Be Changed\n");
+				printf ("Input New Value: ");
+				set_ca_dimx ( scan_uint () );
+				ca_need_update ();
 				break;
 
 			case 6: // CA.DIMY
-				printf ("Cannot Be Changed\n");
+				printf ("Input New Value: ");
+				set_ca_dimy ( scan_uint () );
+				ca_need_update ();
 				break;
 
 			case 7: // CA.COLOR
-				printf ("Cannot Be Changed\n");
+				printf ("Input New Value: ");
+				set_ca_color ( scan_uint () );
+				ca_need_update ();
 				break;
 
 			case 8: // CA.NB
-				printf ("Cannot Be Changed\n");
+				printf ("Input New Value: ");
+				set_ca_nb ( scan_uint () );
+				ca_need_update ();
 				break;
 
 			case 9: // DATA.CAPRINT
@@ -279,9 +299,9 @@ void settings (void) {
 				tt::set_row ( scan_uint () );
 				break;
 
-			case 12: // TRUTH.F1
+			case 12: // TRUTH.MODE
 				printf ("Input New Value: ");
-				tt::set_f1 ( scan_bool () );
+				tt::set_mode ( scan_bool () );
 				break;
 
 			case 13: // MASK
@@ -297,18 +317,157 @@ void settings (void) {
 	}
 }
 
-void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
-	// Fail Conditions
-	if ( tt::table_is_init () == 0) {
-		printf (ANSI_RED "No truth table defined.\n" ANSI_RESET);
+void export_ca_grid (void) {
+	// Required initialization
+	if ( ca_is_init () == 0 ) {
+		printf (ANSI_RED "CA not initialized.\n" ANSI_RESET);
 		return;
 	}
 
-	if ( fpga_is_init () == 0 ) {
-		printf (ANSI_RED "FPGA not initialized.\n" ANSI_RESET);
+	printf (ANSI_REVRS "\n\tCSV Generator\n" ANSI_RESET);
+
+	// Enter DNA String in given base / LSB format
+	const unsigned int length = (unsigned int) pow (get_ca_color(), get_ca_nb());
+
+	printf ("Input DNA string in base %u | LSB | Expected length - %u :\n", get_ca_color(), length);
+
+	// Buffer to prevent overflows
+	uint8_t buffer [length*2];
+	scanf ("%s", buffer);
+
+	// Checks input length validity
+	if ( strlen ( (char *)buffer ) != length) {
+		printf (ANSI_RED "DNA length mismatch. Given length was %u\n" ANSI_RESET,
+			(unsigned int) strlen ( (char *)buffer ));
 		return;
 	}
 
+	// Temporary array for this function
+	uint8_t *const dna = new uint8_t [length] ();
+	memcpy (dna, buffer, length);
+
+	// Checks DNA string validity & Converts ASCII to uint8_t
+	bool invalid_flag = 0;
+	for (unsigned int i = 0 ; i < length ; i++) {
+		// Adjusts ASCII input into uint8_t [0,9]
+		dna [i] -= 48;
+
+		if (dna [i] >= get_ca_color()) {
+			printf ("\e[41;97m" "^" ANSI_RESET);
+			invalid_flag = 1;
+		} else {
+			putchar (' ');
+		}
+	}
+
+	if (invalid_flag) {
+		printf (ANSI_RED "\nDNA string invalid at marked position\n" ANSI_RESET);
+		delete[] dna;
+		return;
+	} else {
+		printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
+	}
+
+
+	/* ===== CA GRID SET ===== */
+
+	ca_gen_grid (grid, dna, seed);
+	ca_gen_grid (grid, dna);
+
+
+	/* ===== Get File Name ===== */
+
+	FILE *fp;
+	char filename [64];
+
+	printf ("Filename: ");
+	scanf ("%s", filename);
+
+
+	/* ===== Write to CSV ===== */
+
+	// Append file extention
+	char csvfile [64];
+	strcat (csvfile, "./export/");
+	strcpy (csvfile, filename);
+	strcat (csvfile, ".csv");
+
+	fp = fopen (csvfile, "w");
+	if (fp == NULL) {
+		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, csvfile);
+		return;
+	}
+
+	printf ("Writing to \"%s\" ...", csvfile);
+
+	for (unsigned int y = 0 ; y < PHYSICAL_DIMY ; y++) {
+		for (unsigned int x = 0 ; x < PHYSICAL_DIMX ; x++) {
+			fprintf (fp, "%d,", grid[y][x]);
+		}
+		fprintf (fp, "\n");
+	}
+
+	fclose (fp);
+	printf (ANSI_GREEN " DONE\n" ANSI_RESET);
+
+
+	/* ===== Write to NetPBM ===== */
+
+	// Append file extention
+	char imgfile [64];
+	strcat (imgfile, "./export/");
+	strcpy (imgfile, filename);
+	strcat (imgfile, ".ppm");
+
+	fp = fopen (imgfile, "w");
+	if (fp == NULL) {
+		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, imgfile);
+		return;
+	}
+
+	printf ("Writing to \"%s\" ...", imgfile);
+
+	// PPM File Header
+	fprintf (fp, "P3\n%u %u\n255\n", PHYSICAL_DIMX, PHYSICAL_DIMY);
+
+	// Additional Comments
+	fprintf (fp, "# GENERATED WITH DNA STRING:\n# ");
+	for (unsigned int i = 0 ; i < length ; i++) {
+		fprintf (fp, "%d", dna[i]);
+	}
+	fprintf (fp, "\n");
+
+	// Actual Data
+	for (unsigned int y = 0 ; y < PHYSICAL_DIMY ; y++) {
+		for (unsigned int x = 0 ; x < PHYSICAL_DIMX ; x++) {
+			switch (grid[y][x]) {
+				case 0: // BLACK
+					fprintf (fp, "0 0 0 ");
+					break;
+				case 1: // GREEN
+					fprintf (fp, "0 255 0 ");
+					break;
+				case 2: // BLUE
+					fprintf (fp, "0 0 255 ");
+					break;
+				case 3: // YELLOW
+					fprintf (fp, "255 255 0 ");
+					break;
+			}
+		}
+		fprintf (fp, "\n");
+	}
+
+	fclose (fp);
+	printf (ANSI_GREEN " DONE\n" ANSI_RESET);
+
+
+	delete[] dna;
+	return;
+}
+
+void inspect (void) {
+	// Required initialization
 	if ( ca_is_init () == 0 ) {
 		printf (ANSI_RED "CA not initialized.\n" ANSI_RESET);
 		return;
@@ -367,43 +526,69 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 
 	if (invalid_flag) {
 		printf (ANSI_RED "\nDNA string invalid at marked position\n" ANSI_RESET);
-		goto END;
+		goto INSPECT_END;
 	} else {
 		printf (ANSI_GREEN "\nDNA string OK\n" ANSI_RESET);
 	}
-
-	fpga_clear ();
 
 
 
 	/* ===== FPGA SET GRID && EVALUATE ===== */
 
+	if ( tt::table_is_init () == 0 ) {
+		printf (ANSI_YELLOW "No truth table defined.\n" ANSI_RESET);
+		goto INSPECT_CA;
+	}
+	if ( fpga_is_init () == 0 ) {
+		printf (ANSI_YELLOW "FPGA not initialized.\n" ANSI_RESET);
+		goto INSPECT_CA;
+	}
+
+	fpga_clear ();
 	ca_gen_grid (grid, dna, seed);
 	ca_gen_grid (grid, dna);
 	fpga_set_grid (grid);
 
-	if ( tt::get_f1() == 1 ) {
-		eval_f1_insp ( tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask() );
+	// Evaluate Circuit
+	if (tt::get_mode() == 0) {
+
+		// Check each case independently
+		eval_com_insp (0);
+		fpga_clear ();
+		fpga_set_grid (grid);
+		eval_com_insp (1);
+		fpga_clear ();
+		fpga_set_grid (grid);
+		eval_com_insp (2);
+
+		// Check all cases together
+		fpga_clear ();
+		fpga_set_grid (grid);
+		eval_com_insp (0);
+		eval_com_insp (1);
+		eval_com_insp (2);
+
 	} else {
-		eval_bc_insp ( tt::get_input(), tt::get_output(), tt::get_row(), tt::get_mask() );
+		eval_seq_insp ();
 	}
 
 
 
 	/* ===== PRINT CA GRID ===== */
 
-	if ( get_data_caprint () == 0 ) goto END;
+	INSPECT_CA:
+	if ( get_data_caprint () == 0 ) goto INSPECT_END;
 
 	printf ("\n\e[100m\t\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 
-	/* Print Seed Row */
+	// Print Seed Row
 	ca_print_row (seed);
 
-	/* Print CA First Pass */
+	// Print CA First Pass
 	ca_gen_grid (grid, dna, seed);
 	ca_print_grid (grid);
 
-	/* Print Center Marker */
+	// Print Center Marker
 	printf ("\e[103;30m");
 	for (unsigned int x = 0 ; x < get_ca_dimx() ; x++) {
 		if (x % 4 == 0) {
@@ -414,11 +599,11 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 	}
 	printf (ANSI_RESET "\n");
 
-	/* Print CA Second Pass */
+	// Print CA Second Pass
 	ca_gen_grid (grid, dna);
 	ca_print_grid (grid);
 
-	/* Print Bottom Marker */
+	// Print Bottom Marker
 	printf ("\e[103;30m");
 	for (unsigned int x = 0 ; x < get_ca_dimx() ; x++) {
 		if (x % 4 == 0) {
@@ -429,14 +614,14 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 	}
 	printf (ANSI_RESET "\n");
 
-	/* Flush Stream */
+	// Flush Stream
 	cout << endl;
 
 
 
 	/* ===== CLEANUP ===== */
 
-	END:
+	INSPECT_END:
 	delete[] dna;
 	fpga_clear ();
 	return;
@@ -449,20 +634,18 @@ void inspect (uint8_t *const *const grid, const uint8_t *const seed) {
 void special (void) {
 	printf (ANSI_REVRS "\n\t>> Special Routine <<\n" ANSI_RESET);
 
-	unsigned int search;
+	if ( tt::table_is_init () == 0) {
+		printf (ANSI_RED "No truth table defined.\n" ANSI_RESET);
+		return;
+	}
+
 	constexpr int MAX = 1000;
-
-
-	printf ("What to search for: ");
-	scan_uint (&search);
+	int sim_flag;
 
 	set_data_caprint (0);
 
-	int sim_flag;
-	tt::set_table (search);
-
 	for (int i = 1; i < MAX; i++) {
-		printf (ANSI_REVRS "\n\tSearching for %0X | Attempt %d / %d\n" ANSI_RESET, search, i, MAX);
+		printf (ANSI_REVRS "\n\tSearching | Attempt %d / %d\n" ANSI_RESET, i, MAX);
 
 		sim_init ();
 		sim_flag = sim_run (grid, seed);

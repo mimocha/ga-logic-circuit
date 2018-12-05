@@ -103,16 +103,6 @@ using namespace std;
 
 
 
-/* ========== STATIC FUNCTION PROTOYPES ========== */
-
-static void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num);
-
-static unsigned int fpga_test (const unsigned int &mode, const unsigned int &x);
-
-
-
-
-
 /* ========== Primitive Avalon Port Read / Write Functions ==========
 	Reference for Altera Functions:
 	 * This section implements read and write functionality for various
@@ -227,7 +217,7 @@ void fpga_cleanup (void) {
 bool fpga_not_init (void) {
 	// Returns TRUE if FPGA is uninitialized
 	if (fpga_init_flag == 0) {
-		printf (ANSI_RED "FPGA Uninitialized\n" ANSI_RESET);
+		// printf (ANSI_RED "FPGA Uninitialized\n" ANSI_RESET);
 		return 1;
 	}
 
@@ -242,6 +232,48 @@ bool fpga_is_init (void) {
 
 
 /* ========== FPGA Verification ========== */
+
+void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num) {
+	for (unsigned int y = 0 ; y < dimy ; y ++) {
+		for (unsigned int x = 0 ; x < dimx ; x ++) {
+			grid [y][x] = num;
+		}
+	}
+}
+
+unsigned int fpga_test (const unsigned int &mode, const unsigned int &x) {
+	// FPGA Testing Inputs
+	constexpr uint64_t test_input [3] =
+	{ 0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12 };
+
+	// FPGA Expected Outputs
+	constexpr uint64_t test_output [4][3] = {
+		{0x0000000000000000, 0x0000000000000000, 0x0000000000000000}, // NULL
+		{0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12}, // PASS A
+		{0x0000000000000000, 0x0000000000000000, 0x0000000000000000}, // PASS B
+		{0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xFFDFFF37FFFFFFFF}  // NAND
+	};
+
+	// Set test case input
+	fpga_set_input (test_input [x]);
+
+	// Run and wait for this specific amount of clock cycles
+	fpga_wind_clock (100);
+
+	// Get test case output
+	uint64_t observed = fpga_get_output ();
+
+	// Compare result with expectation & print table
+	if ( observed == test_output [mode][x] ) {
+		printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
+				test_input [x], test_output [mode][x], observed );
+		return 1;
+	} else {
+		printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
+				test_input [x], test_output [mode][x], observed );
+		return 0;
+	}
+}
 
 void fpga_verify (uint8_t *const *const grid) {
 	// FPGA Uninitialized Error Catch
@@ -323,45 +355,6 @@ void fpga_verify (uint8_t *const *const grid) {
 	return;
 }
 
-void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num) {
-	for (unsigned int y = 0 ; y < dimy ; y ++) {
-		for (unsigned int x = 0 ; x < dimx ; x ++) {
-			grid [y][x] = num;
-		}
-	}
-}
-
-unsigned int fpga_test (const unsigned int &mode, const unsigned int &x) {
-	// FPGA Testing Inputs
-	constexpr uint64_t test_input [3] =
-	{ 0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12 };
-
-	// FPGA Expected Outputs
-	constexpr uint64_t test_output [4][3] = {
-		{0x0000000000000000, 0x0000000000000000, 0x0000000000000000}, // NULL
-		{0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xDEADBEEFABCDEF12}, // PASS A
-		{0x0000000000000000, 0x0000000000000000, 0x0000000000000000}, // PASS B
-		{0x0000000000000000, 0xFFFFFFFFFFFFFFFF, 0xFFDFFF37FFFFFFFF}  // NAND
-	};
-
-	// Set test case input
-	fpga_set_input (test_input [x]);
-
-	// Get test case output
-	uint64_t observed = fpga_get_output ();
-
-	// Compare result with expectation & print table
-	if ( observed == test_output [mode][x] ) {
-		printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
-				test_input [x], test_output [mode][x], observed );
-		return 1;
-	} else {
-		printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
-				test_input [x], test_output [mode][x], observed );
-		return 0;
-	}
-}
-
 
 
 /* ========== AVALON S1 Functions ========== */
@@ -381,9 +374,6 @@ void fpga_set_input (const uint64_t &write_data) {
 		// Writes the bitshifted data to the assigned offset
 		fpga_s1_write (i, tmp_data);
 	}
-
-	// Run & Wait
-	fpga_wind_clock (100);
 }
 
 uint64_t fpga_get_output (void) {
@@ -431,6 +421,9 @@ void fpga_clear (void) {
 
 	// Sets input to zero
 	fpga_set_input (0x0);
+
+	// Update the states a little bit
+	fpga_wind_clock (2);
 }
 
 void fpga_set_grid (const uint8_t *const *const grid) {

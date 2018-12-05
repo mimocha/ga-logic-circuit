@@ -5,8 +5,7 @@
 
 /* ========== Standard Library Include ========== */
 
-#include <stdio.h>		/* Standard I/O */
-#include <stdint.h>		/* uint definitions */
+#include <stdio.h>		// Standard I/O
 
 
 
@@ -22,62 +21,57 @@
 	Kept in structs to group relevant parameters together.
 */
 
-/* Genetics Algorithm Parameters */
+// Genetics Algorithm Parameters
 struct param_ga {
-	/* Maximum Population */
+	// Maximum Population
 	unsigned int POP = 100;
-	/* Maximum Generation */
+	// Maximum Generation
 	unsigned int GEN = 100;
-	/* Mutation Probability in decimal, range [0.00, 1.00] */
+	// Mutation Probability in decimal, range [0.000, 1.000]
 	float MUTP = 0.05;
-	/* Tournament Selection Poolsize */
+	// Tournament Selection Poolsize
 	unsigned int POOL = 5;
 };
 
-/* Cellular Automaton Parameters */
+// Cellular Automaton Parameters
 struct param_ca {
-	/* X-Axis Dimension */
+	// X-Axis Dimension
 	unsigned int DIMX = PHYSICAL_DIMX;
-	/* Y-Axis Dimension */
+	// Y-Axis Dimension
 	unsigned int DIMY = PHYSICAL_DIMY;
-	/* CA Color Count */
+	// CA Color Count
 	unsigned int COLOR = 4;
-	/* CA Neighbor Count */
+	// CA Neighbor Count
 	unsigned int NB = 3;
 };
 
-/* Data Parameters */
+// Data Parameters
 struct param_data {
-	/* Cellular Automaton Grid Print | Default = 1 */
+	// Cellular Automaton Grid Print
 	bool CAPRINT = 1;
-	/* Export data from the experiment to file*/
+	// Export data from the experiment to file
 	bool EXPORT = 0;
-	/* Exit On First Solution | Ends simulation when first solution is found */
+	// Exit On First Solution | Ends simulation when first solution is found
 	bool EOFS = 0;
 };
 
-/* Declaration of Each Struct */
+// Declaration of Each Struct
 static param_ga GA;
 static param_ca CA;
 static param_data DATA;
 
-/* DNA Length Variable */
+// DNA Length Variable
 static unsigned int dna_length = fast_pow (CA.COLOR, CA.NB);
 
-/* ========== Static Boundary Function ==========
+/* ========== Boundary Function ==========
 	Compares the input value with the upper and lower boundaries.
 	If the input exceeds either boundary, returns the exceeded boundary.
 	Else, returns the input.
 */
 
-static unsigned int bound
-(const unsigned int &input, const unsigned int &upper, const unsigned int &lower);
-
-static float bound (const float &input, const float &upper, const float &lower);
-
 unsigned int bound
 (const unsigned int &input, const unsigned int &upper, const unsigned int &lower) {
-	/* Checks if input exceeds upper or lower boundary */
+	// Checks if input exceeds upper or lower boundary
 	if (input > upper) {
 		printf (ANSI_YELLOW "Max Value: %u\n" ANSI_RESET, upper);
 		return upper;
@@ -86,12 +80,12 @@ unsigned int bound
 		return lower;
 	}
 
-	/* Input is within set boundaries */
+	// Input is within set boundaries
 	return input;
 }
 
 float bound (const float &input, const float &upper, const float &lower) {
-	/* Checks if input exceeds upper or lower boundary */
+	// Checks if input exceeds upper or lower boundary
 	if (input > upper) {
 		printf (ANSI_YELLOW "Max Value: %.3f\n" ANSI_RESET, upper);
 		return upper;
@@ -100,7 +94,7 @@ float bound (const float &input, const float &upper, const float &lower) {
 		return lower;
 	}
 
-	/* Input is within set boundaries */
+	// Input is within set boundaries
 	return input;
 }
 
@@ -121,7 +115,7 @@ void update (void) {
 /* ========== Getter Functions ========== */
 
 unsigned int GlobalSettings::get_ga_pop (void) {
-		return GA.POP;
+	return GA.POP;
 }
 
 unsigned int GlobalSettings::get_ga_gen (void) {

@@ -12,13 +12,13 @@
 	Semantic Versioning -- https://semver.org/
 	Should be updated every commit / update.
 */
-#define VERSION "2.05.04"
+#define VERSION "3.03.03"
 
-/* Physical FPGA Cell Array Dimension */
+// Physical FPGA Cell Array Dimension
 #define PHYSICAL_DIMX 64
 #define PHYSICAL_DIMY 64
 
-/* Minimum Cell Array Dimension */
+// Minimum Cell Array Dimension
 #define MIN_DIMX 1
 #define MIN_DIMY 1
 
@@ -53,15 +53,15 @@
 #define MAX_CA_NB 9
 #define MIN_CA_NB 1
 
-/* Max Genetic Algorithm Population Size */
+// Max Genetic Algorithm Population Size
 #define MAX_GA_POP 12800
 #define MIN_GA_POP 10
 
-/* Max Genetic Algorithm Generations */
+// Max Genetic Algorithm Generations
 #define MAX_GA_GEN 128000
 #define MIN_GA_GEN 1
 
-/* Max Genetic Algorithm Mutation Rate (Decimal) */
+// Max Genetic Algorithm Mutation Rate (Decimal)
 #define MAX_GA_MUTP 1
 #define MIN_GA_MUTP 0
 
@@ -75,8 +75,8 @@
 #define MAX_GA_POOL GA.POP
 #define MIN_GA_POOL 1
 
-/* Estimated Number of Individuals Evaluated per Second */
-#define INDV_PER_SEC 430
+// Estimated Number of Individuals Evaluated per Second
+#define INDV_PER_SEC 150
 
 
 

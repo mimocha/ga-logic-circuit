@@ -22,18 +22,17 @@
 
 /* ========== CA Global Variables ========== */
 
-// Made constant for now, can be changed back later
 // Local Copy of Global Parameters
-constexpr uint16_t color = 4;
-constexpr uint16_t dimx = 64;
-constexpr uint16_t dimy = 64;
-constexpr uint16_t nb_count = 3;
+static uint16_t color = 4;
+static uint16_t dimx = 64;
+static uint16_t dimy = 64;
+static uint16_t nb_count = 3;
 
 // Neighboring Cell Offset
-constexpr int offset = 1;
+static int offset = 1;
 
-// Internal Initialization Flag
-static bool ca_init_flag = 1;
+// Initialization Flag
+static bool ca_init_flag = 0;
 
 using namespace std;
 using namespace GlobalSettings;
@@ -46,13 +45,13 @@ void ca_init (void) {
 	printf ("Initializing CA... ");
 
 	// Creates local copy of global parameters for CA functions
-	// dimx = get_ca_dimx ();
-	// dimy = get_ca_dimy ();
-	// color = get_ca_color ();
-	// nb_count = get_ca_nb ();
+	dimx = get_ca_dimx ();
+	dimy = get_ca_dimy ();
+	color = get_ca_color ();
+	nb_count = get_ca_nb ();
 
 	// Calculate index offset for neighboring cells. Only work with odd-numbers
-	// offset = ((nb_count - 1) / 2);
+	offset = ((nb_count - 1) / 2);
 
 	// Sets initialization flag to TRUE
 	ca_init_flag = 1;
@@ -63,17 +62,16 @@ void ca_init (void) {
 }
 
 void ca_cleanup (void) {
-	printf ("Cleaning up CA... ");
-
-	// Practically does nothing at this point
-	ca_init_flag = 0;
-
-	printf (ANSI_GREEN "DONE\n" ANSI_RESET);
-	return;
+	// Dummy
 }
 
 bool ca_is_init (void) {
 	return ca_init_flag;
+}
+
+void ca_need_update (void) {
+	// Resets the flag, when CA related parameters are changed
+	ca_init_flag = 0;
 }
 
 

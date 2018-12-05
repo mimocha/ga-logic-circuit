@@ -6,139 +6,68 @@
 #ifndef EVAL_HPP
 #define EVAL_HPP
 
-
-
 /* ========== Miscellany Functions ========== */
 
-/* static uint64_t bitcount64 (uint64_t x);
-	64-bit Hamming Weight Counting Algorithm
-	https://en.wikipedia.org/wiki/Hamming_weight
-
-	Counts how many bits are set.
-	Input (Expected XNOR Observed) as value to count correct bits.
+/* unsigned int get_score_max (void)
+	Return the maximum score scale
 */
+unsigned int get_score_max (void);
 
-/* uint16_t get_f1_max (void)
-	Return F1 maximum score
-*/
-uint16_t get_f1_max (void);
-
-/* uint16_t get_efficiency_max (void)
+/* unsigned int get_efficiency_max (void)
 	Returns the maximum efficiency score
 */
-uint16_t get_efficiency_max (void);
+unsigned int get_es_max (void);
 
 
 
-/* ========== Array Evaluation Functions ==========
-	Evaluation function for multiple values at once.
+/* ========== Evaluation Functions ========== */
+
+/* unsigned int eval_com (const unsigned short &sel);
+	Evaluation for combinational logic.
+	Tests the truth table in random different orders, should be random enough to stop overfitting
+
+	Counts the number of correct bits over the entire test,
+	divided by the maximum possible correct bit count,
+	returns a scaled score of the tested solution.
+
+	Considerably more time consuming than any other tests before this,
+	hopefully it will be comprehensive enough.
 */
+unsigned int eval_com (const unsigned short &sel);
 
-/* ===== WITHOUT MASK ===== */
+/* unsigned int eval_seq (void);
+	Evaluation for sequential logic.
+	Repeats the truth table over and over until the unit fails, or until the limit is reached.
 
-/* uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
-
-	Simple bit counting evaluation for arrays.
-
-	Evaluates the FPGA output, given:
-		const uint64_t input -- 64-bit value to set the FPGA input
-		const uint64_t expect -- 64-bit expected output from the FPGA
-	Reads a 64-bit output from the FPGA, and compares 'output' with 'expect'.
-	Repeats over 'count' iterations.
-
-	The sum of numbers of equivalent bits is returned.
+	This should be a reliable enough test to see if the system is actually a sequential logic.
 */
-uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
-
-/* uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
-
-	Evaluates with F1 scoring for arrays.
-	More computationally expensive, but better at discriminating small differences.
-
-	Evaluates the FPGA output, given:
-		const uint64_t input -- 64-bit value to set the FPGA input
-		const uint64_t expect -- 64-bit expected output from the FPGA
-	Reads a 64-bit output from the FPGA, and compares 'output' with 'expect' using F1 scoring.
-		https://en.wikipedia.org/wiki/F1_score
-	Repeats over 'count' iterations. Then calculates a single F1 score for the entire array.
-
-	uint32_t (F1 score * F1_MAX) is returned.
-*/
-uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
-
-/* ===== WITH MASK =====
-	Masked functions are overload functions which only evaluates the masked bits.
-	Masked bits are set to 0, and effectively ignored.
-	These bits can express any logical function with no repercussion to the solution fitness.
-
-	Maximum Fitness Values should be adjusted accordingly.
-	ie, Masking 63 bits would leave 1 bit to be evaluated, thus maximum fitness should be out of this single bit.
-*/
-
-uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask);
-
-uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask);
+unsigned int eval_seq (void);
 
 
 
 /* ========== Inspect Evaluation Functions ==========
-	Array evaluation functions with additional stylized truth table print.
-	Does not return results.
+	Evaluation functions with additional stylized truth table print.
 */
 
-/* ===== WITHOUT MASK ===== */
-
-/* void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
-
-	Similar to eval_bc_array().
-	Except this function also prints out a stylized truth table.
-	For manual inspection of input / output.
-	Does not return a result.
+/* unsigned int eval_com_insp (const unsigned short &sel);
+	Similar to the above function, while printing a stylized truth table.
 */
-void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
+unsigned int eval_com_insp (const unsigned short &sel);
 
-/* void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
-
-	Similar to eval_f1_array().
-	Except this function also prints out a stylized truth table.
-	For manual inspection of input / output.
-	Does not return a result.
+/* unsigned int eval_seq_insp (void);
+	Similar to the above function, while printing a stylized truth table.
 */
-void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count);
-
-/* ===== WITH MASK =====
-	Masked functions are overload functions which only evaluates the masked bits.
-	Masked bits are set to 0, and effectively ignored.
-	These bits can express any logical function with no repercussion to the solution fitness.
-
-	Maximum Fitness Values should be adjusted accordingly.
-	ie, Masking 63 bits would leave 1 bit to be evaluated, thus maximum fitness should be out of this single bit.
-*/
-
-void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask);
-
-void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask);
+unsigned int eval_seq_insp (void);
 
 
 
 /* ========== Efficiency Evaluation Functions ========== */
 
+/* uint32_t eval_efficiency (const uint8_t *const *const grid);
+	Efficiency evaluation metric.
+	Set to evaluate which solution is more gate efficient.
+	Using less number of gate is better.
+*/
 uint32_t eval_efficiency (const uint8_t *const *const grid);
 
 #endif

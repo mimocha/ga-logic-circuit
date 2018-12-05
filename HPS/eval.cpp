@@ -14,344 +14,272 @@
 
 #include "eval.hpp"
 #include "ansi.hpp"
+#include "fast.hpp"
 #include "fpga.hpp"
+#include "global.hpp"
+#include "truth.hpp"
 
 
 
 // FPGA Grid Output Bit Size
 #define GRID_BIT_SIZE 64
 
-// F1 Score Scaling -- Converts float score to an integer score
-#define F1_MAX 10000
+// Score Scaling -- Converts float score to an integer score
+#define SCORE_MAX 10000
 
-// Efficiency Score Scale -- Defined as total number of cells
-#define DIMX 64
-#define DIMY 64
-#define EFFICIENCY_MAX (DIMX*DIMY)
+// Max Efficiency Score -- Defined as total number of cells
+#define MAX_ES (PHYSICAL_DIMX*PHYSICAL_DIMY)
 
+// How many clock cycles to wait between each input / output pair
+#define MAX_WAIT 1024
+#define MIN_WAIT 256
+#define RAND_WAIT 256
 
+// The maximum loop count for testing a sequential logic
+#define MAX_SEQ_LOOP 5
 
-/* ========== STATIC FUNCTION PROTOYPES ========== */
-
-static uint64_t bitcount64 (uint64_t x);
+namespace tt = TruthTable;
 
 
 
 /* ========== Miscellany Functions ========== */
 
-uint64_t bitcount64 (uint64_t x) {
-	// Code shamelessly copied from https://en.wikipedia.org/wiki/Hamming_weight
-	constexpr uint64_t m1  = 0x5555555555555555;
-	constexpr uint64_t m2  = 0x3333333333333333;
-	constexpr uint64_t m4  = 0x0f0f0f0f0f0f0f0f;
-
-	x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
-	x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits
-	x = (x + (x >> 4)) & m4;        //put count of each 8 bits into those 8 bits
-	x += x >>  8;	//put count of each 16 bits into their lowest 8 bits
-	x += x >> 16;	//put count of each 32 bits into their lowest 8 bits
-	x += x >> 32;	//put count of each 64 bits into their lowest 8 bits
-	return x & 0x7f;
+unsigned int get_score_max (void) {
+	return SCORE_MAX;
 }
 
-uint16_t get_f1_max (void) {
-	return F1_MAX;
-}
-
-uint16_t get_efficiency_max (void) {
-	return EFFICIENCY_MAX;
+unsigned int get_es_max (void) {
+	return MAX_ES;
 }
 
 
 
-/* ========== Array Evaluation Functions ========== */
+/* ========== Evaluation Functions ========== */
 
-/* ===== WITHOUT MASK ===== */
+unsigned int eval_com (const unsigned short &sel) {
+	const uint64_t *const input = tt::get_input();
+	const uint64_t *const expect = tt::get_output();
+	const uint16_t count = tt::get_row();
+	const uint64_t mask = tt::get_mask();
 
-uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
-	uint32_t result = 0;
+	const float max_result = tt::get_max_bit();
+	float result = 0;
 
-	for (unsigned int i = 0 ; i < count ; i++) {
-		fpga_set_input (input [i]);
+	// Combinational circuits should work in any order, in any timestep
+	// Running a few series of tests with random run cycles might fix the overfitting problem.
+	// Ironic, considering randomness had just been eliminated.
 
-		/* Get FPGA output
-			Buffering 'fpga_set_input' and 'fpga_get_output' may be necessary.
-			usleep(1) is already built into 'fpga_set_input' function, and should be enough.
-		*/
-		uint64_t observed = fpga_get_output ();
-
-		// Counts equivalent bits Using XNOR operation, then count the equivalent bits
-		result += bitcount64 ( ~( expect [i] ^ observed ) );
+	switch (sel) {
+		case 0: goto ORDER;
+		case 1: goto REVERSE;
+		case 2: goto RANDOM;
+		default:
+			printf (ANSI_RED "\nUnrecognized eval_com() input!\n" ANSI_RESET);
+			goto END;
 	}
 
-	return result;
-}
-
-uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
-	// True Positive, False Positive, False Negative
-	float tpos = 0;
-	float fpos = 0;
-	float fneg = 0;
-
-	for (unsigned int i = 0 ; i < count ; i++) {
+	ORDER:
+	// In Given Order
+	for (unsigned short i = 0 ; i < count ; i++) {
 		fpga_set_input (input [i]);
 
-		/* Get FPGA output
-			Buffering 'fpga_set_input' and 'fpga_get_output' may be necessary.
-			usleep(1) is already built into 'fpga_set_input' function, and should be enough.
-		*/
+		// Ending up reimplementing artificial randomness... how ironic.
+		fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
+
 		uint64_t observed = fpga_get_output ();
 
-		/* Sums True Positive, False Positive, False Negative
-			Special case: If no bits are expected (expecting 0x00000000),
-			True Positive shall always be equal to 1
-		*/
-		if (expect [i] == 0) {
-			tpos += 1;
-		} else {
-			tpos += bitcount64 ( expect [i] & observed );
+		result += tt::bitcount64 ( ~(expect [i] ^ observed) & mask );
+	}
+	goto END;
+
+	REVERSE:
+	// In Reverse Order
+	for (short i = count-1 ; i >= 0 ; i--) {
+		fpga_set_input (input [i]);
+
+		// Ending up reimplementing artificial randomness... how ironic.
+		fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
+
+		uint64_t observed = fpga_get_output ();
+
+		result += tt::bitcount64 ( ~(expect [i] ^ observed) & mask );
+	}
+	goto END;
+
+	RANDOM:
+	// Random test
+	for (unsigned short i = 0 ; i < count ; i++) {
+		const unsigned short rng = fast_rng32() % count;
+		fpga_set_input (input [rng]);
+
+		// Ending up reimplementing artificial randomness... how ironic.
+		fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
+
+		uint64_t observed = fpga_get_output ();
+
+		result += tt::bitcount64 ( ~(expect [rng] ^ observed) & mask );
+	}
+
+	END:
+	return (unsigned int) (SCORE_MAX * (result / max_result));
+}
+
+unsigned int eval_seq (void) {
+	const uint64_t *const input = tt::get_input();
+	const uint64_t *const expect = tt::get_output();
+	const uint16_t count = tt::get_row();
+	const uint64_t mask = tt::get_mask();
+
+	const float max_result = tt::get_max_bit() * MAX_SEQ_LOOP;
+	float result = 0;
+
+	// Repeats until a mistake is found, or the loop limit is reached
+	for (unsigned int j = 0 ; j < MAX_SEQ_LOOP ; j++) {
+		for (unsigned int i = 0 ; i < count ; i++) {
+			fpga_set_input (input [i]);
+
+			fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
+
+			const uint64_t observed = fpga_get_output ();
+
+			const unsigned int bits_correct = tt::bitcount64 ( ~(expect [i] ^ observed) & mask );
+			result += bits_correct;
+
+			// Ends prematurely if a mistake is found
+			if (bits_correct != tt::get_mask_bc()) goto END;
 		}
-
-		fpos += bitcount64 ( ~expect [i] &  observed );
-		fneg += bitcount64 (  expect [i] & ~observed );
 	}
 
-	float precision	= tpos / (tpos + fpos);
-	float recall	= tpos / (tpos + fneg);
-	float f1_score	= 2 * precision * recall / (precision + recall);
-
-	return (uint32_t) floor (F1_MAX * f1_score);
-}
-
-/* ===== WITH MASK ===== */
-
-uint32_t eval_bc_array
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask) {
-	uint32_t result = 0;
-
-	for (unsigned int i = 0 ; i < count ; i++) {
-		fpga_set_input (input [i]);
-		uint64_t observed = fpga_get_output ();
-		result += bitcount64 ( ~( expect [i] ^ observed ) & mask );
-	}
-
-	return result;
-}
-
-uint32_t eval_f1_array
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask) {
-	float tpos = 0;
-	float fpos = 0;
-	float fneg = 0;
-
-	for (unsigned int i = 0 ; i < count ; i++) {
-		fpga_set_input (input [i]);
-
-		uint64_t observed = fpga_get_output ();
-
-		if (expect [i] == 0) {
-			tpos += 1;
-		} else {
-			tpos += bitcount64 ( (expect [i] & observed) & mask );
-		}
-
-		fpos += bitcount64 ( (~expect [i] &  observed) & mask );
-		fneg += bitcount64 (  (expect [i] & ~observed) & mask );
-	}
-
-	float precision	= tpos / (tpos + fpos);
-	float recall	= tpos / (tpos + fneg);
-	float f1_score	= 2 * precision * recall / (precision + recall);
-
-	return (uint32_t) floor (F1_MAX * f1_score);
+	END:
+	return (unsigned int) (SCORE_MAX * (result / max_result));
 }
 
 
 
 /* ========== Inspect Evaluation Functions ========== */
 
-/* ===== WITHOUT MASK ===== */
-
-void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
-	uint32_t result = 0;
-
-	// Maximum Fitness Value
-	const uint32_t fit_lim = GRID_BIT_SIZE * count;
-
-	printf (
-		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
-		"\t             Input |      Expected      | Observed\n"
-		"\t-------------------+--------------------+-------------------\n" );
-
-	// Iterates over each case
-	for (unsigned int i = 0 ; i < count ; i++) {
-		// Set FPGA input
-		fpga_set_input (input [i]);
-
-		/* Get FPGA output
-			Buffering 'fpga_set_input' and 'fpga_get_output' may be necessary.
-			usleep(1) is already built into 'fpga_set_input' function, and should be enough.
-		*/
-		uint64_t observed = fpga_get_output ();
-
-		/* Counts equivalent bits
-			Using XNOR operation (bitwise equivalency), then count the equivalent bits.
-		*/
-		result += bitcount64 ( ~( expect [i] ^ observed ) );
-
-		// Compare result with expectation & print table
-		if ( observed == expect [i] ) {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed );
-		} else {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed );
-		}
+void print_table (const uint64_t &input, const uint64_t &expect, const uint64_t &observed) {
+	if ( (observed & tt::get_mask()) == (expect & tt::get_mask()) ) {
+		printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
+			input, expect, observed & tt::get_mask() );
+	} else {
+		printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
+			input, expect, observed & tt::get_mask() );
 	}
-
-	printf ("\n\tFitness: %u / %u\n", result, fit_lim);
-
-	return;
 }
 
-void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect, const uint16_t &count) {
-	// True Positive, False Positive, False Negative
-	float tpos = 0;
-	float fpos = 0;
-	float fneg = 0;
+unsigned int eval_com_insp (const unsigned short &sel) {
+	const uint64_t *const input = tt::get_input();
+	const uint64_t *const expect = tt::get_output();
+	const uint16_t count = tt::get_row();
+	const uint64_t mask = tt::get_mask();
 
-	printf (
-		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
+	const float max_result = tt::get_max_bit();
+	float result = 0;
+
+	printf ( "\n\n\t\t\t" ANSI_REVRS "Combinational Truth Table\n" ANSI_RESET
 		"\t             Input |      Expected      | Observed\n"
 		"\t-------------------+--------------------+-------------------\n" );
 
-	// Iterates over each case
-	for (unsigned int i = 0 ; i < count ; i++) {
-		// Set FPGA input
-		fpga_set_input (input [i]);
-
-		/* Get FPGA output
-			Buffering 'fpga_set_input' and 'fpga_get_output' may be necessary.
-			usleep(1) is already built into 'fpga_set_input' function, and should be enough.
-		*/
-		uint64_t observed = fpga_get_output ();
-
-		// Calculates F1 Score -- https://en.wikipedia.org/wiki/F1_score
-
-		/* Sums True Positive, False Positive, False Negative
-			Special case: If no bits are expected (expecting 0x00000000),
-			True Positive shall always be equal to 1
-		*/
-		if (expect [i] == 0) {
-			tpos += 1;
-		} else {
-			tpos += bitcount64 ( expect [i] & observed );
-		}
-		fpos += bitcount64 ( ~expect [i] &  observed );
-		fneg += bitcount64 (  expect [i] & ~observed );
-
-		// Compare result with expectation & print table
-		if ( observed == expect [i] ) {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed );
-		} else {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed );
-		}
+	switch (sel) {
+		case 0: goto ORDER;
+		case 1: goto REVERSE;
+		case 2: goto RANDOM;
 	}
 
-	// Recall, Precision, F1 Score
-	float precision	= tpos / (tpos + fpos);
-	float recall	= tpos / (tpos + fneg);
-	float f1_score	= 2 * precision * recall / (precision + recall);
+	ORDER:
+	// In Given Order
+	for (unsigned short i = 0 ; i < count ; i++) {
+		fpga_set_input (input [i]);
 
-	// Scales result with F1 score
-	uint32_t result = (uint32_t) floor (F1_MAX * f1_score);
-	printf ("\n\tFitness: %u / %u\n", result, F1_MAX);
+		// Ending up reimplementing artificial randomness... how ironic.
+		fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
 
-	return;
+		uint64_t observed = fpga_get_output ();
+
+		result += tt::bitcount64 ( ~(expect [i] ^ observed) & mask );
+
+		print_table (input[i], expect[i], observed);
+	}
+	goto END;
+
+	REVERSE:
+	// In Reverse Order
+	for (short i = count-1 ; i >= 0 ; i--) {
+		fpga_set_input (input [i]);
+
+		// Ending up reimplementing artificial randomness... how ironic.
+		fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
+
+		uint64_t observed = fpga_get_output ();
+
+		result += tt::bitcount64 ( ~(expect [i] ^ observed) & mask );
+
+		print_table (input[i], expect[i], observed);
+	}
+	goto END;
+
+	RANDOM:
+	// Random test
+	for (unsigned short i = 0 ; i < count ; i++) {
+		const unsigned short rng = fast_rng32() % count;
+		fpga_set_input (input [rng]);
+
+		// Ending up reimplementing artificial randomness... how ironic.
+		fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
+
+		uint64_t observed = fpga_get_output ();
+
+		result += tt::bitcount64 ( ~(expect [rng] ^ observed) & mask );
+
+		print_table (input[rng], expect[rng], observed);
+	}
+
+	END:
+	printf ("\tScore: %5.0f / %5.0f | %5.2f%%\n", result, max_result, (result / max_result)*100);
+	return (unsigned int) (SCORE_MAX * (result / max_result));
 }
 
-/* ===== WITH MASK ===== */
+unsigned int eval_seq_insp (void) {
+	const uint64_t *const input = tt::get_input();
+	const uint64_t *const expect = tt::get_output();
+	const uint16_t count = tt::get_row();
+	const uint64_t mask = tt::get_mask();
 
-void eval_bc_insp
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask) {
-	uint32_t result = 0;
-	const uint32_t fit_lim = (GRID_BIT_SIZE - bitcount64 (~mask)) * count ;
+	const float max_result = tt::get_max_bit() * MAX_SEQ_LOOP;
+	float result = 0;
+	unsigned int loop_count = 0;
 
 	printf (
-		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
+		"\n\n\t\t\t" ANSI_REVRS "Sequential Truth Table\n" ANSI_RESET
 		"\t             Input |      Expected      | Observed\n"
 		"\t-------------------+--------------------+-------------------\n" );
 
-	for (unsigned int i = 0 ; i < count ; i++) {
-		fpga_set_input (input [i]);
-		uint64_t observed = fpga_get_output ();
-		result += bitcount64 ( ~( expect [i] ^ observed ) & mask );
+	// Repeats until a mistake is found, or the loop limit is reached
+	for (unsigned int i = 0 ; i < MAX_SEQ_LOOP ; i++) {
+		for (unsigned int i = 0 ; i < count ; i++) {
+			fpga_set_input (input [i]);
 
-		if ( (observed & mask) == (expect [i] & mask) ) {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed & mask );
-		} else {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed & mask );
+			fpga_wind_clock (MIN_WAIT + (fast_rng32() % RAND_WAIT));
+
+			const uint64_t observed = fpga_get_output ();
+
+			const unsigned int bits_correct = tt::bitcount64 ( ~(expect [i] ^ observed) & mask );
+			result += bits_correct;
+
+			print_table (input[i], expect[i], observed);
+
+			// Ends prematurely if a mistake is found
+			if (bits_correct != tt::get_mask_bc()) goto END;
 		}
-	}
-	printf ("\n\tFitness: %u / %u\n", result, fit_lim);
-	printf ("\n\tMask: %016llX (%llu bits)\n", mask, bitcount64(mask) );
 
-	return;
-}
-
-void eval_f1_insp
-	(const uint64_t *const input, const uint64_t *const expect,
-		const uint16_t &count, const uint64_t &mask) {
-	float tpos = 0;
-	float fpos = 0;
-	float fneg = 0;
-
-	printf (
-		"\n\n\t\t\t\t" ANSI_REVRS "Truth Table\n" ANSI_RESET
-		"\t             Input |      Expected      | Observed\n"
-		"\t-------------------+--------------------+-------------------\n" );
-
-	for (unsigned int i = 0 ; i < count ; i++) {
-		fpga_set_input (input [i]);
-		uint64_t observed = fpga_get_output ();
-
-		if (expect [i] == 0) {
-			tpos += 1;
-		} else {
-			tpos += bitcount64 ( (expect [i] & observed) & mask );
-		}
-		fpos += bitcount64 ( (~expect [i] &  observed) & mask );
-		fneg += bitcount64 (  (expect [i] & ~observed) & mask );
-
-		if ( (observed & mask) == (expect [i] & mask) ) {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_GREEN "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed & mask );
-		} else {
-			printf ("\t0x%016llX | 0x%016llX | " ANSI_YELLOW "0x%016llX\n" ANSI_RESET,
-				input [i], expect [i], observed & mask );
-		}
+		loop_count++;
 	}
 
-	float precision	= tpos / (tpos + fpos);
-	float recall	= tpos / (tpos + fneg);
-	float f1_score	= 2 * precision * recall / (precision + recall);
-
-	uint32_t result = (uint32_t) floor (F1_MAX * f1_score);
-	printf ("\n\tFitness: %u / %u\n", result, F1_MAX);
-	printf ("\n\tMask: %016llX (%llu bits)\n", mask, bitcount64(mask) );
-
-	return;
+	END:
+	printf ("\n\tSuccesfully ran %u / %u times\n", loop_count, MAX_SEQ_LOOP);
+	printf ("\tScore: %5.0f / %5.0f | %5.2f%%\n", result, max_result, (result / max_result)*100);
+	return (unsigned int) (SCORE_MAX * (result / max_result));
 }
 
 
@@ -359,10 +287,10 @@ void eval_f1_insp
 /* ========== Efficiency Evaluation Functions ========== */
 
 uint32_t eval_efficiency (const uint8_t *const *const grid) {
-	uint32_t score = EFFICIENCY_MAX;
+	uint32_t score = MAX_ES;
 
-	for (uint16_t y = 0 ; y < DIMY ; y++) {
-		for (uint16_t x = 0 ; x < DIMX ; x++) {
+	for (uint16_t y = 0 ; y < PHYSICAL_DIMY ; y++) {
+		for (uint16_t x = 0 ; x < PHYSICAL_DIMX ; x++) {
 
 			// Add other values in here to penalize those settings
 			if (grid[y][x] == 3) score--;
@@ -372,3 +300,42 @@ uint32_t eval_efficiency (const uint8_t *const *const grid) {
 
 	return score;
 }
+
+
+
+/* ========== Reference F1 Scoring Functions ==========
+
+const uint64_t *const input = tt::get_input();
+const uint64_t *const expect = tt::get_output();
+const uint16_t count = tt::get_row();
+const uint64_t mask = tt::get_mask();
+
+// True Positive, False Positive, False Negative
+float tpos = 0;
+float fpos = 0;
+float fneg = 0;
+
+for (unsigned int i = 0 ; i < count ; i++) {
+	fpga_set_input (input [i]);
+	uint64_t observed = fpga_get_output ();
+
+	// Sums True Positive, False Positive, False Negative
+	// Special case: If no bits are expected (expecting 0x00000000),
+	// True Positive shall always be equal to 1
+	if (expect [i] == 0) {
+		tpos += 1;
+	} else {
+		tpos += tt::bitcount64 ( (expect [i] & observed) & mask );
+	}
+	fpos += tt::bitcount64 ( (~expect [i] &  observed) & mask );
+	fneg += tt::bitcount64 (  (expect [i] & ~observed) & mask );
+}
+
+// Calculates the F1 Score
+float precision	= tpos / (tpos + fpos);
+float recall	= tpos / (tpos + fneg);
+float f1_score	= 2 * precision * recall / (precision + recall);
+
+return (uint32_t) floor (F1_MAX * f1_score);
+
+*/

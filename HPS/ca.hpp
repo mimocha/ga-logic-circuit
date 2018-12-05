@@ -15,7 +15,7 @@
 void ca_init (void);
 
 /* void ca_cleanup (void)
-	For cleaning up any dynamically allocated memory on the CA global level
+	Dummy function, does nothing for now.
 */
 void ca_cleanup (void);
 
@@ -27,6 +27,11 @@ void ca_cleanup (void);
 */
 bool ca_is_init (void);
 
+/* void ca_need_update (void)
+	Used to reset initialization flag, when related parameters are changed,
+	and CA local variables need updating.
+*/
+void ca_need_update (void);
 
 
 /* ========== Generation Functions ========== */

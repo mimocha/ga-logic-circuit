@@ -10,7 +10,6 @@
 #include <stdint.h>		// uint definitions
 #include <math.h>		// floor
 #include <algorithm>	// sort
-#include <vector>		// vectors
 #include <iostream>		// cout
 
 
@@ -40,6 +39,9 @@ using namespace GlobalSettings;
 static uint32_t object_count = 0;
 
 
+static uint32_t live_count;
+static uint32_t dead_count;
+
 
 // =====================================================
 // GENETIC ALGORITHM CLASS METHODS
@@ -48,10 +50,38 @@ static uint32_t object_count = 0;
 /* ========== Compare Functions ========== */
 
 bool GeneticAlgorithm::compfit_descend (const GeneticAlgorithm &a, const GeneticAlgorithm &b) {
+	// If A is a solution, and B is not a solution,
+	// Return True, for A goes before B
+	if ((a.sol == 1) && (b.sol == 0)) {
+		return 1;
+	}
+
+	// If B is a solution, and A is not a solution,
+	// Return False, for A goes before B
+	if ((a.sol == 0) && (b.sol == 1)) {
+		return 0;
+	}
+
+	// If neither or both are solutions, compare by fitness
+	// The fitter one goes first
 	return (a.fit > b.fit);
 }
 
 bool GeneticAlgorithm::compfit_ascend (const GeneticAlgorithm &a, const GeneticAlgorithm &b) {
+	// If A is a solution, and B is not a solution,
+	// Return False, for A goes before B
+	if ((a.sol == 1) && (b.sol == 0)) {
+		return 0;
+	}
+
+	// If B is a solution, and A is not a solution,
+	// Return True, for A goes before B
+	if ((a.sol == 0) && (b.sol == 1)) {
+		return 1;
+	}
+
+	// If neither or both are solutions, compare by fitness
+	// The weaker one goes first
 	return (a.fit < b.fit);
 }
 
@@ -122,7 +152,17 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 		We will be keeping track of the index, because it allows easy access to the original population and its properties, via array[i].
 	*/
 
+	live_count = 0;
+	dead_count = 0;
+
 	for (unsigned int rank = 0 ; rank < pop ; rank++) {
+		// Leak catch
+		if ( array[rank].alive == 0 ) {
+			dead_count++;
+			printf (ANSI_RED "\tWalking Dead!!!\n");
+			continue;
+		}
+
 		uint32_t rng = fast_rng32 () % pop;
 
 		/* Checks if an individual dies
@@ -134,6 +174,9 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 		*/
 		if ( rng < rank ) {
 			array [rank].alive = 0;
+			dead_count++;
+		} else {
+			live_count++;
 		}
 	}
 
@@ -141,13 +184,8 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 }
 
 void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
-	// Vector of who live or dies -- contains population array index
-	// BUG : memory corruption
-	// When population is small (10), these vectors often fail to .push_back()
-	// Problem likely stemming from other source
-	// Problem is related to pop_lim somehow...
-	// Main suspect : stats struct or DNA pointer
-	vector <uint16_t> live, dead;
+	uint16_t live [live_count] = {0};
+	uint16_t dead [dead_count] = {0};
 
 	// Gets the variable values once -- per individual
 	const unsigned int pop = get_ga_pop ();
@@ -156,12 +194,15 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 	const float mutp = get_ga_mutp ();
 	const unsigned int color = get_ca_color ();
 
-	// Puts the array index of alive / dead individuals into their respective vectors
+	// Puts the array index of alive / dead individuals into their respective groups
+	int l = 0, d = 0;
 	for (unsigned int i = 0 ; i < pop ; i++) {
-		if ( array[i].alive ) {
-			live.push_back ( i );
+		if ( array[i].alive == 1 ) {
+			live [l] = i;
+			l++;
 		} else {
-			dead.push_back ( i );
+			dead [d] = i;
+			d++;
 		}
 	}
 
@@ -169,11 +210,10 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 
 	/* ========== TOURNAMENT SELECTION ==========
 		Using the results from the previous part (selecting who live & dies), we will next select who will reproduce with whom, via tournament selection strategy.
-
-		This loop iterates until the vector 'dead' is empty
 	*/
 
-	while ( !dead.empty() ) {
+	// Using counter d to count how many deads are left
+	for ( d = d-1 ; d >= 0 ; d--) {
 		uint16_t parent [2];
 
 		/* Tournament Selection Pool
@@ -195,72 +235,51 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 			generate a random individual entirely.
 		*/
 		for (unsigned int j = 0 ; j < 2 ; j++) {
-			/* pcur == Current Pick | pnew == New Pick */
-			uint16_t pcur = live.back();
+			// pcur == Current Pick -- start with the weakest in the pool
+			// pnew == New Pick
+			uint16_t pcur = live [ live_count-1 ];
 			uint16_t pnew;
 
-			/* Tournament Pool Loop */
+			// Tournament Pool Loop
 			for (unsigned int i = 0 ; i < pool ; i++) {
-				/* Pick a random live individual */
-				pnew = live [ fast_rng32 () % live.size() ];
+				// Pick a random live individual
+				pnew = live [ fast_rng32 () % live_count ];
 
-				/* Compare by fitness -- fittest wins */
+				// Compare by fitness -- fittest wins
 				if ( array[pnew].fit > array[pcur].fit ) {
-					/* New pick is fitter, Keep new pick */
+					// New pick is fitter, Keep new pick
 					pcur = pnew;
-				} else if ( array[pnew].fit < array[pcur].fit ) {
-					/* Current pick is fitter, Keep current pick */
-					// pcur = pcur; /* Do Nothing */
-				} else {
+					continue;
+				}
 
-					/* Compare by age -- youngest wins */
-					if (array[pnew].age > array[pcur].age) {
-						/* Current pick is younger, Keep current pick */
-						// pcur = pcur; /* Do Nothing */
-					} else if (array[pnew].age < array[pcur].age) {
-						/* New pick is younger, Keep new pick */
-						pcur = pnew;
-					} else {
-
-						/* Pick one by random */
-						if ( fast_rng32() % 1 ) {
-							/* Keep new pick */
-							pcur = pnew;
-						} else {
-							/* Keep current pick */
-							// pcur = pcur; /* Do Nothing */
-						}
-					}
+				// Compare by age -- youngest wins
+				if ( array[pnew].age < array[pcur].age ) {
+					// New pick is younger, Keep new pick
+					pcur = pnew;
 				}
 			}
 
-			/* Assign current pick as parent */
+			// Assign current pick as parent
 			parent [j] = pcur;
 		}
 
-		/* Resets a dead individual */
-		array[dead.back()].Reset ();
+		// Resets a dead individual
+		array[dead[d]].Reset ();
 
-		/* Confirms two different parents */
+		// Confirms two different parents
 		if ( parent [0] != parent [1] ) {
-			/* Reproduce Normally */
-			array[dead.back()].Crossover
+			// Reproduce Normally
+			array[dead[d]].Crossover
 			(array[parent[0]].dna, array[parent[1]].dna, dna_length);
 		} else {
-			/* If both picks are the same, generate new DNA randomly */
-			array[dead.back()].dna_rand_fill (dna_length);
+			// If both picks are the same, generate new DNA randomly
+			array[dead[d]].dna_rand_fill (dna_length);
 		}
 
-		/* Mutate DNA */
-		array[dead.back()].Mutate (mutp, color, dna_length);
-
-		/* Remove new individual from list of the dead */
-		dead.pop_back ();
+		// Mutate DNA
+		array[dead[d]].Mutate (mutp, color, dna_length);
 	}
 
-	/* Empties vector at the end */
-	live.clear();
-	dead.clear();
 	return;
 }
 
@@ -346,12 +365,12 @@ void GeneticAlgorithm::Mutate
 
 void GeneticAlgorithm::Reset (void) {
 	// TODO: DNA REALLOC - If DNA length has changed, reallocate *dna
-	uid = object_count;
-	fit = 0;
-	age = 0;
-	eval = 0;
-	alive = 1;
-	sol = 0;
+	this -> uid = object_count;
+	this -> fit = 0;
+	this -> age = 0;
+	this -> eval = 0;
+	this -> alive = 1;
+	this -> sol = 0;
 	object_count++;
 }
 
@@ -360,9 +379,8 @@ uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t &dna_length) {
 	uint8_t *dna = (uint8_t *) calloc (dna_length, sizeof (uint8_t));
 
 	// If Memory Allocation Failed
-	if (dna == NULL) {
+	if (dna == nullptr) {
 		printf (ANSI_RED "\nERROR: DNA CALLOC FAILED\n" ANSI_RESET);
-		return nullptr;
 	}
 
 	return dna;
@@ -401,7 +419,7 @@ void GeneticAlgorithm::dna_rand_fill (uint8_t *const dna, const uint32_t &dna_le
 }
 
 void GeneticAlgorithm::Sort (GeneticAlgorithm *const array) {
-	sort (	array, array + get_ga_pop(), compfit_descend );
+	sort (array, array + get_ga_pop(), compfit_descend);
 	return;
 }
 
@@ -467,14 +485,14 @@ void GeneticAlgorithm::set_fit (const uint32_t &set_val) {
 	this -> fit = set_val;
 }
 
-void GeneticAlgorithm::set_eval (void) {
-	this -> eval = 1;
+void GeneticAlgorithm::set_eval (const uint32_t &set_val) {
+	this -> eval = set_val;
 }
 
 void GeneticAlgorithm::set_age (void) {
 	this -> age++;
 }
 
-void GeneticAlgorithm::set_sol (void) {
-	this -> sol = 1;
+void GeneticAlgorithm::set_sol (const uint32_t &set_val) {
+	this -> sol = set_val;
 }

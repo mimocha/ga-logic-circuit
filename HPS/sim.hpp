@@ -37,6 +37,9 @@ void sim_cleanup (void);
 */
 int sim_run (uint8_t *const *const grid, const uint8_t *const seed);
 
+// Function for continuing a population run?
+// int sim_optimize (uint8_t *const *const grid, const uint8_t *const seed);
+
 /* bool sim_is_done (void)
 	Returns bool of whether sim is completed.
 	0 == No sim ran (successfully)
@@ -67,12 +70,6 @@ bool sim_is_done (void);
 	Prints pretty tables and CA grid.
 	Also inspects the top individual, and print its truth table.
 */
-
-/* void sim_results (void)
-	Prints simulation results table.
-	Should add more use to it, or remove it entirely.
-*/
-void sim_results (void);
 
 /* void sim_export (void)
 	Exports simulation data to file.

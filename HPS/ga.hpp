@@ -212,11 +212,11 @@ public:
 
 	void set_fit (const uint32_t &set_val);
 
-	void set_eval (void);
+	void set_eval (const uint32_t &set_val);
 
 	void set_age (void);
 
-	void set_sol (void);
+	void set_sol (const uint32_t &set_val);
 
 };
 
