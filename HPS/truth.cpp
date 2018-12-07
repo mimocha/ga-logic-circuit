@@ -49,7 +49,7 @@ static uint64_t *INPUT;
 static uint64_t *OUTPUT;
 
 // Toggle Evaluation Mode | 0 == Combinational | 1 == Sequential
-static bool MODE = 1;
+static bool MODE = 0;
 
 // Truth Table Mask
 static uint64_t MASK = 0x1;

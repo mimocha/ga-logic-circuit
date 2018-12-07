@@ -388,8 +388,8 @@ void export_ca_grid (void) {
 
 	// Append file extention
 	char csvfile [64];
-	strcat (csvfile, "./export/");
-	strcpy (csvfile, filename);
+	strcpy (csvfile, "./export/");
+	strcat (csvfile, filename);
 	strcat (csvfile, ".csv");
 
 	fp = fopen (csvfile, "w");
@@ -415,8 +415,8 @@ void export_ca_grid (void) {
 
 	// Append file extention
 	char imgfile [64];
-	strcat (imgfile, "./export/");
-	strcpy (imgfile, filename);
+	strcpy (imgfile, "./export/");
+	strcat (imgfile, filename);
 	strcat (imgfile, ".ppm");
 
 	fp = fopen (imgfile, "w");
@@ -467,6 +467,9 @@ void export_ca_grid (void) {
 }
 
 void inspect (void) {
+	// How many test cases to run
+	constexpr unsigned int CHECK_NUM = 100;
+
 	// Required initialization
 	if ( ca_is_init () == 0 ) {
 		printf (ANSI_RED "CA not initialized.\n" ANSI_RESET);
@@ -533,51 +536,9 @@ void inspect (void) {
 
 
 
-	/* ===== FPGA SET GRID && EVALUATE ===== */
-
-	if ( tt::table_is_init () == 0 ) {
-		printf (ANSI_YELLOW "No truth table defined.\n" ANSI_RESET);
-		goto INSPECT_CA;
-	}
-	if ( fpga_is_init () == 0 ) {
-		printf (ANSI_YELLOW "FPGA not initialized.\n" ANSI_RESET);
-		goto INSPECT_CA;
-	}
-
-	fpga_clear ();
-	ca_gen_grid (grid, dna, seed);
-	ca_gen_grid (grid, dna);
-	fpga_set_grid (grid);
-
-	// Evaluate Circuit
-	if (tt::get_mode() == 0) {
-
-		// Check each case independently
-		eval_com_insp (0);
-		fpga_clear ();
-		fpga_set_grid (grid);
-		eval_com_insp (1);
-		fpga_clear ();
-		fpga_set_grid (grid);
-		eval_com_insp (2);
-
-		// Check all cases together
-		fpga_clear ();
-		fpga_set_grid (grid);
-		eval_com_insp (0);
-		eval_com_insp (1);
-		eval_com_insp (2);
-
-	} else {
-		eval_seq_insp ();
-	}
-
-
-
 	/* ===== PRINT CA GRID ===== */
 
-	INSPECT_CA:
-	if ( get_data_caprint () == 0 ) goto INSPECT_END;
+	if ( get_data_caprint () == 0 ) goto INSPECT_GRID;
 
 	printf ("\n\e[100m\t\t-- Generated Logic Circuit --" ANSI_RESET "\n");
 
@@ -616,6 +577,76 @@ void inspect (void) {
 
 	// Flush Stream
 	cout << endl;
+
+
+
+	/* ===== FPGA SET GRID && EVALUATE ===== */
+
+	INSPECT_GRID:
+	if ( tt::table_is_init () == 0 ) {
+		printf (ANSI_YELLOW "No truth table defined.\n" ANSI_RESET);
+		goto INSPECT_END;
+	}
+	if ( fpga_is_init () == 0 ) {
+		printf (ANSI_YELLOW "FPGA not initialized.\n" ANSI_RESET);
+		goto INSPECT_END;
+	}
+
+	fpga_clear ();
+	ca_gen_grid (grid, dna, seed);
+	ca_gen_grid (grid, dna);
+	fpga_set_grid (grid);
+
+	// Evaluate Circuit
+	if (tt::get_mode() == 0) {
+
+		// Check each case independently
+		eval_com_insp (0);
+		fpga_clear ();
+		fpga_set_grid (grid);
+		eval_com_insp (1);
+		fpga_clear ();
+		fpga_set_grid (grid);
+		eval_com_insp (2);
+
+		// Check random cases
+		printf ("\n\tChecking %u Random Cases... ", CHECK_NUM);
+		const unsigned int max_rand_score = get_score_max() * CHECK_NUM;
+		unsigned int rand_score = 0;
+
+		fpga_clear ();
+		fpga_set_grid (grid);
+		for (unsigned int i = 0 ; i < CHECK_NUM ; i++) {
+			rand_score += eval_com ( 2 );
+		}
+
+		if (rand_score == max_rand_score) {
+			printf (ANSI_GREEN "%u / %u | PASS\n" ANSI_RESET, rand_score, max_rand_score);
+		} else {
+			printf (ANSI_YELLOW "%u / %u | FAIL\n" ANSI_RESET, rand_score, max_rand_score);
+		}
+
+	} else {
+		// Inspect sequential truth table
+		eval_seq_insp ();
+
+		// Run continuous test
+		printf ("\n\tChecking %u Iterations... ", CHECK_NUM);
+		const unsigned int max_loop_score = get_score_max() * CHECK_NUM;
+		unsigned int loop_score = 0;
+
+		fpga_clear ();
+		fpga_set_grid (grid);
+		for (unsigned int i = 0 ; i < CHECK_NUM ; i++) {
+			loop_score += eval_seq ();
+		}
+
+		if (loop_score == max_loop_score) {
+			printf (ANSI_GREEN "%u / %u | PASS\n" ANSI_RESET, loop_score, max_loop_score);
+		} else {
+			printf (ANSI_YELLOW "%u / %u | FAIL\n" ANSI_RESET, loop_score, max_loop_score);
+		}
+	}
 
 
 

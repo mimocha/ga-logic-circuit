@@ -12,7 +12,7 @@
 	Semantic Versioning -- https://semver.org/
 	Should be updated every commit / update.
 */
-#define VERSION "3.03.03"
+#define VERSION "3.03.08"
 
 // Physical FPGA Cell Array Dimension
 #define PHYSICAL_DIMX 64

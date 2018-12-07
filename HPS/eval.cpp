@@ -177,9 +177,22 @@ unsigned int eval_com_insp (const unsigned short &sel) {
 	const float max_result = tt::get_max_bit();
 	float result = 0;
 
-	printf ( "\n\n\t\t\t" ANSI_REVRS "Combinational Truth Table\n" ANSI_RESET
+	switch (sel) {
+		case 0:
+			printf ("\n\n\t\t\t   " ANSI_REVRS "Combinational | ORDER\n" ANSI_RESET);
+			break;
+		case 1:
+			printf ("\n\n\t\t\t   " ANSI_REVRS "Combinational | REVERSE\n" ANSI_RESET);
+			break;
+		case 2:
+			printf ("\n\n\t\t\t   " ANSI_REVRS "Combinational | RANDOM\n" ANSI_RESET);
+			break;
+	}
+
+	printf (
 		"\t             Input |      Expected      | Observed\n"
-		"\t-------------------+--------------------+-------------------\n" );
+		"\t-------------------+--------------------+-------------------\n"
+	);
 
 	switch (sel) {
 		case 0: goto ORDER;
@@ -236,7 +249,7 @@ unsigned int eval_com_insp (const unsigned short &sel) {
 	}
 
 	END:
-	printf ("\tScore: %5.0f / %5.0f | %5.2f%%\n", result, max_result, (result / max_result)*100);
+	printf ("\tScore: %3.0f / %3.0f | %5.2f%%\n", result, max_result, (result / max_result)*100);
 	return (unsigned int) (SCORE_MAX * (result / max_result));
 }
 
@@ -251,7 +264,7 @@ unsigned int eval_seq_insp (void) {
 	unsigned int loop_count = 0;
 
 	printf (
-		"\n\n\t\t\t" ANSI_REVRS "Sequential Truth Table\n" ANSI_RESET
+		"\n\n\t\t\t   " ANSI_REVRS "Sequential Truth Table\n" ANSI_RESET
 		"\t             Input |      Expected      | Observed\n"
 		"\t-------------------+--------------------+-------------------\n" );
 

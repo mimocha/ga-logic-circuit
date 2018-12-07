@@ -167,7 +167,6 @@ void sim_init (void) {
 	}
 
 
-
 	// Creates a local copy for sim.cpp file
 	pop_lim = get_ga_pop ();
 	gen_lim = get_ga_gen ();
@@ -207,11 +206,11 @@ void sim_init (void) {
 
 
 	// Allocate memory for data array
-	stats.avg =  (float *) calloc (pop_lim, sizeof (float));
-	stats.med =  (float *) calloc (pop_lim, sizeof (float));
-	stats.max =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
-	stats.min =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
-	stats.sol_count =  (unsigned int *) calloc (pop_lim, sizeof (unsigned int));
+	stats.avg =  (float *) calloc (gen_lim, sizeof (float));
+	stats.med =  (float *) calloc (gen_lim, sizeof (float));
+	stats.max =  (unsigned int *) calloc (gen_lim, sizeof (unsigned int));
+	stats.min =  (unsigned int *) calloc (gen_lim, sizeof (unsigned int));
+	stats.sol_count =  (unsigned int *) calloc (gen_lim, sizeof (unsigned int));
 
 	// Set fitness limit
 	fit_lim = get_score_max();
@@ -302,16 +301,18 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 
 			// Sequential or Combinational Logic
 			if (tt::get_mode() == 0) {
-				// Resets circuit inbetween each test case
+				// Test basic cases
 				score += eval_com (0);
-				fpga_clear ();
-				fpga_set_grid (grid);
 				score += eval_com (1);
-				fpga_clear ();
-				fpga_set_grid (grid);
-				score += eval_com (2);
+
+				// Test a few random cases
+				for (int j = 0 ; j < 3 ; j++) {
+					score += eval_com (2);
+				}
+
 				// Get the average score
-				score /= 3;
+				score /= 5;
+
 			} else {
 				score = eval_seq ();
 			}
