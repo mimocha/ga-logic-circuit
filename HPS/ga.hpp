@@ -12,13 +12,22 @@ private:
 
 	/* ========== Properties ========== */
 
-	uint32_t uid;	// Unique id for tracking the individual
-	uint8_t *dna;	// DNA sequence (Cellular Automaton Rule)
-	uint32_t fit;	// Fitness score of the individual
-	uint32_t age;	// For how long the individual has been alive for
-	bool eval;		// Evaluation Flag | 0 = Not Evaluated | 1 = Evaluated
-	bool alive;		// Alive Flag | 0 = Dead | 1 = Alive
-	bool sol;		// Solution Flag | 0 = Not a solution | 1 = Is a solution
+	// Unique id for tracking the individual
+	uint32_t uid;
+	// DNA sequence (Cellular Automaton Rule)
+	uint8_t *dna;
+	// Fitness score of the individual
+	uint32_t fit;
+	// Gate Efficiency Score := (Max Gate - Gates Used) ; Higher is better
+	uint16_t gate;
+	// For how long the individual has been alive for
+	uint32_t age;
+	// Evaluation Flag | Use to skip redundant evaluations
+	bool eval;
+	// Alive Flag | 0 = Dead | 1 = Alive
+	bool alive;
+	// Solution Flag | 0 = Not a solution | 1 = Is a solution
+	bool sol;
 
 
 	/* ========== Compare Functions ========== */
@@ -199,6 +208,8 @@ public:
 
 	uint32_t get_fit (void);
 
+	uint16_t get_gate (void);
+
 	uint32_t get_age (void);
 
 	bool get_eval (void);
@@ -212,11 +223,13 @@ public:
 
 	void set_fit (const uint32_t &set_val);
 
-	void set_eval (const uint32_t &set_val);
+	void set_gate (const uint16_t &set_val);
 
 	void set_age (void);
 
-	void set_sol (const uint32_t &set_val);
+	void set_eval (const bool &set_val);
+
+	void set_sol (const bool &set_val);
 
 };
 

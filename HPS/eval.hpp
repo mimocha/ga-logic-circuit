@@ -63,11 +63,11 @@ unsigned int eval_seq_insp (void);
 
 /* ========== Efficiency Evaluation Functions ========== */
 
-/* uint32_t eval_efficiency (const uint8_t *const *const grid);
+/* uint16_t eval_efficiency (const uint8_t *const *const grid);
 	Efficiency evaluation metric.
 	Set to evaluate which solution is more gate efficient.
 	Using less number of gate is better.
 */
-uint32_t eval_efficiency (const uint8_t *const *const grid);
+uint16_t eval_efficiency (const uint8_t *const *const grid);
 
 #endif

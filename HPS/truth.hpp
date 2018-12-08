@@ -42,6 +42,11 @@ namespace TruthTable {
 	*/
 	void set_table (void);
 
+	/* int auto_set_table (const int &set);
+		Automatically sets preprogrammed truth tables.
+	*/
+	int auto_set_table (const int &set);
+
 	/* void clear_table (void)
 		Clears currently set truth table.
 		Frees INPUT and OUTPUT arrays.

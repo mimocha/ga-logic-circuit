@@ -51,38 +51,50 @@ static uint32_t dead_count;
 
 bool GeneticAlgorithm::compfit_descend (const GeneticAlgorithm &a, const GeneticAlgorithm &b) {
 	// If A is a solution, and B is not a solution,
-	// Return True, for A goes before B
+	// A goes before B is True
 	if ((a.sol == 1) && (b.sol == 0)) {
 		return 1;
 	}
 
 	// If B is a solution, and A is not a solution,
-	// Return False, for A goes before B
+	// A goes before B is False
 	if ((a.sol == 0) && (b.sol == 1)) {
 		return 0;
 	}
 
-	// If neither or both are solutions, compare by fitness
-	// The fitter one goes first
-	return (a.fit > b.fit);
+	// Compare by fitness, fitter goes first
+	// For A goes before B:
+	if (a.fit > b.fit) {
+		return 1;
+	}
+	if (a.fit < b.fit) {
+		return 0;
+	}
+
+	// Compare gate efficiency, higher gate efficiency goes first
+	if (a.gate > b.gate) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 bool GeneticAlgorithm::compfit_ascend (const GeneticAlgorithm &a, const GeneticAlgorithm &b) {
 	// If A is a solution, and B is not a solution,
-	// Return False, for A goes before B
-	if ((a.sol == 1) && (b.sol == 0)) {
-		return 0;
-	}
+	// A goes before B is False
+	if ((a.sol == 1) && (b.sol == 0)) return 0;
 
 	// If B is a solution, and A is not a solution,
-	// Return True, for A goes before B
-	if ((a.sol == 0) && (b.sol == 1)) {
-		return 1;
-	}
+	// A goes before B is True
+	if ((a.sol == 0) && (b.sol == 1)) return 1;
 
-	// If neither or both are solutions, compare by fitness
-	// The weaker one goes first
-	return (a.fit < b.fit);
+	// Compare by fitness
+	// For A goes before B:
+	if (a.fit > b.fit) return 0;
+	if (a.fit < b.fit) return 1;
+
+	// Compare gate efficiency, lower gate efficiency goes first
+	return (a.gate <= b.gate);
 }
 
 
@@ -93,6 +105,7 @@ GeneticAlgorithm::GeneticAlgorithm (void) {
 	uid = 0;
 	dna = nullptr;
 	fit = 0;
+	gate = 0;
 	age = 0;
 	eval = 0;
 	alive = 1;
@@ -104,6 +117,7 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 	dna = GeneticAlgorithm::dna_calloc (dna_length);
 	GeneticAlgorithm::dna_rand_fill (dna, dna_length);
 	fit = 0;
+	gate = 0;
 	age = 0;
 	eval = 0;
 	alive = 1;
@@ -120,10 +134,6 @@ void GeneticAlgorithm::FreeDNA (void) {
 /* ========== Genetic Algorithm Operations ========== */
 
 void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
-	/* Gets these variable values once per population
-		Accessing local memory is faster than a function call.
-		Increases performance by almost 2x.
-	*/
 	const unsigned int pop = get_ga_pop ();
 
 	/* 	========== Natural Selection ==========
@@ -156,10 +166,11 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 	dead_count = 0;
 
 	for (unsigned int rank = 0 ; rank < pop ; rank++) {
-		// Leak catch
+		// Leak catch -- 'Live' individuals will have status of being 'dead'
+		// Usually a sign of bad memory management elsewhere.
 		if ( array[rank].alive == 0 ) {
 			dead_count++;
-			printf (ANSI_RED "\tWalking Dead!!!\n");
+			printf (ANSI_RED "\tWalking Dead!!!\n" ANSI_RESET);
 			continue;
 		}
 
@@ -178,6 +189,11 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 		} else {
 			live_count++;
 		}
+	}
+
+	// Leak catch
+	if ((live_count + dead_count) != pop) {
+		printf (ANSI_RED "\tSelection Population Mismatch!\n" ANSI_RESET);
 	}
 
 	return;
@@ -208,9 +224,7 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 
 
 
-	/* ========== TOURNAMENT SELECTION ==========
-		Using the results from the previous part (selecting who live & dies), we will next select who will reproduce with whom, via tournament selection strategy.
-	*/
+	// ========== TOURNAMENT SELECTION ========== //
 
 	// Using counter d to count how many deads are left
 	for ( d = d-1 ; d >= 0 ; d--) {
@@ -285,7 +299,7 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 
 void GeneticAlgorithm::Crossover
 (const uint8_t *const dna_a, const uint8_t *const dna_b, const unsigned int &dna_length) {
-	/* Using RNG, determine which DNA comes from which parent */
+	// Determine which gene comes from which parent -- 50-50 chance for any given gene
 	for (uint16_t i = 0 ; i < dna_length ; i++) {
 		if ( (fast_rng32 () % 1) )
 			this->dna [i] = dna_a [i];
@@ -298,16 +312,16 @@ void GeneticAlgorithm::Crossover
 
 void GeneticAlgorithm::Mutate
 (const float &mutp, const unsigned int &color, const unsigned int &dna_length) {
-	/* Iterates over each DNA  */
+	// Iterates over each DNA
 	for (uint32_t i = 0 ; i < dna_length ; i++) {
 		uint16_t rng = fast_rng32 () % P_MAX;
 
-		/* Do Nothing | 1 - MUTP probability */
+		// Do Nothing | 1 - MUTP probability
 		if (rng > floor (mutp * P_MAX) ) {
 			continue;
 		}
 
-		/* Minor Mutations | 75% of all mutations*/
+		// Minor Mutations | 75% of all mutations
 		if (rng > floor (mutp * P_MAX * 0.25) ) {
 			switch (rng % 5) {
 				case 0:
@@ -333,7 +347,7 @@ void GeneticAlgorithm::Mutate
 			continue;
 		}
 
-		/* Swap Mutation | 20% of all mutations */
+		// Swap Mutation | 20% of all mutations
 		if (rng > floor (mutp * P_MAX * 0.05) ) {
 			uint16_t dest = fast_rng32 () % dna_length;
 			uint8_t tmp = this->dna [i];
@@ -346,7 +360,6 @@ void GeneticAlgorithm::Mutate
 			Picks two anchor points,
 			The first is the current DNA index (i)
 			The second is a random point within the DNA string (fast_rng32 () % dna_length)
-
 		*/
 		uint16_t anchor = fast_rng32 () % dna_length;
 		if (i > anchor) {
@@ -367,6 +380,7 @@ void GeneticAlgorithm::Reset (void) {
 	// TODO: DNA REALLOC - If DNA length has changed, reallocate *dna
 	this -> uid = object_count;
 	this -> fit = 0;
+	this -> gate = 0;
 	this -> age = 0;
 	this -> eval = 0;
 	this -> alive = 1;
@@ -419,6 +433,7 @@ void GeneticAlgorithm::dna_rand_fill (uint8_t *const dna, const uint32_t &dna_le
 }
 
 void GeneticAlgorithm::Sort (GeneticAlgorithm *const array) {
+	// Sort using the helper function defined
 	sort (array, array + get_ga_pop(), compfit_descend);
 	return;
 }
@@ -428,20 +443,14 @@ void GeneticAlgorithm::Sort (GeneticAlgorithm *const array) {
 /* ========== Print Functions ========== */
 
 void GeneticAlgorithm::print_dna (const uint32_t &dna_length) {
-	// Iterates over entire DNA length
 	for (uint32_t i = 0; i < dna_length; i++) {
-		// Prints DNA to terminal
-		cout << (unsigned int) dna [i];
+		printf ("%d", dna[i]);
 	}
 }
 
 void GeneticAlgorithm::fprint_dna (FILE *const fp, const uint32_t &dna_length) {
-	// Iterates over entire DNA length
-	for (uint32_t i = 0; i < dna_length; i++) {
-		// Adjusts each character from uint8_t to an ASCII number
-		char buff = dna [i] + 48;
-		// Writes to file
-		fputc (buff, fp);
+	for (uint32_t i = 0 ; i < dna_length ; i++) {
+		fprintf (fp, "%d", dna[i]);
 	}
 }
 
@@ -459,6 +468,10 @@ uint8_t *GeneticAlgorithm::get_dna (void) {
 
 uint32_t GeneticAlgorithm::get_fit (void) {
 	return this -> fit;
+}
+
+uint16_t GeneticAlgorithm::get_gate (void) {
+	return this -> gate;
 }
 
 uint32_t GeneticAlgorithm::get_age (void) {
@@ -485,14 +498,18 @@ void GeneticAlgorithm::set_fit (const uint32_t &set_val) {
 	this -> fit = set_val;
 }
 
-void GeneticAlgorithm::set_eval (const uint32_t &set_val) {
-	this -> eval = set_val;
+void GeneticAlgorithm::set_gate (const uint16_t &set_val) {
+	this -> gate = set_val;
 }
 
 void GeneticAlgorithm::set_age (void) {
 	this -> age++;
 }
 
-void GeneticAlgorithm::set_sol (const uint32_t &set_val) {
+void GeneticAlgorithm::set_eval (const bool &set_val) {
+	this -> eval = set_val;
+}
+
+void GeneticAlgorithm::set_sol (const bool &set_val) {
 	this -> sol = set_val;
 }

@@ -51,8 +51,8 @@ struct param_data {
 	bool CAPRINT = 1;
 	// Export data from the experiment to file
 	bool EXPORT = 0;
-	// Exit On First Solution | Ends simulation when first solution is found
-	bool EOFS = 0;
+	// Print report at end of each simulation
+	bool REPORT = 1;
 };
 
 // Declaration of Each Struct
@@ -69,6 +69,8 @@ static unsigned int dna_length = fast_pow (CA.COLOR, CA.NB);
 	Else, returns the input.
 */
 
+static unsigned int bound (const unsigned int &, const unsigned int &, const unsigned int &);
+
 unsigned int bound
 (const unsigned int &input, const unsigned int &upper, const unsigned int &lower) {
 	// Checks if input exceeds upper or lower boundary
@@ -83,6 +85,8 @@ unsigned int bound
 	// Input is within set boundaries
 	return input;
 }
+
+static float bound (const float &, const float &, const float &);
 
 float bound (const float &input, const float &upper, const float &lower) {
 	// Checks if input exceeds upper or lower boundary
@@ -105,6 +109,8 @@ float bound (const float &input, const float &upper, const float &lower) {
 	For updating certain internal variables that depends upon other settings.
 	Should reduce time spent on certain more expensive calculations.
 */
+
+static void update (void);
 
 void update (void) {
 	dna_length = fast_pow (CA.COLOR, CA.NB);
@@ -154,6 +160,10 @@ bool GlobalSettings::get_data_caprint (void) {
 
 bool GlobalSettings::get_data_export (void) {
 	return DATA.EXPORT;
+}
+
+bool GlobalSettings::get_data_report (void) {
+	return DATA.REPORT;
 }
 
 
@@ -239,5 +249,10 @@ void GlobalSettings::set_data_caprint (const bool &set_val) {
 
 void GlobalSettings::set_data_export (const bool &set_val) {
 	DATA.EXPORT = set_val;
+	return;
+}
+
+void GlobalSettings::set_data_report (const bool &set_val) {
+	DATA.REPORT = set_val;
 	return;
 }

@@ -299,19 +299,19 @@ unsigned int eval_seq_insp (void) {
 
 /* ========== Efficiency Evaluation Functions ========== */
 
-uint32_t eval_efficiency (const uint8_t *const *const grid) {
-	uint32_t score = MAX_ES;
+uint16_t eval_efficiency (const uint8_t *const *const grid) {
+	uint16_t penalty = 0;
 
 	for (uint16_t y = 0 ; y < PHYSICAL_DIMY ; y++) {
 		for (uint16_t x = 0 ; x < PHYSICAL_DIMX ; x++) {
 
 			// Add other values in here to penalize those settings
-			if (grid[y][x] == 3) score--;
+			if (grid[y][x] == 3) penalty += 1; // Penalize NAND Gates
 
 		}
 	}
 
-	return score;
+	return MAX_ES - penalty;
 }
 
 

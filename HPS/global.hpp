@@ -12,7 +12,7 @@
 	Semantic Versioning -- https://semver.org/
 	Should be updated every commit / update.
 */
-#define VERSION "3.03.08"
+#define VERSION "3.04.07"
 
 // Physical FPGA Cell Array Dimension
 #define PHYSICAL_DIMX 64
@@ -98,6 +98,7 @@ namespace GlobalSettings {
 
 	bool get_data_caprint (void);
 	bool get_data_export (void);
+	bool get_data_report (void);
 
 	unsigned int get_dna_length (void);
 
@@ -108,7 +109,6 @@ namespace GlobalSettings {
 	void set_ga_mutp (const float &set_val);
 	void set_ga_pool (const unsigned int &set_val);
 
-	// Although unused now, left in for future usage
 	void set_ca_dimx (const unsigned int &set_val);
 	void set_ca_dimy (const unsigned int &set_val);
 	void set_ca_color (const unsigned int &set_val);
@@ -116,6 +116,7 @@ namespace GlobalSettings {
 
 	void set_data_caprint (const bool &set_val);
 	void set_data_export (const bool &set_val);
+	void set_data_report (const bool &set_val);
 
 };
 

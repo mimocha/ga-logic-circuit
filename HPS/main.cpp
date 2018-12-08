@@ -52,7 +52,7 @@ int main (int argc, char **argv) {
 
 		switch (sel) {
 
-			case 0: // Exit */
+			case 0: // Exit
 				printf ("\nExiting Program.\n");
 
 				tt::clear_table ();
@@ -96,7 +96,7 @@ int main (int argc, char **argv) {
 				inspect ();
 				break;
 
-			case 9:
+			case 9: // Export Simulation Data
 				sim_export ();
 				break;
 
@@ -178,7 +178,7 @@ unsigned int main_menu (void) {
 	else printf (ANSI_YELLOW "WAITING\n" ANSI_RESET);
 
 	printf ("\t6. Run Simulation\n"
-			"\t7. Export CA Grid as CSV and NetPBM file\n");
+			"\t7. Export CA Grid\n");
 
 	printf ("\t8. Inspect DNA\n"
 			"\t9. Export Results  | ");
@@ -220,14 +220,15 @@ void settings (void) {
 			ANSI_BOLD "\t===== Data Parameters =====\n" ANSI_RESET
 			"\t9. DATA CA Print\t| Current Value: %u\n"
 			"\t10. DATA Export\t\t| Current Value: %u\n"
+			"\t11. DATA Report\t\t| Current Value: %u\n"
 			ANSI_BOLD "\t===== Truth Table Parameters =====\n" ANSI_RESET
-			"\t11. TT Row Count\t| Current Value: %u\n"
-			"\t12. TT Mode (0 Combinational | 1 Sequential) | Current Value: %u\n"
-			"\t13. TT Mask\t\t| Current Value: %016llX | (%llu bits)\n\n"
+			"\t12. TT Row Count\t| Current Value: %u\n"
+			"\t13. TT Mode (0 Combinational | 1 Sequential) | Current Value: %u\n"
+			"\t14. TT Mask\t\t| Current Value: %016llX | (%llu bits)\n\n"
 			"Waiting for Input: ",
 			get_ga_pop(), get_ga_gen(), get_ga_mutp(), get_ga_pool(),
 			get_ca_dimx(), get_ca_dimy(), get_ca_color(), get_ca_nb(),
-			get_data_caprint(), get_data_export(),
+			get_data_caprint(), get_data_export(), get_data_report(),
 			tt::get_row(), tt::get_mode(), tt::get_mask(), tt::get_mask_bc()
 		);
 
@@ -235,7 +236,6 @@ void settings (void) {
 		scan_uint (&var);
 
 		switch (var) {
-
 			case 0: // Back
 				printf ("Returning to main menu\n");
 				return;
@@ -294,17 +294,22 @@ void settings (void) {
 				set_data_export ( scan_bool () );
 				break;
 
-			case 11: // TRUTH.ROW
+			case 11: // DATA.EXPORT
+				printf ("Input New Value: ");
+				set_data_report ( scan_bool () );
+				break;
+
+			case 12: // TRUTH.ROW
 				printf ("Input New Value: ");
 				tt::set_row ( scan_uint () );
 				break;
 
-			case 12: // TRUTH.MODE
+			case 13: // TRUTH.MODE
 				printf ("Input New Value: ");
 				tt::set_mode ( scan_bool () );
 				break;
 
-			case 13: // MASK
+			case 14: // MASK
 				printf ("Input New Value: ");
 				tt::set_mask ( scan_hex () );
 				break;
@@ -324,7 +329,7 @@ void export_ca_grid (void) {
 		return;
 	}
 
-	printf (ANSI_REVRS "\n\tCSV Generator\n" ANSI_RESET);
+	printf (ANSI_REVRS "\n\tCA Grid Export to CSV and PPM image\n" ANSI_RESET);
 
 	// Enter DNA String in given base / LSB format
 	const unsigned int length = (unsigned int) pow (get_ca_color(), get_ca_nb());
@@ -467,9 +472,6 @@ void export_ca_grid (void) {
 }
 
 void inspect (void) {
-	// How many test cases to run
-	constexpr unsigned int CHECK_NUM = 100;
-
 	// Required initialization
 	if ( ca_is_init () == 0 ) {
 		printf (ANSI_RED "CA not initialized.\n" ANSI_RESET);
@@ -536,7 +538,7 @@ void inspect (void) {
 
 
 
-	/* ===== PRINT CA GRID ===== */
+	// ===== PRINT CA GRID ===== //
 
 	if ( get_data_caprint () == 0 ) goto INSPECT_GRID;
 
@@ -573,14 +575,11 @@ void inspect (void) {
 			cout << "+";
 		}
 	}
-	printf (ANSI_RESET "\n");
-
-	// Flush Stream
-	cout << endl;
+	printf (ANSI_RESET "\n\n");
 
 
 
-	/* ===== FPGA SET GRID && EVALUATE ===== */
+	// ===== FPGA SET GRID && EVALUATE ===== //
 
 	INSPECT_GRID:
 	if ( tt::table_is_init () == 0 ) {
@@ -592,65 +591,67 @@ void inspect (void) {
 		goto INSPECT_END;
 	}
 
-	fpga_clear ();
-	ca_gen_grid (grid, dna, seed);
-	ca_gen_grid (grid, dna);
-	fpga_set_grid (grid);
-
-	// Evaluate Circuit
-	if (tt::get_mode() == 0) {
-
-		// Check each case independently
-		eval_com_insp (0);
-		fpga_clear ();
-		fpga_set_grid (grid);
-		eval_com_insp (1);
-		fpga_clear ();
-		fpga_set_grid (grid);
-		eval_com_insp (2);
-
-		// Check random cases
-		printf ("\n\tChecking %u Random Cases... ", CHECK_NUM);
-		const unsigned int max_rand_score = get_score_max() * CHECK_NUM;
-		unsigned int rand_score = 0;
+	// Wrap code in an explicit block -- jump to label ‘INSPECT_END’ [-fpermissive]
+	// Ensures the compiler that it is not jumping over the initialization of any variables.
+	{
+		// How many test cases to run
+		constexpr unsigned int CHECK_NUM = 100;
 
 		fpga_clear ();
+		ca_gen_grid (grid, dna, seed);
+		ca_gen_grid (grid, dna);
 		fpga_set_grid (grid);
-		for (unsigned int i = 0 ; i < CHECK_NUM ; i++) {
-			rand_score += eval_com ( 2 );
-		}
 
-		if (rand_score == max_rand_score) {
-			printf (ANSI_GREEN "%u / %u | PASS\n" ANSI_RESET, rand_score, max_rand_score);
+		// Evaluate Circuit
+		const unsigned int max_score = get_score_max() * CHECK_NUM;
+		unsigned int score = 0;
+
+		if (tt::get_mode() == 0) {
+
+			// Check each case independently
+			eval_com_insp (0);
+			fpga_clear ();
+			fpga_set_grid (grid);
+			eval_com_insp (1);
+			fpga_clear ();
+			fpga_set_grid (grid);
+			eval_com_insp (2);
+
+			// Check random cases
+			printf ("\n\tChecking %u Random Cases... ", CHECK_NUM);
+
+			fpga_clear ();
+			fpga_set_grid (grid);
+			for (unsigned int i = 0 ; i < CHECK_NUM ; i++) {
+				score += eval_com (2);
+			}
+
 		} else {
-			printf (ANSI_YELLOW "%u / %u | FAIL\n" ANSI_RESET, rand_score, max_rand_score);
+			// Inspect sequential truth table
+			eval_seq_insp ();
+
+			// Run continuous test
+			printf ("\n\tChecking %u Iterations... ", CHECK_NUM);
+
+			fpga_clear ();
+			fpga_set_grid (grid);
+			for (unsigned int i = 0 ; i < CHECK_NUM ; i++) {
+				score += eval_seq ();
+			}
 		}
 
-	} else {
-		// Inspect sequential truth table
-		eval_seq_insp ();
-
-		// Run continuous test
-		printf ("\n\tChecking %u Iterations... ", CHECK_NUM);
-		const unsigned int max_loop_score = get_score_max() * CHECK_NUM;
-		unsigned int loop_score = 0;
-
-		fpga_clear ();
-		fpga_set_grid (grid);
-		for (unsigned int i = 0 ; i < CHECK_NUM ; i++) {
-			loop_score += eval_seq ();
-		}
-
-		if (loop_score == max_loop_score) {
-			printf (ANSI_GREEN "%u / %u | PASS\n" ANSI_RESET, loop_score, max_loop_score);
+		if (score == max_score) {
+			printf (ANSI_GREEN "%u / %u | PASS\n" ANSI_RESET, score, max_score);
 		} else {
-			printf (ANSI_YELLOW "%u / %u | FAIL\n" ANSI_RESET, loop_score, max_loop_score);
+			printf (ANSI_YELLOW "%u / %u | FAIL\n" ANSI_RESET, score, max_score);
 		}
+
+		unsigned int efficiency = eval_efficiency (grid);
+		printf ("\n\tEfficiency Score: %u / %u\n", efficiency, get_es_max());
 	}
 
 
-
-	/* ===== CLEANUP ===== */
+	// ===== CLEANUP ===== //
 
 	INSPECT_END:
 	delete[] dna;
@@ -665,28 +666,32 @@ void inspect (void) {
 void special (void) {
 	printf (ANSI_REVRS "\n\t>> Special Routine <<\n" ANSI_RESET);
 
-	if ( tt::table_is_init () == 0) {
-		printf (ANSI_RED "No truth table defined.\n" ANSI_RESET);
-		return;
-	}
-
-	constexpr int MAX = 1000;
-	int sim_flag;
+	constexpr int MAX = 10;
 
 	set_data_caprint (0);
+	set_data_report (0);
 
-	for (int i = 1; i < MAX; i++) {
-		printf (ANSI_REVRS "\n\tSearching | Attempt %d / %d\n" ANSI_RESET, i, MAX);
+	for (int i = 0 ; i < 16 ; i++) {
+		int file_read_flag = tt::auto_set_table (i);
 
-		sim_init ();
-		sim_flag = sim_run (grid, seed);
+		// Fail Check
+		if (file_read_flag == -1) return;
 
-		if (sim_flag == 1) {
+		// Repeat experiment MAX times
+		for (int j = 0 ; j < MAX ; j++) {
+			int sim_flag;
+			printf (ANSI_REVRS "\n\tSearching %X | Run %d / %d\n" ANSI_RESET, i, j, MAX);
+
+			sim_cleanup();
+			sim_init();
+			sim_flag = sim_run (grid, seed);
+
+			if (sim_flag == -1) {
+				printf (ANSI_RED "\n\tSimulation Failed.\n");
+				return;
+			}
+
 			sim_export ();
-			break;
-		} else if (sim_flag == -1) {
-			printf ("Simulation Failed.\n");
-			break;
 		}
 	}
 

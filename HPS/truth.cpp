@@ -178,6 +178,122 @@ void TruthTable::set_table (void) {
 	return;
 }
 
+int TruthTable::auto_set_table (const int &set) {
+	FILE *fp;
+	char filename [64];
+
+	switch (set) {
+		case 0:
+			strcpy (filename, "./tt/0");
+			break;
+		case 1:
+			strcpy (filename, "./tt/1");
+			break;
+		case 2:
+			strcpy (filename, "./tt/2");
+			break;
+		case 3:
+			strcpy (filename, "./tt/3");
+			break;
+		case 4:
+			strcpy (filename, "./tt/4");
+			break;
+		case 5:
+			strcpy (filename, "./tt/5");
+			break;
+		case 6:
+			strcpy (filename, "./tt/6");
+			break;
+		case 7:
+			strcpy (filename, "./tt/7");
+			break;
+		case 8:
+			strcpy (filename, "./tt/8");
+			break;
+		case 9:
+			strcpy (filename, "./tt/9");
+			break;
+		case 10:
+			strcpy (filename, "./tt/a");
+			break;
+		case 11:
+			strcpy (filename, "./tt/b");
+			break;
+		case 12:
+			strcpy (filename, "./tt/c");
+			break;
+		case 13:
+			strcpy (filename, "./tt/d");
+			break;
+		case 14:
+			strcpy (filename, "./tt/e");
+			break;
+		case 15:
+			strcpy (filename, "./tt/f");
+			break;
+		default:
+			printf (ANSI_RED "Unknown Input %d\n", set);
+			return -1;
+	}
+
+	fp = fopen (filename, "r");
+	if (fp == nullptr) {
+		printf (ANSI_RED "FAILED -- Unable to open file: %s\n" ANSI_RESET, filename);
+		return -1;
+	}
+
+	printf ("Parsing CSV... ");
+
+	// Checks Header Row
+	char buffer [64];
+
+	// Checks input column header
+	fscanf (fp, "%s", buffer);
+	if ( strcmp (buffer, "input") != 0 ) {
+		printf (ANSI_RED "FAILED -- Missing input column\n" ANSI_RESET);
+		fclose (fp);
+		return -1;
+	}
+
+	// Checks output column header
+	fscanf (fp, "%s", buffer);
+	if ( strcmp (buffer, "output") != 0 ) {
+		printf (ANSI_RED "FAILED -- Missing output column\n" ANSI_RESET);
+		fclose (fp);
+		return -1;
+	}
+
+	// Gets row count
+	fscanf (fp, "%u", &ROW);
+
+	// Clears any previously set truth table, then calloc row number of items
+	free (INPUT);
+	free (OUTPUT);
+	INPUT = (uint64_t *) calloc (ROW, sizeof (uint64_t));
+	OUTPUT = (uint64_t *) calloc (ROW, sizeof (uint64_t));
+
+	// Gets value, one-by-one
+	for (unsigned int i = 0; i < ROW; i++) {
+		fscanf (fp, "%llx", &INPUT [i]);
+		fscanf (fp, "%llx", &OUTPUT [i]);
+
+		// Unexpected End-of-File Error
+		if ( feof (fp) ) {
+			printf (ANSI_RED "FAILED -- Unexpected End of File. Read %d / %d\n" ANSI_RESET,
+			i, ROW);
+			fclose (fp);
+			return -1;
+		}
+	}
+
+	// Update max bit count score
+	update ();
+
+	fclose (fp);
+	INIT = 1;
+	return 1;
+}
+
 void TruthTable::clear_table (void) {
 		free (INPUT);
 		free (OUTPUT);
