@@ -19,11 +19,15 @@
 
 /* ========== Altera HWLIB Include ========== */
 
-#include "hwlib.h"
-#include "socal/socal.h"
-#include "socal/hps.h"
-#include "socal/alt_gpio.h"
-#include "hps_0.h"
+#ifndef PC_BUILD
+
+	#include "hwlib.h"
+	#include "socal/socal.h"
+	#include "socal/hps.h"
+	#include "socal/alt_gpio.h"
+	#include "hps_0.h"
+
+#endif
 
 
 /* ========== Custom Header Include ========== */
@@ -35,59 +39,69 @@
 
 /* ========== FPGA Define ========== */
 
-#define HW_REGS_BASE ( ALT_STM_OFST )
-#define HW_REGS_SPAN ( 0x04000000 )
-#define HW_REGS_MASK ( HW_REGS_SPAN - 1 )
+#ifndef PC_BUILD
 
-/* Avalon Slave Ports
-	The Cell Array module contains these Avalon Slave Ports.
-	Port 1 -- Linux IO
-	Port 2 -- RAM
-	Port 3 -- Clock Control
-*/
+	#define HW_REGS_BASE ( ALT_STM_OFST )
+	#define HW_REGS_SPAN ( 0x04000000 )
+	#define HW_REGS_MASK ( HW_REGS_SPAN - 1 )
 
-// --- S1 | Linux In / Out --- //
-#define S_IO		0x1000
-#define SIO_RANGE 2
+	/* Avalon Slave Ports
+		The Cell Array module contains these Avalon Slave Ports.
+		Port 1 -- Linux IO
+		Port 2 -- RAM
+		Port 3 -- Clock Control
+	*/
 
-// --- S2 | Cell RAM --- //
-#define S_RAM		0x2000
-#define SRAM_RANGE 512
+	// --- S1 | Linux In / Out --- //
+	#define S_IO		0x1000
+	#define SIO_RANGE 2
 
-// --- S3 | Wind-up Clock --- //
-#define S_CLK		0x0000
-#define CYCLES_PER_USEC 100
+	// --- S2 | Cell RAM --- //
+	#define S_RAM		0x2000
+	#define SRAM_RANGE 512
 
-/* --- Version ROM ---
-	This ROM module is used to keep track of what the FPGA configuration is.
-	Each FPGA config build will have a unique version number, embedded at compile time.
-*/
-#define VROM_ADDR		0x10000
-#define VROM_RANGE 16
+	// --- S3 | Wind-up Clock --- //
+	#define S_CLK		0x0000
+	#define CYCLES_PER_USEC 100
 
-// Avalon Slave Port Data Width (Bits)
-#define AVALON_PORT_WIDTH 32
+	/* --- Version ROM ---
+		This ROM module is used to keep track of what the FPGA configuration is.
+		Each FPGA config build will have a unique version number, embedded at compile time.
+	*/
+	#define VROM_ADDR		0x10000
+	#define VROM_RANGE 16
 
-// FPGA Array Cell Data Width (Bits) -- fpga_set_grid
-#define CELL_DATA_WIDTH 4
+	// Avalon Slave Port Data Width (Bits)
+	#define AVALON_PORT_WIDTH 32
 
-// Numbers of Cells able to fit in the buffer -- fpga_set_grid
-#define CELL_IN_BUFFER (AVALON_PORT_WIDTH / CELL_DATA_WIDTH)
+	// FPGA Array Cell Data Width (Bits) -- fpga_set_grid
+	#define CELL_DATA_WIDTH 4
 
+	// Numbers of Cells able to fit in the buffer -- fpga_set_grid
+	#define CELL_IN_BUFFER (AVALON_PORT_WIDTH / CELL_DATA_WIDTH)
+
+#endif
 
 
 /* ========== FPGA Global Variables ========== */
 
-// Virtual Memory Pointer Base
-static void *virtual_base;
+#ifndef PC_BUILD
 
-// DEV/MEM/
-static int fd;
+	// Virtual Memory Pointer Base
+	static void *virtual_base;
 
-// Pointer for Avalon Slave Devices
-static uint32_t *sio_addr;
-static uint32_t *sram_addr;
-static uint16_t *sclk_addr;
+	// DEV/MEM/
+	static int fd;
+
+	// Pointer for Avalon Slave Devices
+	static uint32_t *sio_addr;
+	static uint32_t *sram_addr;
+	static uint16_t *sclk_addr;
+
+	// Version ROM pointer
+	static uint8_t *vrom_address;
+
+#endif
 
 // Local Copy of Global Parameters
 static uint16_t dimx;
@@ -96,8 +110,6 @@ static uint16_t dimy;
 // Internal Initialization Flag
 static bool fpga_init_flag;
 
-// Version ROM pointer
-static uint8_t *vrom_address;
 
 using namespace std;
 
@@ -119,6 +131,8 @@ using namespace std;
 	 *
 */
 
+#ifndef PC_BUILD
+
 uint32_t fpga_s1_read (const uint32_t &offset) {
 	return alt_read_word (sio_addr + offset);
 }
@@ -139,9 +153,34 @@ uint8_t fpga_vrom_read (const uint32_t &offset) {
 	return alt_read_byte (vrom_address + offset);
 }
 
+#endif
 
 
 /* ========== Main Functions ========== */
+
+#ifdef PC_BUILD
+
+void fpga_init (void) {
+	printf ("PC Build FPGA Init ");
+
+	dimx = GlobalSettings::get_ca_dimx ();
+	dimy = GlobalSettings::get_ca_dimy ();
+	fpga_init_flag = 1;
+
+	printf (ANSI_GREEN "OK\n" ANSI_RESET);
+	return;
+}
+
+void fpga_cleanup (void) {
+	printf ("PC Build FPGA Cleanup ");
+
+	fpga_init_flag = 0;
+
+	printf (ANSI_GREEN "OK\n" ANSI_RESET);
+	return;
+}
+
+#else
 
 void fpga_init (void) {
 	printf ("Initializing FPGA... ");
@@ -217,13 +256,15 @@ void fpga_cleanup (void) {
 bool fpga_not_init (void) {
 	// Returns TRUE if FPGA is uninitialized
 	if (fpga_init_flag == 0) {
-		// printf (ANSI_RED "FPGA Uninitialized\n" ANSI_RESET);
+		printf (ANSI_RED "FPGA Uninitialized\n" ANSI_RESET);
 		return 1;
 	}
 
 	// Otherwise, return FALSE
 	return 0;
 }
+
+#endif
 
 bool fpga_is_init (void) {
 	return fpga_init_flag;
@@ -232,6 +273,19 @@ bool fpga_is_init (void) {
 
 
 /* ========== FPGA Verification ========== */
+
+#ifdef PC_BUILD
+
+void fpga_verify (uint8_t *const *const grid) {
+	printf ("\tPC Build FPGA Verify\n\n"
+			"\tSet Dimensions: %d x %d\n"
+			"\tSet Cell Count: %d\n\n",
+			dimx, dimy, dimx * dimy);
+
+	return;
+}
+
+#else
 
 void fpga_test_fill (uint8_t *const *const grid, const uint8_t &num) {
 	for (unsigned int y = 0 ; y < dimy ; y ++) {
@@ -355,9 +409,23 @@ void fpga_verify (uint8_t *const *const grid) {
 	return;
 }
 
+#endif
+
 
 
 /* ========== AVALON S1 Functions ========== */
+
+#ifdef PC_BUILD
+
+void fpga_set_input (const uint64_t &write_data) {
+	return;
+}
+
+uint64_t fpga_get_output (void) {
+	return 0;
+}
+
+#else
 
 void fpga_set_input (const uint64_t &write_data) {
 	// FPGA Uninitialized Error Catch
@@ -406,9 +474,23 @@ uint64_t fpga_get_output (void) {
 	return results;
 }
 
+#endif
+
 
 
 /* ========== AVALON S2 Functions ========== */
+
+#ifdef PC_BUILD
+
+void fpga_clear (void) {
+	return;
+}
+
+void fpga_set_grid (const uint8_t *const *const grid) {
+	return;
+}
+
+#else
 
 void fpga_clear (void) {
 	// FPGA Uninitialized Error Catch
@@ -468,9 +550,19 @@ void fpga_set_grid (const uint8_t *const *const grid) {
 
 }
 
+#endif
+
 
 
 /* ========== AVALON S3 Functions ========== */
+
+#ifdef PC_BUILD
+
+void fpga_wind_clock (const uint16_t &cycles) {
+	return;
+}
+
+#else
 
 void fpga_wind_clock (const uint16_t &cycles) {
 	fpga_s3_write (cycles);
@@ -479,9 +571,19 @@ void fpga_wind_clock (const uint16_t &cycles) {
 	usleep ( 1 + (cycles / CYCLES_PER_USEC) );
 }
 
+#endif
+
 
 
 /* ========== Version ROM Functions ========== */
+
+#ifdef PC_BUILD
+
+void fpga_config_version (void) {
+	printf ("\tPC BUILD\n");
+}
+
+#else
 
 void fpga_config_version (void) {
 	unsigned char ver_num [VROM_RANGE];
@@ -490,3 +592,5 @@ void fpga_config_version (void) {
 	}
 	printf ("\tFPGA Configuration <%s>\n", ver_num);
 }
+
+#endif

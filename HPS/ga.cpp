@@ -102,7 +102,8 @@ bool GeneticAlgorithm::compfit_ascend (const GeneticAlgorithm &a, const GeneticA
 /* ========== Constructors ========== */
 
 GeneticAlgorithm::GeneticAlgorithm (void) {
-	uid = 0;
+	uid = object_count;
+	object_count++;
 	dna = nullptr;
 	fit = 0;
 	gate = 0;
@@ -114,6 +115,7 @@ GeneticAlgorithm::GeneticAlgorithm (void) {
 
 GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 	uid = object_count;
+	object_count++;
 	dna = GeneticAlgorithm::dna_calloc (dna_length);
 	GeneticAlgorithm::dna_rand_fill (dna, dna_length);
 	fit = 0;
@@ -122,7 +124,6 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 	eval = 0;
 	alive = 1;
 	sol = 0;
-	object_count++;
 }
 
 void GeneticAlgorithm::FreeDNA (void) {
@@ -378,14 +379,14 @@ void GeneticAlgorithm::Mutate
 
 void GeneticAlgorithm::Reset (void) {
 	// TODO: DNA REALLOC - If DNA length has changed, reallocate *dna
-	this -> uid = object_count;
+	// this -> uid = object_count;
+	// object_count++;
 	this -> fit = 0;
 	this -> gate = 0;
 	this -> age = 0;
 	this -> eval = 0;
 	this -> alive = 1;
 	this -> sol = 0;
-	object_count++;
 }
 
 uint8_t *GeneticAlgorithm::dna_calloc (const uint32_t &dna_length) {

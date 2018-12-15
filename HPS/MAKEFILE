@@ -13,9 +13,11 @@
 # Cross Compiler
 CC = arm-linux-gnueabihf-g++
 # Compiler Flags
-CFLAGS = -g -Wall -std=c++11
+CPPFLAGS = -g -Wall -std=c++11
 # Compiler Include (Altera Libraries)
 ALT_INCLUDE = -I../hwlib/include/ -I../hwlib/include/soc_cv_av/ -I../ref/
+# PC Build Flag
+DEFINES = PC_BUILD
 # Output program name
 OUTPUT-ARM = ga.prog
 OUTPUT-PC = ga.exe
@@ -35,7 +37,7 @@ arm-link :
 # === Compile Recipe for Each File === #
 
 arm-%.o : %.cpp
-	$(CC) $(CFLAGS) $(ALT_INCLUDE) $^ -o $@ -c
+	$(CC) $(CPPFLAGS) $(ALT_INCLUDE) $^ -o $@ -c
 
 # ================================================================
 # X86 PC COMPILATION
@@ -52,7 +54,7 @@ pc-link :
 # === Compile Recipe for Each File === #
 
 pc-%.o : %.cpp
-	g++ $(CFLAGS) $(ALT_INCLUDE) $^ -o $@ -c
+	g++ $(CPPFLAGS) -Wformat=0 -DPC_BUILD $^ -o $@ -c
 
 # ================================================================
 # OTHER OPTIONS

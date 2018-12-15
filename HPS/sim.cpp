@@ -184,7 +184,7 @@ void sim_init (void) {
 	} else {
 		printf (ANSI_REVRS "COMBINATIONAL" ANSI_RESET "\n");
 	}
-	
+
 	printf ("\tTT MASK = 0x%016llX (%llu bits)\n\n", tt::get_mask(), tt::get_mask_bc());
 
 	/* Allocates an array of individuals (population)

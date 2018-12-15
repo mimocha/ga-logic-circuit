@@ -144,28 +144,28 @@ void ca_print (const uint8_t &cell) {
 	// Sets terminal output according to the cell's value
 	switch ( cell ) {
 		case 0x0:
-			cout << ANSI_RED;
+			cout << ANSI_DGRAY; // K
 			break;
 		case 0x1:
-			cout << ANSI_GREEN;
+			cout << ANSI_CYAN; // C
 			break;
 		case 0x2:
-			cout << ANSI_BLUE;
+			cout << ANSI_PURPL; // M
 			break;
 		case 0x3:
-			cout << ANSI_PURPL;
+			cout << ANSI_YELLOW; // Y
 			break;
 		case 0x8:
-			cout << ANSI_LRED;
+			cout << ANSI_LGRAY;
 			break;
 		case 0x9:
-			cout << ANSI_LGREEN;
+			cout << ANSI_LCYAN;
 			break;
 		case 0xA:
-			cout << ANSI_LBLUE;
+			cout << ANSI_LPURPL;
 			break;
 		case 0xB:
-			cout << ANSI_LPURPL;
+			cout << ANSI_LGREEN;
 			break;
 		default: // Undefined
 			cout << ANSI_WHITE;

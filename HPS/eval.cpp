@@ -146,11 +146,11 @@ unsigned int eval_seq (void) {
 			result += bits_correct;
 
 			// Ends prematurely if a mistake is found
-			if (bits_correct != tt::get_mask_bc()) goto END;
+			// if (bits_correct != tt::get_mask_bc()) goto END;
 		}
 	}
 
-	END:
+	// END:
 	return (unsigned int) (SCORE_MAX * (result / max_result));
 }
 
@@ -283,13 +283,13 @@ unsigned int eval_seq_insp (void) {
 			print_table (input[i], expect[i], observed);
 
 			// Ends prematurely if a mistake is found
-			if (bits_correct != tt::get_mask_bc()) goto END;
+			// if (bits_correct != tt::get_mask_bc()) goto END;
 		}
 
 		loop_count++;
 	}
 
-	END:
+	// END:
 	printf ("\n\tSuccesfully ran %u / %u times\n", loop_count, MAX_SEQ_LOOP);
 	printf ("\tScore: %5.0f / %5.0f | %5.2f%%\n", result, max_result, (result / max_result)*100);
 	return (unsigned int) (SCORE_MAX * (result / max_result));

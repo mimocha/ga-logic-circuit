@@ -231,6 +231,27 @@ int TruthTable::auto_set_table (const int &set) {
 		case 15:
 			strcpy (filename, "./tt/f");
 			break;
+		case 16:
+			strcpy (filename, "./tt/sr-nand-latch-1");
+			break;
+		case 17:
+			strcpy (filename, "./tt/sr-nand-latch-2");
+			break;
+		case 18:
+			strcpy (filename, "./tt/sr-nand-latch-3");
+			break;
+		case 19:
+			strcpy (filename, "./tt/sr-nor-latch");
+			break;
+		case 20:
+			strcpy (filename, "./tt/count-1bit");
+			break;
+		case 21:
+			strcpy (filename, "./tt/count-2bit");
+			break;
+		case 22:
+			strcpy (filename, "./tt/count-4bit");
+			break;
 		default:
 			printf (ANSI_RED "Unknown Input %d\n", set);
 			return -1;

@@ -12,7 +12,11 @@
 	Semantic Versioning -- https://semver.org/
 	Should be updated every commit / update.
 */
-#define VERSION "3.04.07"
+#ifdef PC_BUILD
+#define VERSION "3.05.00 PC BUILD"
+#else
+#define VERSION "3.05.00"
+#endif
 
 // Physical FPGA Cell Array Dimension
 #define PHYSICAL_DIMX 64

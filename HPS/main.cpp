@@ -442,21 +442,21 @@ void export_ca_grid (void) {
 	}
 	fprintf (fp, "\n");
 
-	// Actual Data
+	// Actual Data -- CMYK Color Scheme
 	for (unsigned int y = 0 ; y < PHYSICAL_DIMY ; y++) {
 		for (unsigned int x = 0 ; x < PHYSICAL_DIMX ; x++) {
 			switch (grid[y][x]) {
-				case 0: // BLACK
-					fprintf (fp, "0 0 0 ");
+				case 0: // KEY
+					fprintf (fp, "35 31 32 ");
 					break;
-				case 1: // GREEN
-					fprintf (fp, "0 255 0 ");
+				case 1: // CYAN
+					fprintf (fp, "0 174 239 ");
 					break;
-				case 2: // BLUE
-					fprintf (fp, "0 0 255 ");
+				case 2: // MAGENTA
+					fprintf (fp, "236 0 140 ");
 					break;
 				case 3: // YELLOW
-					fprintf (fp, "255 255 0 ");
+					fprintf (fp, "255 242 0 ");
 					break;
 			}
 		}
@@ -666,34 +666,32 @@ void inspect (void) {
 void special (void) {
 	printf (ANSI_REVRS "\n\t>> Special Routine <<\n" ANSI_RESET);
 
-	constexpr int MAX = 10;
-
 	set_data_caprint (0);
 	set_data_report (0);
+	tt::set_mode(1);
 
-	for (int i = 0 ; i < 16 ; i++) {
-		int file_read_flag = tt::auto_set_table (i);
+	constexpr int MAX = 10;
 
-		// Fail Check
-		if (file_read_flag == -1) return;
+	for (int j = 0 ; j < 5 ; j++) {
+		tt::auto_set_table(16+j);
 
-		// Repeat experiment MAX times
-		for (int j = 0 ; j < MAX ; j++) {
+		for (int i = 0 ; i < MAX ; i++) {
 			int sim_flag;
-			printf (ANSI_REVRS "\n\tSearching %X | Run %d / %d\n" ANSI_RESET, i, j, MAX);
+			printf (ANSI_REVRS "\n\t%d | %d / %d\n" ANSI_RESET, j, i, MAX);
 
 			sim_cleanup();
 			sim_init();
 			sim_flag = sim_run (grid, seed);
+			sim_export ();
 
 			if (sim_flag == -1) {
 				printf (ANSI_RED "\n\tSimulation Failed.\n");
 				return;
 			}
-
-			sim_export ();
 		}
+
 	}
+
 
 	printf (ANSI_REVRS "\n\t>> Special Routine Done <<\n\n ANSI_RESET");
 }
