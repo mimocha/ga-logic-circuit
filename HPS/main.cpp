@@ -672,26 +672,37 @@ void special (void) {
 
 	constexpr int MAX = 10;
 
-	for (int j = 0 ; j < 5 ; j++) {
-		tt::auto_set_table(16+j);
+	tt::auto_set_table (19);
+	for (int i = 0 ; i < MAX ; i++) {
+		int sim_flag;
+		printf (ANSI_REVRS "\n\tRUN | %d / %d\n" ANSI_RESET, i, MAX);
 
-		for (int i = 0 ; i < MAX ; i++) {
-			int sim_flag;
-			printf (ANSI_REVRS "\n\t%d | %d / %d\n" ANSI_RESET, j, i, MAX);
+		sim_cleanup();
+		sim_init();
+		sim_flag = sim_run (grid, seed);
+		sim_export ();
 
-			sim_cleanup();
-			sim_init();
-			sim_flag = sim_run (grid, seed);
-			sim_export ();
-
-			if (sim_flag == -1) {
-				printf (ANSI_RED "\n\tSimulation Failed.\n");
-				return;
-			}
+		if (sim_flag == -1) {
+			printf (ANSI_RED "\n\tSimulation Failed.\n");
+			return;
 		}
-
 	}
 
+	tt::auto_set_table (20);
+	for (int i = 0 ; i < MAX ; i++) {
+		int sim_flag;
+		printf (ANSI_REVRS "\n\tRUN | %d / %d\n" ANSI_RESET, i, MAX);
+
+		sim_cleanup();
+		sim_init();
+		sim_flag = sim_run (grid, seed);
+		sim_export ();
+
+		if (sim_flag == -1) {
+			printf (ANSI_RED "\n\tSimulation Failed.\n");
+			return;
+		}
+	}
 
 	printf (ANSI_REVRS "\n\t>> Special Routine Done <<\n\n ANSI_RESET");
 }

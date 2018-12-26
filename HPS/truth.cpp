@@ -241,15 +241,18 @@ int TruthTable::auto_set_table (const int &set) {
 			strcpy (filename, "./tt/sr-nand-latch-3");
 			break;
 		case 19:
-			strcpy (filename, "./tt/sr-nor-latch");
+			strcpy (filename, "./tt/sr-nor-latch-1");
 			break;
 		case 20:
-			strcpy (filename, "./tt/count-1bit");
+			strcpy (filename, "./tt/sr-nor-latch-2");
 			break;
 		case 21:
-			strcpy (filename, "./tt/count-2bit");
+			strcpy (filename, "./tt/count-1bit");
 			break;
 		case 22:
+			strcpy (filename, "./tt/count-2bit");
+			break;
+		case 23:
 			strcpy (filename, "./tt/count-4bit");
 			break;
 		default:
