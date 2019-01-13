@@ -668,40 +668,28 @@ void special (void) {
 
 	set_data_caprint (0);
 	set_data_report (0);
-	tt::set_mode(1);
+	tt::set_mode(0);
 
 	constexpr int MAX = 10;
 
-	tt::auto_set_table (19);
-	for (int i = 0 ; i < MAX ; i++) {
-		int sim_flag;
-		printf (ANSI_REVRS "\n\tRUN | %d / %d\n" ANSI_RESET, i, MAX);
+	for (int j = 0 ; j < 16 ; j++) {
+		tt::auto_set_table (j);
 
-		sim_cleanup();
-		sim_init();
-		sim_flag = sim_run (grid, seed);
-		sim_export ();
+		for (int i = 0 ; i < MAX ; i++) {
+			int sim_flag;
+			printf (ANSI_REVRS "\n\tRUN %X | %d / %d\n" ANSI_RESET, j, i, MAX);
 
-		if (sim_flag == -1) {
-			printf (ANSI_RED "\n\tSimulation Failed.\n");
-			return;
+			sim_cleanup();
+			sim_init();
+			sim_flag = sim_run (grid, seed);
+			sim_export ();
+
+			if (sim_flag == -1) {
+				printf (ANSI_RED "\n\tSimulation Failed.\n");
+				return;
+			}
 		}
-	}
 
-	tt::auto_set_table (20);
-	for (int i = 0 ; i < MAX ; i++) {
-		int sim_flag;
-		printf (ANSI_REVRS "\n\tRUN | %d / %d\n" ANSI_RESET, i, MAX);
-
-		sim_cleanup();
-		sim_init();
-		sim_flag = sim_run (grid, seed);
-		sim_export ();
-
-		if (sim_flag == -1) {
-			printf (ANSI_RED "\n\tSimulation Failed.\n");
-			return;
-		}
 	}
 
 	printf (ANSI_REVRS "\n\t>> Special Routine Done <<\n\n ANSI_RESET");

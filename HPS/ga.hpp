@@ -16,6 +16,8 @@ private:
 	uint32_t uid;
 	// DNA sequence (Cellular Automaton Rule)
 	uint8_t *dna;
+	// Generated Circuit for each individual
+	uint8_t **grid;
 	// Fitness score of the individual
 	uint32_t fit;
 	// Gate Efficiency Score := (Max Gate - Gates Used) ; Higher is better
@@ -102,7 +104,11 @@ private:
 	*/
 	void dna_rand_fill (uint8_t *const dna, const uint32_t &dna_length);
 
+	/**/
+	uint8_t **grid_calloc (void);
 
+	/**/
+	void grid_gen (const uint8_t *const seed);
 
 public:
 
@@ -116,10 +122,10 @@ public:
 	*/
 	GeneticAlgorithm (const uint32_t &dna_length);
 
-	/* void FreeDNA (void)
-		Frees allocated memory for DNA strings.
+	/* void Free (void)
+		Frees allocated memory for DNA strings & CA Grid
 	*/
-	void FreeDNA (void);
+	void Free (void);
 
 
 	/* ========== Genetic Algorithm Operations ========== */
@@ -151,7 +157,7 @@ public:
 	*/
 	static void Selection (GeneticAlgorithm *const array);
 
-	/* static void Repopulate (GeneticAlgorithm *const array)
+	/* static void Repopulate (GeneticAlgorithm *const array, const uint8_t *const seed)
 		Using Tournament Selection Method,
 		choose two parents to procreate and replace a dead individual.
 
@@ -176,7 +182,7 @@ public:
 			If both parents happen to be the same individual (the individual won twice),
 			generate a random individual entirely.
 	*/
-	static void Repopulate (GeneticAlgorithm *const array);
+	static void Repopulate (GeneticAlgorithm *const array, const uint8_t *const seed);
 
 
 	/* ========== Other Miscellany Operations ========== */
@@ -205,6 +211,8 @@ public:
 	uint32_t get_uid (void);
 
 	uint8_t *get_dna (void);
+
+	uint8_t **get_grid (void);
 
 	uint32_t get_fit (void);
 

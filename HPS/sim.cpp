@@ -241,7 +241,7 @@ void sim_cleanup (void) {
 
 	// Free GA Class Objects
 	for (unsigned int i = 0 ; i < pop_lim ; i++) {
-		indv[i].FreeDNA ();
+		indv[i].Free ();
 	}
 	free (indv);
 
@@ -279,52 +279,49 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 	for (unsigned int gen = 0 ; gen < gen_lim ; gen++) {
 		// Perform selection, reproduction, crossover, and mutation
 		GeneticAlgorithm::Selection (indv);
-		GeneticAlgorithm::Repopulate (indv);
+		GeneticAlgorithm::Repopulate (indv, seed);
 
 		// Loop over each individual
 		for (unsigned int i = 0 ; i < pop_lim ; i++) {
 			// Automatically ages an individual
 			indv[i].set_age();
 
-			// Generate CA Array
-			ca_gen_grid (grid, indv[i].get_dna(), seed);
-			ca_gen_grid (grid, indv[i].get_dna());
+			// Evaluate Individual -- Once per individual
+			if ( indv[i].get_eval () == 0 ) {
+				fpga_clear ();
 
-			// Edit FPGA RAM
-			fpga_set_grid (grid);
+				// Edit FPGA RAM
+				fpga_set_grid (indv[i].get_grid());
 
-			// Evaluate Circuit Truth Table
-			uint32_t score = 0;
+				// Evaluate Circuit Truth Table
+				uint32_t score = 0;
 
-			// Sequential or Combinational Logic
-			if (tt::get_mode() == 0) {
-				// Test a few cases and gets the average score
-				score += eval_com (0);
-				score += eval_com (1);
+				// Sequential or Combinational Logic
+				if (tt::get_mode() == 0) {
+					// Test a few cases and gets the average score
+					score += eval_com (0);
+					score += eval_com (1);
 
-				for (int j = 0 ; j < 3 ; j++) {
-					score += eval_com (2);
+					for (int j = 0 ; j < 3 ; j++) {
+						score += eval_com (2);
+					}
+
+					score /= 5;
+				} else {
+					// Runs a single continuous test
+					score = eval_seq ();
 				}
 
-				score /= 5;
-			} else {
-				// Runs a single continuous test until fail or end of test
-				score = eval_seq ();
-			}
+				// Flags this as a viable solution, if the fitness is maxed
+				indv[i].set_sol ((score == fit_lim));
 
-			// Flags this as a viable solution, if the fitness is maxed
-			indv[i].set_sol ((score == fit_lim));
+				// Assign fitness score
+				indv[i].set_fit (score);
 
-			// Assign fitness score
-			indv[i].set_fit (score);
-
-			// Evaluate Gate Efficiency -- Once per individual
-			if ( indv[i].get_eval () == 0 ) {
-				indv[i].set_gate (eval_efficiency (grid));
+				// Evaluate Efficiency
+				indv[i].set_gate (eval_efficiency (indv[i].get_grid()));
 				indv[i].set_eval (1);
 			}
-
-			fpga_clear ();
 		}
 
 		// Sort population by fitness & solution

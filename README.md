@@ -11,7 +11,60 @@
 
 ## Methodology:
 
-	TBD
+### 1.	Logical Cell & Logical Cell Array (LCA)
+
+<img src="https://imgur.com/S41A63O.png" width="650">
+
+	Figure 1. A Logical Cell (Left) and a 4x4 Logical Cell Array (Right)
+
+A “Logical Cell” (Figure 1, Left) is a simple device with 2-inputs and 1-output, where the output is some logical function of the inputs. Each cell contains a small memory register. The logical function of a cell can be configured by manipulating the memory of the cell. The possible memory configurations are shown in Table 1.
+
+<img src="https://imgur.com/iagD06D.png" width="550">
+
+	Table 1. Possible Logical Cell Configurations
+
+We combine multiple logical cells to create a “Logical Cell Array” (Figure 1, Right). The Logical Cell Array (LCA) forms a grid of cells, each cell taking inputs from two neighboring cells in the next row. Cells on the edges of the grid are connected to cells on the opposite edge, forming a torus shape. Finally, the bottom-most row’s connections are modified; each cell is connected to one input bit from the HPS, and a neighboring cell, instead of two neighboring cells. This design is described in the following section.
+
+Here, y and x denotes the cell’s coordinates within the LCA. DIMY and DIMX is the dimensions of the LCA in the Y and X axis respectively.
+
+<img src="https://imgur.com/A9n6y4y.png">
+
+Each cell’s input is determined by their coordinates, expressed with the following rules:
+
+<img src="https://imgur.com/7JfSUBQ.png">
+
+Here, Ix denotes the xth input bit from the HPS. Inputs from the HPS are set based on the current truth table configuration.
+
+The output bits of the LCA are denoted as Ox, these are the output of the circuit as a whole, to be compared with the truth table’s configuration. Output bits are connected to every cell in the top-most row.
+
+<img src="https://imgur.com/JxHAi6t.png">
+
+In total, any given LCA will have a DIMX-bit input and output signal. For this research, we have implemented a 64x64 LCA.
+
+
+### 2.	Cellular Automaton
+
+<img src="https://imgur.com/fs1xaYY.png" width="650">
+
+	Figure 2. Converting number matrix to logic circuit.
+	1) Using CA rules, we generate a DIMY-by-DIMX matrix.
+	2) Write the number matrix onto the LCA memory registers.
+	3) The LCA is now configured into some arbitrary logical circuit.
+
+This paper uses Cellular Automaton (CA) as the encoding algorithm for logical circuits. By applying an arbitrary CA rule, we can generate some DIMY-by-DIMX matrix representing the LCA, with each element representing a cell’s state. Writing this matrix into the LCA memory register will configure the LCA into some arbitrary logical circuit. This process is shown in Figure 2.
+
+For this research, we applied a one-dimensional, nearest-neighbor, 4-color CA. Similar to Wolfram’s work on elementary cellular automata, we define the neighbors for each cell ![Cell Definition](https://imgur.com/PR9Cb2K.png) as ![CA Neighborhood definition](https://imgur.com/2mRmXT0.png), where y denotes the vertical axis (time), and x denotes the horizontal axis (cell index). With this settings, CA rules are 4^3=64 integers long, and there are approximately 4^64≈3.403×10^38 rules in total. Finally, the CA grid is torus shaped, cells at edges of the grid loops around to the opposite edges, similar to the LCA.
+
+With this method, we can encode some arbitrary logic circuit as the CA rules required to generate it.
+
+
+## 3.	Genetic Algorithm
+
+In this paper, we use Genetic Algorithm (GA) to search for desired logical circuits. We define the genotypes as the CA rule, and the phenotypes as the generated circuit. Each individual’s DNA is a CA rule of the format:
+
+![DNA Format](https://imgur.com/JudXNqC.png)
+
+This paper utilizes the following GA strategies: Fitness-Proportionate Selection, Elitism, Tournament Selection, and Uniform Crossover.
 
 -----
 
@@ -416,8 +469,45 @@ Other options include:
 
 #### SR NAND Flip-Flip (Active Low Signal)
 
-	TBD
+S | R | Action
+--|---|---
+0 | 0 | PROHIBITED
+0 | 1 | RESET
+1 | 0 | SET
+1 | 1 | LACTH
+
+DNA:
+`2023331301333313231333320020333322331322232030300013221033221321`
+`2030303032023312230303022323010320130333202210331032331313233233`
+`2023312101300002110021131031012111303121022133130300311320100200`
+
+
+Cellular Automaton Grid | Logical Circuit
+------------------------|----------------
+<img src="https://imgur.com/0FSL6Nr.png" width="250"> | <img src="https://imgur.com/2tRZPAK.png" width="250">
+<img src="https://imgur.com/TfGwe74.png" width="250"> | <img src="https://imgur.com/LsMYpaK.png" width="250">
+<img src="https://imgur.com/zb4UHFf.png" width="250"> | <img src="https://imgur.com/3g9gCcT.png" width="250">
+
+&nbsp;
 
 #### SR NOR Flip-Flip (Active High Signal)
 
-	TBD
+S | R | Action
+--|---|---
+0 | 0 | LATCH
+0 | 1 | RESET
+1 | 0 | SET
+1 | 1 | PROHIBITED
+
+DNA:
+`3032203331220033220300013031213231003130301030023200010203032333`
+`2132330201331002200013100312031000302103332212032331332330303331`
+`0030033100031333323030030322323320210313300301031002333200133123`
+
+Cellular Automaton Grid | Logical Circuit
+------------------------|----------------
+<img src="https://imgur.com/cw1pN2i.png" width="250"> | <img src="https://imgur.com/s23SlPf.png" width="250">
+<img src="https://imgur.com/6TrB5L5.png" width="250"> | <img src="https://imgur.com/ET9oeFe.png" width="250">
+<img src="https://imgur.com/TYReRtp.png" width="250"> | <img src="https://imgur.com/7Z7A3uR.png" width="250">
+
+&nbsp;

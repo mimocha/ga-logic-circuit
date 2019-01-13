@@ -18,6 +18,7 @@
 
 #include "ga.hpp"
 #include "ansi.hpp"
+#include "ca.hpp"
 #include "global.hpp"
 #include "fast.hpp"
 
@@ -105,6 +106,7 @@ GeneticAlgorithm::GeneticAlgorithm (void) {
 	uid = object_count;
 	object_count++;
 	dna = nullptr;
+	grid = nullptr;
 	fit = 0;
 	gate = 0;
 	age = 0;
@@ -116,8 +118,13 @@ GeneticAlgorithm::GeneticAlgorithm (void) {
 GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 	uid = object_count;
 	object_count++;
+
 	dna = GeneticAlgorithm::dna_calloc (dna_length);
 	GeneticAlgorithm::dna_rand_fill (dna, dna_length);
+
+	grid = GeneticAlgorithm::grid_calloc ();
+	// Doesn't generate grid here - Done in Repopulate()
+
 	fit = 0;
 	gate = 0;
 	age = 0;
@@ -126,8 +133,13 @@ GeneticAlgorithm::GeneticAlgorithm (const uint32_t &dna_length) {
 	sol = 0;
 }
 
-void GeneticAlgorithm::FreeDNA (void) {
+void GeneticAlgorithm::Free (void) {
 	free (this->dna);
+
+	for (uint16_t y = 0 ; y < PHYSICAL_DIMY ; y++) {
+		free (this->grid[y]);
+	}
+	free (this->grid);
 }
 
 
@@ -200,7 +212,7 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 	return;
 }
 
-void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
+void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array, const uint8_t *const seed) {
 	uint16_t live [live_count] = {0};
 	uint16_t dead [dead_count] = {0};
 
@@ -293,6 +305,9 @@ void GeneticAlgorithm::Repopulate (GeneticAlgorithm *const array) {
 
 		// Mutate DNA
 		array[dead[d]].Mutate (mutp, color, dna_length);
+
+		// Generate new circuit
+		array[dead[d]].grid_gen (seed);
 	}
 
 	return;
@@ -433,6 +448,26 @@ void GeneticAlgorithm::dna_rand_fill (uint8_t *const dna, const uint32_t &dna_le
 	return;
 }
 
+uint8_t **GeneticAlgorithm::grid_calloc (void) {
+	// Allocates memory for each cell's circuits
+	uint8_t **grid = (uint8_t **) calloc (PHYSICAL_DIMY, sizeof (uint8_t *));
+	for (uint16_t y = 0 ; y < PHYSICAL_DIMY ; y++) {
+		grid [y] = (uint8_t *) calloc (PHYSICAL_DIMX, sizeof (uint8_t));
+	}
+
+	// If Memory Allocation Failed
+	if (grid == nullptr) {
+		printf (ANSI_RED "\nERROR: GRID CALLOC FAILED\n" ANSI_RESET);
+	}
+
+	return grid;
+}
+
+void GeneticAlgorithm::grid_gen (const uint8_t *const seed) {
+	ca_gen_grid (this->grid, this->dna, seed);
+	ca_gen_grid (this->grid, this->dna);
+}
+
 void GeneticAlgorithm::Sort (GeneticAlgorithm *const array) {
 	// Sort using the helper function defined
 	sort (array, array + get_ga_pop(), compfit_descend);
@@ -465,6 +500,10 @@ uint32_t GeneticAlgorithm::get_uid (void) {
 
 uint8_t *GeneticAlgorithm::get_dna (void) {
 	return this -> dna;
+}
+
+uint8_t **GeneticAlgorithm::get_grid (void) {
+	return this -> grid;
 }
 
 uint32_t GeneticAlgorithm::get_fit (void) {

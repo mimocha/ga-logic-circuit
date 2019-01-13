@@ -13,9 +13,9 @@
 	Should be updated every commit / update.
 */
 #ifdef PC_BUILD
-#define VERSION "3.05.00 PC BUILD"
+#define VERSION "3.06.01 PC BUILD"
 #else
-#define VERSION "3.05.00"
+#define VERSION "3.06.01"
 #endif
 
 // Physical FPGA Cell Array Dimension
@@ -80,7 +80,7 @@
 #define MIN_GA_POOL 1
 
 // Estimated Number of Individuals Evaluated per Second
-#define INDV_PER_SEC 150
+#define INDV_PER_SEC 233
 
 
 
