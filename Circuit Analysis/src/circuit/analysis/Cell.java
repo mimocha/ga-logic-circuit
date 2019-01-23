@@ -12,6 +12,37 @@ package circuit.analysis;
 public class Cell {
 	
 	// ---------------------------------------------------------
+	// CELL LOGIC INT
+	// ---------------------------------------------------------
+	
+	//	This defines all the possible state a cell's logic can be set to.
+	//	Use this instead of hard-coding the int, for easy maintenance
+	
+	// Shorted Cells -> TODO: Low Priority
+	public static final int SHORT = -2;
+	
+	// Undetermined Logic
+	public static final int UNDET = -1;
+	
+	// All 16 Boolean functions of (A,B) - In ascending binary order
+	public static final int FALSE = 0;
+	public static final int NOR = 1;
+	public static final int A_AND_NB = 2;
+	public static final int NOT_B = 3;
+	public static final int B_AND_NA = 4;
+	public static final int NOT_A = 5;
+	public static final int XOR = 6;
+	public static final int NAND = 7;
+	public static final int AND = 8;
+	public static final int XNOR = 9;
+	public static final int A = 10;
+	public static final int A_OR_NB = 11;
+	public static final int B = 12;
+	public static final int B_OR_NA = 13;
+	public static final int OR = 14;
+	public static final int TRUE = 15;
+	
+	// ---------------------------------------------------------
 	// CELL PROPERTIES
 	// ---------------------------------------------------------
 	
@@ -43,13 +74,6 @@ public class Cell {
 	public boolean constant;
 	
 	// Determined logic of cell (if cell is constant)
-	// -1 = Undetermined
-	// 0 = GND
-	// 1 = TRUE
-	// 2 = A
-	// 3 = B
-	// 4 = NOT A
-	// 5 = NOT B
 	public int logic;
 	
 	
@@ -75,7 +99,7 @@ public class Cell {
 	
 	
 	// ---------------------------------------------------------
-	// METHODS
+	// UPDATE METHODS
 	// ---------------------------------------------------------
 	
 	// Updates input for each cell
@@ -108,42 +132,5 @@ public class Cell {
 	}
 	
 	
-	
-	// ---------------------------------------------------------
-	// SETTER & GETTER METHODS
-	// ---------------------------------------------------------
-	
-//	// Coordinates
-//	
-//	public void setLoc (int x_in, int y_in) {
-//		this.x = x_in;
-//		this.y = y_in;
-//	}
-//	
-//	public void setX (int setval) {
-//		this.x = setval;
-//	}
-//	
-//	public void setY (int setval) {
-//		this.y = setval;
-//	}
-//	
-//	public int getX () {
-//		return this.x;
-//	}
-//	
-//	public int getY () {
-//		return this.y;
-//	}
-//	
-//	// RAM
-//	
-//	public void setRAM (int setval) {
-//		this.ram = setval;
-//	}
-//	
-//	public int getRAM () {
-//		return this.ram;
-//	}
 	
 }

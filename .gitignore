@@ -1,17 +1,4 @@
 ## ignores all these directories ##
-CV_HelloWorld/
 FPGA/
 hwlib/
 ref/
-
-## Files to keep track of: ##
-# .qpf	->	Quartus Project File
-# .qsf	->	Quartus Project Settings File
-# .qip	->	Quartus IP File
-# .bdf	->	Quartus Block Schematic File
-# .pin	->	Quartus Pin Assignment
-# .c	->	C Program files
-# .cpp	->	C++ Program files
-# .exe	->	Executables
-# .v	->	Verilog HDL files
-# .sym	->	Symbol files converted from Verilog

@@ -30,6 +30,11 @@ public class Simplify {
 	}
 	
 	
+	
+	// ---------------------------------------------------------
+	// CONNECTION CHECKING METHODS
+	// ---------------------------------------------------------
+	
 	// Checks connection
 	private static void checkConnection (int[] OUTPUT, int loop) {
 		// Set top row the same as output once
@@ -95,6 +100,11 @@ public class Simplify {
 	}
 	
 	
+	
+	// ---------------------------------------------------------
+	// CONSTANT LOGIC CHECKING METHODS
+	// ---------------------------------------------------------
+	
 	// Checks for constant cells
 	private static void checkConstant (int[] INPUT, int loop) {
 		// Set bottom row once
@@ -105,19 +115,18 @@ public class Simplify {
 				// Cell is a GND cell
 				case 0:
 					LCA[y][x].constant = true;
-					LCA[y][x].logic = 0;
+					LCA[y][x].logic = Cell.FALSE;
 					break;
 					
 				// Cell is left connection
 				case 1:
 					LCA[y][x].constant = true;
-					// 2 == A | 3 == B
-					LCA[y][x].logic = INPUT[x] + 1;
-					break;
-					
-				// Cell is not yet determined
-				case 2:
-				case 3:
+					// INPUT 1 == A | INPUT 2 == B
+					if (INPUT[x] == 1) {
+						LCA[y][x].logic = Cell.A;
+					} else {
+						LCA[y][x].logic = Cell.B;
+					}
 					break;
 			}
 		}
@@ -128,9 +137,9 @@ public class Simplify {
 			for (int y=DIMY-1; y>=0; y--) {
 				for (int x=0; x<DIMX; x++) {
 
-					// If this cell is already determined, skip
+					// If this cell's logic is already determined, skip
 					if (LCA[y][x].constant == true) continue;
-					
+
 					// Set index of next cells
 					int x_next = (x + 1) % DIMX;
 					int y_next = (y + 1) % DIMY;
@@ -141,7 +150,7 @@ public class Simplify {
 						// Cell is a GND cell
 						case 0:
 							LCA[y][x].constant = true;
-							LCA[y][x].logic = 0;
+							LCA[y][x].logic = Cell.FALSE;
 							break;
 
 						// Cell is PASS Left Cell
@@ -156,9 +165,14 @@ public class Simplify {
 							LCA[y][x].logic = LCA[y_next][x_next].logic;
 							break;
 
-						// Cell is short-circuited NAND
+						// Cell is NAND Gate
 						case 3:
-							checkNAND (x, y, x_next, y_next);
+							// Different depending if it is on the bottom row or not
+							if (y != DIMY-1) {
+								checkNAND (x, y, x_next, y_next);
+							} else {
+								checkNANDBot (x, y, x_next, y_next, INPUT);
+							}
 							break;
 
 					}
@@ -170,121 +184,37 @@ public class Simplify {
 	}
 	
 	
-	// Checks NAND Gate Logic
+	// Checks NAND Gate Logic - Non bottom-row
 	private static void checkNAND (int x, int y, int x_next, int y_next) {
 		
+		// ----------------- SHORT CIRCUITS ----------------- //
+		
 		// Short Circuited NAND Gate - NAND(0,X) = 1
-		if (LCA[y_next][x].logic == 0 || LCA[y_next][x_next].logic == 0) {
+		// Skips one-side undetermined logics, if the other is FALSE
+		if (LCA[y_next][x].logic == Cell.FALSE || LCA[y_next][x_next].logic == Cell.FALSE) {
 			LCA[y][x].constant = true;
-			LCA[y][x].logic = 1;
+			LCA[y][x].logic = Cell.TRUE;
 			return;
 		}
+	
+		// ----------------- NAND LOGICS ----------------- //
 		
-		// Short Circuited NAND Gate - NAND(1,1) = 0
-		if (LCA[y_next][x].logic == 1 && LCA[y_next][x_next].logic == 1) {
-			LCA[y][x].constant = true;
-			LCA[y][x].logic = 0;
-			return;
-		}
-		
-		// NOT Gates - If either input is a constant TRUE
-		if (LCA[y_next][x].logic == 1) {
-			switch (LCA[y_next][x_next].logic) {
-				// If the other input isn't determined yet, do nothing
-				case -1:
-					return;
-					
-				// If the other input is a constant A -> Become NOT A
-				case 2:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 4;
-					return;
-					
-				// If the other input is a constant B -> Become NOT B
-				case 3:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 5;
-					return;
-					
-				// If the other input is a constant NOT A -> Become A
-				case 4:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 2;
-					return;
-					
-				// If the other input is a constant NOT B -> Become B
-				case 5:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 3;
-					return;
-					
-			}
-		}
-		
-		// Does the opposite of the previous statements
-		if (LCA[y_next][x_next].logic == 1) {
-			switch (LCA[y_next][x].logic) {
-				// If the other input isn't determined yet, do nothing
-				case -1:
-					return;
-					
-				// If the other input is a constant A -> Become NOT A
-				case 2:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 4;
-					return;
-					
-				// If the other input is a constant B -> Become NOT B
-				case 3:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 5;
-					return;
-					
-				// If the other input is a constant NOT A -> Become A
-				case 4:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 2;
-					return;
-					
-				// If the other input is a constant NOT B -> Become B
-				case 5:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 3;
-					return;
-					
-			}
-		}
-		
-		// Inverters - Two same signals
-		if (LCA[y_next][x].logic == LCA[y_next][x_next].logic) {
-			switch (LCA[y_next][x].logic) {
-				case 2:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 4;
-					return;
-				case 3:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 5;
-					return;
-				case 4:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 2;
-					return;
-				case 5:
-					LCA[y][x].constant = true;
-					LCA[y][x].logic = 3;
-					return;
-			}
-		}
-		
+		NAND.logic(LCA[y_next][x].logic, LCA[y_next][x_next].logic, LCA[y][x]);
 	}
 	
 	
-	// Remove short-circuited connections
-	private static void removeShort (int loop) {
+	// Checks NAND Gate Logic - Bottom-row
+	private static void checkNANDBot (int x, int y, int x_next, int y_next, int[] INPUT) {
+
+		// ----------------- NAND LOGICS ----------------- //
+		
+		if (INPUT[x] == 1) {
+			NAND.logic(Cell.A, LCA[y_next][x_next].logic, LCA[y][x]);
+		} else {
+			NAND.logic(Cell.B, LCA[y_next][x_next].logic, LCA[y][x]);
+		}
 		
 	}
-	
 	
 	// ---------------------------------------------------------
 	// PRINT METHODS
@@ -320,29 +250,63 @@ public class Simplify {
 	// Special print for constant logic cells
 	private static void printConstant (int logic) {
 		switch (logic) {
-			// False
-			case 0:
+			default: // Incorrect Values
+				System.out.printf("x");
+				break;
+				
+			case Cell.FALSE:
 				System.out.printf ("0");
 				break;
-			// True
-			case 1:
-				System.out.printf ("T");
+			case Cell.TRUE:
+				System.out.printf ("1");
 				break;
-			// A
-			case 2:
+				
+			case Cell.A:
 				System.out.printf (Color.GREEN + "A" + Color.RESET);
 				break;
-			// B
-			case 3:
+			case Cell.B:
 				System.out.printf (Color.BLUE + "B" + Color.RESET);
 				break;
-			// NOT A
-			case 4:
+			case Cell.NOT_A:
 				System.out.printf (Color.RED + "a" + Color.RESET);
 				break;
-			// NOT B
-			case 5:
+			case Cell.NOT_B:
 				System.out.printf (Color.RED + "b" + Color.RESET);
+				break;
+				
+			case Cell.AND:
+				System.out.printf (Color.YELLOW + "&" + Color.RESET);
+				break;
+			case Cell.NAND:
+				System.out.printf (Color.RED + "&" + Color.RESET);
+				break;
+				
+			case Cell.OR:
+				System.out.printf (Color.YELLOW + "+" + Color.RESET);
+				break;
+			case Cell.NOR:
+				System.out.printf (Color.RED + "+" + Color.RESET);
+				break;
+				
+			case Cell.XOR:
+				System.out.printf (Color.YELLOW + "X" + Color.RESET);
+				break;
+			case Cell.XNOR:
+				System.out.printf (Color.RED + "X" + Color.RESET);
+				break;
+				
+			case Cell.A_OR_NB:
+				System.out.printf (Color.MAGNTA + "P" + Color.RESET);
+				break;
+			case Cell.B_OR_NA:
+				System.out.printf (Color.MAGNTA + "Q" + Color.RESET);
+				break;
+				
+			case Cell.A_AND_NB:
+				System.out.printf (Color.MAGNTA + "R" + Color.RESET);
+				break;
+			case Cell.B_AND_NA:
+				System.out.printf (Color.MAGNTA + "S" + Color.RESET);
 				break;
 		}
 	}

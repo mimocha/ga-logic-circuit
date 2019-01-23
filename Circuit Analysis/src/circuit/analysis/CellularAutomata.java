@@ -9,12 +9,26 @@ import static circuit.analysis.CircuitAnalysis.COLOR;
 import static circuit.analysis.CircuitAnalysis.DIMX;
 import static circuit.analysis.CircuitAnalysis.DIMY;
 import static circuit.analysis.CircuitAnalysis.NB;
+import static circuit.analysis.CircuitAnalysis.LENGTH;
 
 /**
  *
  * @author mimocha
  */
 public class CellularAutomata {
+	
+	// ---------------------------------------------------------
+	// CONSTANTS & GLOBALS
+	// ---------------------------------------------------------
+	
+	// Rule Usage Counter -- Increment in lookupDNA()
+	private static int[] USE_COUNT = new int[LENGTH];
+	
+	
+	
+	// ---------------------------------------------------------
+	// METHODS
+	// ---------------------------------------------------------
 	
 	// Calculate the neighborhood indices - returns array of indices
 	private static int[] calculateNB (int x) {
@@ -50,8 +64,9 @@ public class CellularAutomata {
 	}
 	
 	
-	// Lookup DNA with index number
+	// Lookup DNA with index number -- Usage Counter Increment
 	private static int lookupDNA (int[] DNA, int idx) {
+		USE_COUNT[idx] += 1;
 		return DNA[idx];
 	}
 	
@@ -82,14 +97,14 @@ public class CellularAutomata {
 	public static void generateGrid (int[][] GRID, int[] DNA) {
 		// Generates first row from bottom row
 		applyCA (GRID[DIMY-1], GRID[0], DNA);
-		CircuitAnalysis.printRow (GRID[0]);
+//		CircuitAnalysis.printRow (GRID[0]);
 		
 		// Generates GRID, except first row
 		for (int y=0; y<(DIMY-1); y++) {
 			int next = (y + 1) % DIMY;
 			
 			applyCA (GRID[y], GRID[next], DNA);
-			CircuitAnalysis.printRow (GRID[next]);
+//			CircuitAnalysis.printRow (GRID[next]);
 		}
 	}
 	
@@ -98,14 +113,26 @@ public class CellularAutomata {
 	public static void generateGrid (int[][] GRID, int[] SEED, int[] DNA) {
 		// Generates first row from SEED
 		applyCA (SEED, GRID[0], DNA);
-		CircuitAnalysis.printRow (GRID[0]);
+//		CircuitAnalysis.printRow (GRID[0]);
 		
 		// Generates GRID, except first row
 		for (int y=0; y<(DIMY-1); y++) {
 			int next = (y + 1) % DIMY;
 			
 			applyCA (GRID[y], GRID[next], DNA);
-			CircuitAnalysis.printRow (GRID[next]);
+//			CircuitAnalysis.printRow (GRID[next]);
 		}
+	}
+	
+	
+	// Get Usage Count
+	public static int[] getUsage () {
+		return USE_COUNT;
+	}
+	
+	
+	// Reset Usage Count
+	public static void resetUsage () {
+		USE_COUNT = new int [LENGTH];
 	}
 }

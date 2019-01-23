@@ -178,10 +178,9 @@ Other options include:
 
  Each item is some Boolean function `f(A,B) = Output`. For each item, the following is provided:
 
- * The Truth Table (Input A, Input B, Output)
  * The best DNA found (Genetic Algorithm's solution, a Cellular Automaton ruleset)
  * The grid generated using the Cellular Automaton rule (Represented in colors)
- * *The grid converted into a logic circuit - TBD*
+ * The state transition diagram of the Cellular Automaton rule
 
  The input is at the bottom of the circuit, in the format: `ABABAB...`
 
@@ -191,273 +190,161 @@ Other options include:
 
 ##### 0. FALSE
 
- A | B | Output    
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 0
- 1 | 0 | 0
- 1 | 1 | 0
-
  DNA: `0030131020030300000101030103033321333200011001030323123330333000`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/4nN9rWy.png" width="250"> | <img src="https://imgur.com/dreslqq.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/4nN9rWy.png" width="250"> | <img src="https://imgur.com/dreslqq.png" width="250"> | <img src="https://imgur.com/gV1Uitq.png" width="250">
 
  &nbsp;
 
 ##### 1. NOR (A,B)
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 0
- 1 | 0 | 0
- 1 | 1 | 0
-
  DNA: `1112310302033013300011330321010001300101020233003100302310201333`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/0uLc8sz.png" width="250"> | <img src="https://imgur.com/m2p16Zg.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/0uLc8sz.png" width="250"> | <img src="https://imgur.com/m2p16Zg.png" width="250"> | <img src="https://imgur.com/j2tkk9h.png" width="250">
 
  &nbsp;
 
 ##### 2. A & !B
 
- A | B | Output
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 1
- 1 | 0 | 0
- 1 | 1 | 0
-
  DNA: `1100002031130300201312220023302230033303311001233333310032213332`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/1AEcntI.png" width="250"> | <img src="https://imgur.com/LJ7aXV2.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/1AEcntI.png" width="250"> | <img src="https://imgur.com/LJ7aXV2.png" width="250"> | <img src="https://imgur.com/pccPvpJ.png" width="250">
 
  &nbsp;
 
 ##### 3. !B
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 1
- 1 | 0 | 0
- 1 | 1 | 0
-
  DNA: `2200221303031331331011111300002310322101001103333213001000003021`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/NI4c277.png" width="250"> | <img src="https://imgur.com/pccj5bT.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/NI4c277.png" width="250"> | <img src="https://imgur.com/pccj5bT.png" width="250"> | <img src="https://imgur.com/589EVyP.png" width="250">
 
  &nbsp;
 
 ##### 4. B & !A
 
- A | B | Output
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 0
- 1 | 0 | 1
- 1 | 1 | 0
-
  DNA: `3033020222101233100011232030110100003110020002011331310103303000`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/m8RdPsF.png" width="250"> | <img src="https://imgur.com/BdfujJp.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/m8RdPsF.png" width="250"> | <img src="https://imgur.com/BdfujJp.png" width="250"> | <img src="https://imgur.com/KRRAWsZ.png" width="250">
 
  &nbsp;
 
 ##### 5. !A
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 0
- 1 | 0 | 1
- 1 | 1 | 0
-
  DNA: `1003133302303202122011110200033131331112302230301100013202013033`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/lSAwuVJ.png" width="250"> | <img src="https://imgur.com/ATshoJo.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/lSAwuVJ.png" width="250"> | <img src="https://imgur.com/ATshoJo.png" width="250"> | <img src="https://imgur.com/CeqpNBt.png" width="250">
 
  &nbsp;
 
 ##### 6. XOR (A,B)
 
- A | B | Output
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 1
- 1 | 0 | 1
- 1 | 1 | 0
-
  DNA: `3211103103232300010033323212323121223311200103133031331232222230`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/xsogOYH.png" width="250"> | <img src="https://imgur.com/B6M2rr9.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/xsogOYH.png" width="250"> | <img src="https://imgur.com/B6M2rr9.png" width="250"> | <img src="https://imgur.com/UV2jDNa.png" width="250">
 
  &nbsp;
 
 ##### 7. NAND (A,B)
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 1
- 1 | 0 | 1
- 1 | 1 | 0
-
  DNA: `1110122123221030013011032123012133013233203213310033101321322210`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/g6nBAGg.png" width="250"> | <img src="https://imgur.com/lQLSfuL.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/g6nBAGg.png" width="250"> | <img src="https://imgur.com/lQLSfuL.png" width="250"> | <img src="https://imgur.com/NHyZJI9.png" width="250">
 
  &nbsp;
 
 ##### 8. AND (A,B)
 
- A | B | Output
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 0
- 1 | 0 | 0
- 1 | 1 | 1
-
  DNA: `3021033113110012320331313012003100323333331301331333111030313311`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/7rOQJuC.png" width="250"> | <img src="https://imgur.com/CA1rSRH.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/7rOQJuC.png" width="250"> | <img src="https://imgur.com/CA1rSRH.png" width="250"> | <img src="https://imgur.com/ijRw8H5.png" width="250">
 
  &nbsp;
 
 ##### 9. XNOR (A,B)
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 0
- 1 | 0 | 0
- 1 | 1 | 1
-
  DNA: `1333033311302303013231310130233100000103332033331323332330101123`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/qLuBGdy.png" width="250"> | <img src="https://imgur.com/oH1vjqn.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/qLuBGdy.png" width="250"> | <img src="https://imgur.com/oH1vjqn.png" width="250"> | <img src="https://imgur.com/6jOI59R.png" width="250">
 
  &nbsp;
 
 ##### 10. A
 
- A | B | Output
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 1
- 1 | 0 | 0
- 1 | 1 | 1
-
  DNA: `0130100231132300110201010323000013332130031033020330302302310033`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/J4FCL4G.png" width="250"> | <img src="https://imgur.com/mfcerUy.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/J4FCL4G.png" width="250"> | <img src="https://imgur.com/mfcerUy.png" width="250"> | <img src="https://imgur.com/goyx6VL.png" width="250">
 
  &nbsp;
 
 ##### 11. A + !B
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 1
- 1 | 0 | 0
- 1 | 1 | 1
-
  DNA: `1133331200232301201111213301331313310033013301203100021021133333`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/D5Ae6V9.png" width="250"> | <img src="https://imgur.com/qn95263.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/D5Ae6V9.png" width="250"> | <img src="https://imgur.com/qn95263.png" width="250"> | <img src="https://imgur.com/SOAqUrS.png" width="250">
 
  &nbsp;
 
 ##### 12. B
 
- A | B | Output
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 0
- 1 | 0 | 1
- 1 | 1 | 1
-
  DNA: `1131020211002321222211101130323132113212131321112332212213302103`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/88D6onS.png" width="250"> | <img src="https://imgur.com/4p8yRin.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/88D6onS.png" width="250"> | <img src="https://imgur.com/4p8yRin.png" width="250"> | <img src="https://imgur.com/Kc9pv3N.png" width="250">
 
  &nbsp;
 
 ##### 13. B + !A
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 0
- 1 | 0 | 1
- 1 | 1 | 1
-
  DNA: `0330230333032111013021110131110313021033303033332133310001012330`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/73PWgei.png" width="250"> | <img src="https://imgur.com/VzvKd5i.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/73PWgei.png" width="250"> | <img src="https://imgur.com/VzvKd5i.png" width="250"> | <img src="https://imgur.com/jFtwQzl.png" width="250">
 
  &nbsp;
 
 ##### 14. OR (A,B)
 
- A | B | Output
- --|---|---
- 0 | 0 | 0
- 0 | 1 | 1
- 1 | 0 | 1
- 1 | 1 | 1
-
  DNA: `3330103330320031330033121213112111030111101203003333312111101231`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/IzLQQWS.png" width="250"> | <img src="https://imgur.com/ZTSkPf1.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/IzLQQWS.png" width="250"> | <img src="https://imgur.com/ZTSkPf1.png" width="250"> | <img src="https://imgur.com/2dkiIuj.png" width="250">
 
  &nbsp;
 
 ##### 15. TRUE
 
- A | B | Output
- --|---|---
- 0 | 0 | 1
- 0 | 1 | 1
- 1 | 0 | 1
- 1 | 1 | 1
-
  DNA: `2201112321302333231030320300003003233320222020230323032221110320`
 
- Cellular Automaton Grid | Logical Circuit
- ------------------------|----------------
- <img src="https://imgur.com/ZfTHkJc.png" width="250"> | <img src="https://imgur.com/xi4W04p.png" width="250">
+ Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+ ------------------------|-----------------|-------------------------
+ <img src="https://imgur.com/ZfTHkJc.png" width="250"> | <img src="https://imgur.com/xi4W04p.png" width="250"> | <img src="https://imgur.com/w4Xd8q4.png" width="250">
 
  &nbsp;
 
@@ -482,11 +369,11 @@ DNA:
 `2023312101300002110021131031012111303121022133130300311320100200`
 
 
-Cellular Automaton Grid | Logical Circuit
-------------------------|----------------
-<img src="https://imgur.com/0FSL6Nr.png" width="250"> | <img src="https://imgur.com/2tRZPAK.png" width="250">
-<img src="https://imgur.com/TfGwe74.png" width="250"> | <img src="https://imgur.com/LsMYpaK.png" width="250">
-<img src="https://imgur.com/zb4UHFf.png" width="250"> | <img src="https://imgur.com/3g9gCcT.png" width="250">
+Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+------------------------|-----------------|-------------------------
+<img src="https://imgur.com/0FSL6Nr.png" width="250"> | <img src="https://imgur.com/2tRZPAK.png" width="250"> | <img src="https://imgur.com/Pi2z7H7.png" width="250">
+<img src="https://imgur.com/TfGwe74.png" width="250"> | <img src="https://imgur.com/LsMYpaK.png" width="250"> | <img src="https://imgur.com/9Y3eNMU.png" width="250">
+<img src="https://imgur.com/7Fq7ZRe.png" width="250"> | <img src="https://imgur.com/3g9gCcT.png" width="250"> | <img src="https://imgur.com/NroEKYt.png" width="250">
 
 &nbsp;
 
@@ -504,10 +391,10 @@ DNA:
 `2132330201331002200013100312031000302103332212032331332330303331`
 `0030033100031333323030030322323320210313300301031002333200133123`
 
-Cellular Automaton Grid | Logical Circuit
-------------------------|----------------
-<img src="https://imgur.com/cw1pN2i.png" width="250"> | <img src="https://imgur.com/s23SlPf.png" width="250">
-<img src="https://imgur.com/6TrB5L5.png" width="250"> | <img src="https://imgur.com/ET9oeFe.png" width="250">
-<img src="https://imgur.com/TYReRtp.png" width="250"> | <img src="https://imgur.com/7Z7A3uR.png" width="250">
+Cellular Automaton Grid | Logical Circuit | State Transition Diagram
+------------------------|-----------------|-------------------------
+<img src="https://imgur.com/cw1pN2i.png" width="250"> | <img src="https://imgur.com/s23SlPf.png" width="250"> | <img src="https://imgur.com/WWfuSiF.png" width="250">
+<img src="https://imgur.com/6TrB5L5.png" width="250"> | <img src="https://imgur.com/ET9oeFe.png" width="250"> | <img src="https://imgur.com/G4Pgs9Y.png" width="250">
+<img src="https://imgur.com/TYReRtp.png" width="250"> | <img src="https://imgur.com/7Z7A3uR.png" width="250"> | <img src="https://imgur.com/1i8wJX7.png" width="250">
 
 &nbsp;
