@@ -39,6 +39,12 @@ namespace TruthTable {
 		Header row is Case Sensitive!
 		Missing columns will return a failure.
 		Input / Output values are required to be in hexadecimals.
+
+		This function will automatically try to find the file in these directories:
+			./
+			./tt/
+
+		> Suggest future work make program set parameters automatically.
 	*/
 	void set_table (void);
 

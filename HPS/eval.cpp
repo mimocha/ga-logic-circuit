@@ -25,6 +25,9 @@
 #define GRID_BIT_SIZE 64
 
 // Score Scaling -- Converts float score to an integer score
+// This is not required, and a waste of computation resource
+// Suggests future work remove this, and make GA fitness a float instead.
+// However, be warned, many parts of the program may depend on fitness score being an int.
 #define SCORE_MAX 10000
 
 // Max Efficiency Score -- Defined as total number of cells

@@ -33,6 +33,9 @@ using namespace GlobalSettings;
 	mutp is multiplied with a random number, then modulo by this number.
 	A number too small could cause the program to become faulty.
 	But a number too large would be computationally expensive.
+
+	> This is probably unnecessary.
+	> Consider removing and directly comparing floats for propbability calcs.
 */
 #define P_MAX 100000
 
@@ -53,31 +56,19 @@ static uint32_t dead_count;
 bool GeneticAlgorithm::compfit_descend (const GeneticAlgorithm &a, const GeneticAlgorithm &b) {
 	// If A is a solution, and B is not a solution,
 	// A goes before B is True
-	if ((a.sol == 1) && (b.sol == 0)) {
-		return 1;
-	}
+	if ((a.sol == 1) && (b.sol == 0)) return 1;
 
 	// If B is a solution, and A is not a solution,
 	// A goes before B is False
-	if ((a.sol == 0) && (b.sol == 1)) {
-		return 0;
-	}
+	if ((a.sol == 0) && (b.sol == 1)) return 0;
 
 	// Compare by fitness, fitter goes first
 	// For A goes before B:
-	if (a.fit > b.fit) {
-		return 1;
-	}
-	if (a.fit < b.fit) {
-		return 0;
-	}
+	if (a.fit > b.fit) return 1;
+	if (a.fit < b.fit) return 0;
 
 	// Compare gate efficiency, higher gate efficiency goes first
-	if (a.gate > b.gate) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return (a.gate >= b.gate);
 }
 
 bool GeneticAlgorithm::compfit_ascend (const GeneticAlgorithm &a, const GeneticAlgorithm &b) {
@@ -172,7 +163,8 @@ void GeneticAlgorithm::Selection (GeneticAlgorithm *const array) {
 
 		NOTE:
 		The array index is equivalent to the rank, because the array is pre-sorted.
-		We will be keeping track of the index, because it allows easy access to the original population and its properties, via array[i].
+		We will be keeping track of the index,
+		because it allows easy access to the original population and its properties, via array[i].
 	*/
 
 	live_count = 0;
@@ -393,9 +385,6 @@ void GeneticAlgorithm::Mutate
 /* ========== Other Miscellany Operations ========== */
 
 void GeneticAlgorithm::Reset (void) {
-	// TODO: DNA REALLOC - If DNA length has changed, reallocate *dna
-	// this -> uid = object_count;
-	// object_count++;
 	this -> fit = 0;
 	this -> gate = 0;
 	this -> age = 0;
@@ -464,6 +453,8 @@ uint8_t **GeneticAlgorithm::grid_calloc (void) {
 }
 
 void GeneticAlgorithm::grid_gen (const uint8_t *const seed) {
+	// Generates twice,
+	// This effectively generates a (DIMX,2*DIMY) grid from seed.
 	ca_gen_grid (this->grid, this->dna, seed);
 	ca_gen_grid (this->grid, this->dna);
 }

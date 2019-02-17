@@ -84,6 +84,9 @@ void sim_export (void);
 */
 bool export_is_done (void);
 
-
+/* static void data_dump (GeneticAlgorithm *const array, const unsigned int &gen)
+	Dumps all genetic information of the run into a csv file.
+	Use data to create convergence plot / state transition diagram video.
+*/
 
 #endif

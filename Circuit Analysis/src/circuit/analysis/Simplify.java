@@ -9,6 +9,9 @@ import static circuit.analysis.CircuitAnalysis.DIMX;
 import static circuit.analysis.CircuitAnalysis.DIMY;
 import static circuit.analysis.CircuitAnalysis.GRID;
 import static circuit.analysis.CircuitAnalysis.LCA;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  *
@@ -296,19 +299,63 @@ public class Simplify {
 				break;
 				
 			case Cell.A_OR_NB:
-				System.out.printf (Color.MAGNTA + "P" + Color.RESET);
+				System.out.printf (Color.MAGNTA + "J" + Color.RESET);
 				break;
 			case Cell.B_OR_NA:
-				System.out.printf (Color.MAGNTA + "Q" + Color.RESET);
+				System.out.printf (Color.MAGNTA + "K" + Color.RESET);
 				break;
 				
 			case Cell.A_AND_NB:
-				System.out.printf (Color.MAGNTA + "R" + Color.RESET);
+				System.out.printf (Color.MAGNTA + "L" + Color.RESET);
 				break;
 			case Cell.B_AND_NA:
-				System.out.printf (Color.MAGNTA + "S" + Color.RESET);
+				System.out.printf (Color.MAGNTA + "M" + Color.RESET);
 				break;
 		}
+	}
+	
+	
+	
+	// ---------------------------------------------------------
+	// SAVE METHODS
+	// ---------------------------------------------------------
+	
+	// Save MASK NetPBM file for analysis
+	public static void saveMask (String inname) throws IOException {
+
+		// ========== SAVE ========== //
+		
+		String filename;
+		if (inname == null) {
+			filename = "C:/dump/mask.pbm";
+		} else {
+			filename = inname;
+		}
+		System.out.printf ("Saving file as: %s\n", filename);
+		
+		FileWriter fileWriter = new FileWriter(filename);
+		PrintWriter printWriter = new PrintWriter(fileWriter);
+		
+		printWriter.printf ("P1\n64 64\n");
+		
+		for (int y=0; y<DIMY; y++) {
+			for (int x=0; x<DIMX; x++) {
+				// Disconnected Cell
+				if (LCA[y][x].connect == false) {
+					printWriter.printf ("0 ");
+				}
+				// Connected Cell
+				else {
+					printWriter.printf ("1 ");
+				}
+			}
+
+			printWriter.printf ("\n");
+		}
+		
+		printWriter.close();
+		fileWriter.close();
+
 	}
 	
 }

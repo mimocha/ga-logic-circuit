@@ -1,10 +1,12 @@
 # Dependency Level:
+# (Has no dependencies)
 # 0. ansi.hpp fast.cpp
 # 1. global.cpp
 # 2. ca.cpp fpga.cpp ga.cpp misc.cpp truth.cpp
 # 3. eval.cpp
 # 4. sim.cpp
 # 5. main.cpp
+# (Has most dependencies)
 
 # ================================================================
 # VARIABLES
@@ -14,11 +16,9 @@
 CC = arm-linux-gnueabihf-g++
 # Compiler Flags
 CPPFLAGS = -g -Wall -std=c++11
-# Compiler Include (Altera Libraries)
+# Compiler Include (Altera Libraries) - Make sure to point this to the correct location!
 ALT_INCLUDE = -I../hwlib/include/ -I../hwlib/include/soc_cv_av/ -I../ref/
-# PC Build Flag
-DEFINES = PC_BUILD
-# Output program name
+# Output binary file name
 OUTPUT-ARM = ga.prog
 OUTPUT-PC = ga.exe
 

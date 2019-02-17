@@ -19,6 +19,7 @@ private:
 	// Generated Circuit for each individual
 	uint8_t **grid;
 	// Fitness score of the individual
+	// > Consider changing this to float instead of uint.
 	uint32_t fit;
 	// Gate Efficiency Score := (Max Gate - Gates Used) ; Higher is better
 	uint16_t gate;
@@ -104,10 +105,17 @@ private:
 	*/
 	void dna_rand_fill (uint8_t *const dna, const uint32_t &dna_length);
 
-	/**/
+	/* uint8_t **grid_calloc (void)
+		Allocate memory for each cell's CA grid.
+		Each individual holds their own CA grid.
+		This reduces the computations required, by only generating each individual's CA grid once.
+		Each CA grids can be evaluated multiple times.
+	*/
 	uint8_t **grid_calloc (void);
 
-	/**/
+	/* void grid_gen (const uint8_t *const seed)
+		Wrapper function for generating each individual's CA grid with their DNA.
+	*/
 	void grid_gen (const uint8_t *const seed);
 
 public:

@@ -3,7 +3,6 @@ Notes on each version of the SOF (SRAM Object File) or JIC (JTAG Indirect Conver
 -----
 
 # 2018-10-28 64x64
-
 ### Grid Size:	64 x 64
 
 ### Address Map:

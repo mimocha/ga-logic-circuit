@@ -62,8 +62,9 @@
 void fpga_init (void);
 
 /* void fpga_cleanup (void)
-	Cleans up initialized FPGA pointers
-	Practically does nothing, kept for furture usage.
+	(Used to) Clean up initialized FPGA pointers.
+
+	> Not necessary, can be removed.
 */
 void fpga_cleanup (void);
 

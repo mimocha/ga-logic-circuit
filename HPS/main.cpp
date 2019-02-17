@@ -595,7 +595,7 @@ void inspect (void) {
 	// Ensures the compiler that it is not jumping over the initialization of any variables.
 	{
 		// How many test cases to run
-		constexpr unsigned int CHECK_NUM = 10000;
+		constexpr unsigned int CHECK_NUM = 100;
 
 		fpga_clear ();
 		ca_gen_grid (grid, dna, seed);

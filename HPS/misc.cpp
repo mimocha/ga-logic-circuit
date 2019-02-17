@@ -21,7 +21,7 @@
 void about (void) {
 	printf ("\n\e[7m\t--- Genetics Algorithm Program Version %s ---\e[0m\n\n", VERSION);
 
-	/* Explanation & License */
+	/* Copyright Info */
 	printf (
 	"\tThis program applies Genetics Algorithm, Cellular Automaton, and more\n"
 	"\tto generate logic circuits. This is create as part of a Bachelor's degree\n"

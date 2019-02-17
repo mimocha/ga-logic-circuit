@@ -3,6 +3,20 @@
 	Copyright (c) 2018 Chawit Leosrisook
 */
 
+/* Notes on PC_BUILD
+	This file compiles differently based on whether or not the flag PC_BUILD was defined.
+	Define the flag with makefile to compile a different version for PC.
+	The PC_BUILD version will not have access to the FPGA.
+	This allows debug builds to be ran on PC, instead of on the DE0-nano-SoC
+*/
+
+/* Notes on Endianness - FPGA module is designed as little-endian
+	Becareful when editing these functions.
+	The FPGA module "Logical Cell Array" is designed as a little-endian device.
+	The Least-Significant-Bit is set first, in the lower memory address.
+	The Most-Significant-Bit is set last, in the higher memory address.
+*/
+
 /* ========== Standard Library Include ========== */
 
 #include <stdio.h>		// printf

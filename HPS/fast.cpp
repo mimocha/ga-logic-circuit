@@ -7,7 +7,7 @@
 
 #include <stdint.h>		// uint definitions
 #include <stdlib.h>		// rand, srand
-#include <time.h>		// time
+#include <time.h>		// time - initializing prng
 
 
 
@@ -23,7 +23,7 @@ uint32_t fast_pow (const uint16_t &base, const uint16_t &expo) {
 	uint32_t result = 1;
 
 	/* Simple exponent calculations -- positive integers only */
-	for (int16_t e = 0 ; e < expo ; e++) {
+	for (uint16_t e = 0 ; e < expo ; e++) {
 		result = result * base;
 	}
 

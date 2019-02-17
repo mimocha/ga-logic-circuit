@@ -69,8 +69,6 @@ static unsigned int dna_length = fast_pow (CA.COLOR, CA.NB);
 	Else, returns the input.
 */
 
-static unsigned int bound (const unsigned int &, const unsigned int &, const unsigned int &);
-
 unsigned int bound
 (const unsigned int &input, const unsigned int &upper, const unsigned int &lower) {
 	// Checks if input exceeds upper or lower boundary
@@ -85,8 +83,6 @@ unsigned int bound
 	// Input is within set boundaries
 	return input;
 }
-
-static float bound (const float &, const float &, const float &);
 
 float bound (const float &input, const float &upper, const float &lower) {
 	// Checks if input exceeds upper or lower boundary
@@ -110,6 +106,14 @@ float bound (const float &input, const float &upper, const float &lower) {
 	Should reduce time spent on certain more expensive calculations.
 */
 
+/* This function prototype is required. May cause this error if removed:
+	arm-global.o: In function `update()':
+	.../global.cpp:119: multiple definition of `update()'
+	arm-truth.o:.../truth.cpp:91: first defined here
+	collect2: error: ld returned 1 exit status
+	Makefile:35: recipe for target 'arm-link' failed
+	make: *** [arm-link] Error 1
+*/
 static void update (void);
 
 void update (void) {
@@ -173,7 +177,10 @@ unsigned int GlobalSettings::get_dna_length (void) {
 
 
 
-/* ========== Setter Functions ========== */
+/* ========== Setter Functions ==========
+	Use these rather than setting values directly.
+	Put constraints and boundary checker functions in here.
+*/
 
 void GlobalSettings::set_ga_pop (const unsigned int &set_val) {
 	GA.POP = bound (set_val, MAX_GA_POP, MIN_GA_POP);

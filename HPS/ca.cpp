@@ -143,28 +143,28 @@ void ca_gen_grid
 void ca_print (const uint8_t &cell) {
 	// Sets terminal output according to the cell's value
 	switch ( cell ) {
-		case 0x0:
+		case 0x0: // 0000
 			cout << ANSI_DGRAY; // K
 			break;
-		case 0x1:
+		case 0x1: // 0001
 			cout << ANSI_CYAN; // C
 			break;
-		case 0x2:
+		case 0x2: // 0010
 			cout << ANSI_PURPL; // M
 			break;
-		case 0x3:
+		case 0x3: // 0011
 			cout << ANSI_YELLOW; // Y
 			break;
-		case 0x8:
+		case 0x8: // 1000
 			cout << ANSI_LGRAY;
 			break;
-		case 0x9:
+		case 0x9: // 1001
 			cout << ANSI_LCYAN;
 			break;
-		case 0xA:
+		case 0xA: // 1010
 			cout << ANSI_LPURPL;
 			break;
-		case 0xB:
+		case 0xB: // 1011
 			cout << ANSI_LGREEN;
 			break;
 		default: // Undefined

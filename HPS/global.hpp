@@ -13,9 +13,9 @@
 	Should be updated every commit / update.
 */
 #ifdef PC_BUILD
-#define VERSION "3.06.01 PC BUILD"
+#define VERSION "3.07.00 PC BUILD"
 #else
-#define VERSION "3.06.01"
+#define VERSION "3.07.00"
 #endif
 
 // Physical FPGA Cell Array Dimension
@@ -65,7 +65,7 @@
 #define MAX_GA_GEN 128000
 #define MIN_GA_GEN 1
 
-// Max Genetic Algorithm Mutation Rate (Decimal)
+// Max Genetic Algorithm Mutation Rate (Decimal, range [0,1])
 #define MAX_GA_MUTP 1
 #define MIN_GA_MUTP 0
 
@@ -79,7 +79,7 @@
 #define MAX_GA_POOL GA.POP
 #define MIN_GA_POOL 1
 
-// Estimated Number of Individuals Evaluated per Second
+// Estimated Number of Individuals Evaluated per Second - Calculated manually
 #define INDV_PER_SEC 233
 
 

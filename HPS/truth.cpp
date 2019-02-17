@@ -22,18 +22,22 @@
 
 /* ========== Truth Table Variables ==========
 	The desired truth table for evaluating circuits.
+	
+	File must be in the following format:
+	-----------------
+	input output <row count>
+	<input value 1> <output value 1>
+	<input value 2> <output value 2>
+	<input value 3> <output value 3>
+	...
+	-----------------
 
-	Definition  | Input		 | Output     | Time (optional?)
-	------------+------------+------------+------------
-				| Input    1 | Output   1 | Time Step 1
-				| Input    2 | Output   2 | Time Step 2
-				| Input    3 | Output   3 | Time Step 3
+	Whitespaces are automatically trimmed.
+	Header row is Case Sensitive!
+	Missing columns will return a failure.
+	Input / Output values are required to be in hexadecimals.
 
-	There must be only a single input column.
-	There must be only a single output column.
-	There may be only one single time column?
-	All column should have the same length
-	Same goes for the number of configurations. A complete truth table is not required.
+	> Suggest future work make program set parameters automatically.
 
 	Must be set in the main-menu, before simulations.
 */
@@ -78,6 +82,14 @@ uint64_t TruthTable::bitcount64 (uint64_t x) {
 	return x & 0x7f;
 }
 
+/* This function prototype is required. May cause this error if removed:
+	arm-global.o: In function `update()':
+	.../global.cpp:119: multiple definition of `update()'
+	arm-truth.o:.../truth.cpp:91: first defined here
+	collect2: error: ld returned 1 exit status
+	Makefile:35: recipe for target 'arm-link' failed
+	make: *** [arm-link] Error 1
+*/
 static void update (void);
 
 void update (void) {

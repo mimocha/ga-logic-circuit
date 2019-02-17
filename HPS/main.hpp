@@ -9,12 +9,16 @@
 /* ========== Main Menu / Initialize / Cleanup Functions ========== */
 
 /* static void main_init (void)
-	Initializes main file.
+	Initialization wrapper function.
+	Helps keep program clean.
 */
 static void main_init (void);
 
 /* static void main_cleanup (void)
 	Cleanup global variable memory before exiting program.
+
+	> Not necessary; remainder from previous versions.
+	> Can be removed.
 */
 static void main_cleanup (void);
 
@@ -59,7 +63,7 @@ static void inspect (void);
 
 /* static void special (void)
 	Special pre-programmed routines.
-	Program things here for longer experiments.
+	Program things here to automatically run experiments.
 */
 static void special (void);
 

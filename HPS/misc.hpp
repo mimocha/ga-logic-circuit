@@ -7,14 +7,16 @@
 #define MISC_HPP
 
 /* void about (void)
-	Displays about message.
-	Also displays certain internal variables for debug purposes.
+	About message. Displays version & copyright info.
+	Can be changed to display other messages, or removed entirely.
 */
 void about (void);
 
 /* void input_argument (const int &argc, const char *const *const argv)
 	This function handles input arguments.
-	Should have limited use, now that a main menu is being implemented.
+
+	> Not necessary.
+	> Can be removed.
 */
 void input_argument (const int &argc, const char *const *const argv);
 

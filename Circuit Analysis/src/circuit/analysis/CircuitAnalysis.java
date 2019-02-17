@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.util.Random;
 
 /**
@@ -60,7 +61,7 @@ public class CircuitAnalysis {
 	// 1 == Active (Considered) Node
 	// 0 == Inactive (Ignored) Node
 	private static final int OUT_BIT_1 = 1;
-	private static final int OUT_BIT_2 = 1;
+	private static final int OUT_BIT_2 = 0;
 	
 	// Define Cell Array
 	public static Cell[][] LCA = new Cell[DIMY][DIMX];
@@ -78,21 +79,46 @@ public class CircuitAnalysis {
 
 		// ===== Analyzing Solution Logic ===== //
 		
-//		logicAnalysis ();
+		logicAnalysis ();
 		
 		// ===== Checking Rule Usage in batches =====//
 		
 //		countingAnalysis ();
 
-		int[][] DNA = randGenDNA (8);
+
+		// ===== Print Random CA Rules ===== //
+
+//		int[][] DNA = randGenDNA (100);
+//
+//		for (int i=0; i<DNA.length; i++) {
+//			System.out.printf ("'");
+//			for (int j=0; j<64; j++) {
+//				System.out.printf("%1d", DNA[i][j]);
+//			}
+//			System.out.printf ("', ...\n");
+//		}
 		
-		for (int i=0; i<8; i++) {
-			for (int j=0; j<64; j++) {
-				System.out.printf("%1d", DNA[i][j]);
-			}
-			System.out.printf ("\n");
-		}
+
+		// ===== Get and Print Solutions ===== //
 		
+//		String dir = null;
+//		String[] DNA_String = readCSV (dir);
+//
+//		int[][] DNA = new int [DNA_String.length][LENGTH];
+//		int solution_count = DNA_String.length;
+//		
+//		for (int i=0; i<solution_count; i++) {
+//			DNA[i] = convertDNA (DNA_String[i]);
+//		}
+//		
+//		for (int i=0; i<solution_count; i++) {
+//			System.out.printf ("'");
+//			for (int j=0; j<64; j++) {
+//				System.out.printf("%1d", DNA[i][j]);
+//			}
+//			if (i!=solution_count-1) System.out.printf ("', ...\n");
+//			else System.out.printf ("'\n");
+//		}
 	}
 	
 	// Initialize function
@@ -111,7 +137,7 @@ public class CircuitAnalysis {
 	// ---------------------------------------------------------
 	
 	// Wrapper function for logic analysis
-	private static void logicAnalysis () {
+	private static void logicAnalysis () throws IOException {
 		
 		// Determines OUTPUT
 		// 1 == Active (Considered) Node
@@ -142,6 +168,7 @@ public class CircuitAnalysis {
 			CellularAutomata.generateGrid (GRID, SEED, DNA);
 			System.out.println ();
 			CellularAutomata.generateGrid (GRID, DNA);
+			printGrid (GRID);
 
 
 			// ----- Logic Simplification ----- //
@@ -159,6 +186,7 @@ public class CircuitAnalysis {
 			Simplify.printConnection ();
 
 			printInput (INPUT_NODE);
+			Simplify.saveMask (null);
 		}
 	}
 	
@@ -206,7 +234,6 @@ public class CircuitAnalysis {
 			}
 		}
 	}
-	
 	
 	
 	// ---------------------------------------------------------
@@ -518,13 +545,6 @@ public class CircuitAnalysis {
 		}
 		
 		
-//		System.out.printf ("INDEX | USAGE | PERCENT\n");
-//		for (int i=0; i<LENGTH; i++) {
-//			System.out.printf ("%5d |%7d| %5.2f%%\n", i, result[i], percent[i]);
-//		}
-//		System.out.printf ("TOTAL |%7d| %6.2f%%\n", sum, total);
-		
-		
 		// ========== SAVE ========== //
 		
 		String filename;
@@ -538,21 +558,10 @@ public class CircuitAnalysis {
 		FileWriter fileWriter = new FileWriter(filename);
 		PrintWriter printWriter = new PrintWriter(fileWriter);
 		
-//		printWriter.printf ("solution_count,", solution_count);
-//		for (int i=0; i<LENGTH; i++) {
-//			printWriter.printf ("%d,", i);
-//		}
-		
 		printWriter.printf ("%d,", solution_count);
 		for (int i=0; i<LENGTH; i++) {
 			printWriter.printf ("%d,", result[i]);
 		}
-		
-//		printWriter.printf ("\n");
-//		
-//		for (int i=0; i<LENGTH; i++) {
-//			printWriter.printf ("%f,", percent[i]);
-//		}
 		
 		printWriter.close();
 		fileWriter.close();

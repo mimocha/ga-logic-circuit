@@ -102,6 +102,8 @@ static void statistics (GeneticAlgorithm *const array, const unsigned int &gen);
 
 static void report (uint8_t *const *const grid, const uint8_t *const seed);
 
+static void data_dump (GeneticAlgorithm *const array, const unsigned int &gen);
+
 
 
 /* ========== Miscellany Functions ========== */
@@ -336,6 +338,9 @@ int sim_run (uint8_t *const *const grid, const uint8_t *const seed) {
 
 		// Status Update
 		status_print (gen);
+
+		// Dump genetic data to file
+		data_dump (indv, gen);
 	}
 
 
@@ -657,4 +662,25 @@ void sim_export (void) {
 
 bool export_is_done (void) {
 	return data_exported;
+}
+
+
+void data_dump (GeneticAlgorithm *const array, const unsigned int &gen) {
+	// Dump all data to 'gen'.csv
+	FILE *fp;
+	char filename [] = "./rpt/dump.csv";
+
+	// Append next line
+	fp = fopen (filename, "a");
+
+	// Dump gen number and all genetic information
+	fprintf (fp, "%d,", gen);
+	for (unsigned int i = 0 ; i < pop_lim ; i++) {
+		fprintf (fp, "'");
+		array[i].fprint_dna (fp, dna_length);
+		fprintf (fp, "',");
+	}
+	fprintf (fp, "\n");
+
+	fclose (fp);
 }
