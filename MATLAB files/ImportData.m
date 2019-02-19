@@ -1,3 +1,9 @@
+% Script to import data from data dump .csv files
+% Repo: https://github.com/mimocha/ga-logic-circuit
+% Copyright (c) 2019 Chawit Leosrisook
+
+% Converts .csv dump into MATLAB tables
+
 % Import CSV data to struct
 clear all
 

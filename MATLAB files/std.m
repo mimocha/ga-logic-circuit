@@ -1,4 +1,7 @@
-% CA State Transition Diagram
+% CA State Transition Diagram Genertation Function
+% Repo: https://github.com/mimocha/ga-logic-circuit
+% Copyright (c) 2019 Chawit Leosrisook
+
 % Takes a DNA String as input, returns a directional graph as output
 
 function G = std (DNA_String, nb, c)

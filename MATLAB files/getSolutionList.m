@@ -1,5 +1,10 @@
+% Function to return a list of solution DNAs
+% Repo: https://github.com/mimocha/ga-logic-circuit
+% Copyright (c) 2019 Chawit Leosrisook
 
-
+% 100 Solutions for each functions, except for last entry (863 solutions)
+% Solutions are not ordered.
+% Function returns a list of solutions to the function selected
 
 function List = getSolutionList (index)
 
@@ -1965,6 +1970,7 @@ switch (index)
 		
 		case 19
 		%% ===== FULL OR LIST ===== %%
+		% 863 solutions
 		List = { '3313313131012113230330230330210131330323120331120332113302330003', ...
 '3100320133312333011101312330013100201332100332331222103301330333', ...
 '3303320332003123101001003203010131332231130103333103031303220022', ...

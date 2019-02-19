@@ -1,13 +1,19 @@
-% 2018-12-10 - Time To Solution Box Plot
+% Script to plot the time-to-solution boxplots: 16 boolean functions
+% Repo: https://github.com/mimocha/ga-logic-circuit
+% Copyright (c) 2019 Chawit Leosrisook
+
 % This script extracts the time to solution for each simulation run,
 % and compiles a boxplot from it.
+% Data is available in the following files:
+% Name: 'BOOLEAN_1.mat' 'BOOLEAN_2.mat'
+% Type: 1000x160 struct with 10 fields each
+% 1000 Rows => 1000 Generations
+% 160 Columns => 10 simulation runs, for each of the 16 boolean functions
 
-% Data is in the following format:
-% Name: BOOLEAN_1 & BOOLEAN_2
-% Type: 1000x16 struct with 10 fields
-% BOOLEAN (Generations, Run)
+%             COLUMN 1|             COLUMN 2| ... |           COLUMN 160
+% FALSE function run 1, FALSE function run 2, ... , TRUE function run 10
 
-% ==================================
+%% =================================
 % Compile Data
 % ==================================
 
@@ -48,7 +54,7 @@ for func = 1:16
    end
 end
 
-% ==================================
+%% ==================================
 % Draw Box Plot
 % ==================================
 
@@ -61,7 +67,7 @@ xlabel ('Boolean Function')
 xticklabels (1:16)
 ylabel ('Generations')
 
-% ==================================
+%% ==================================
 % Other Data Analysis
 % ==================================
 
