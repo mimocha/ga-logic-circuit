@@ -32,9 +32,9 @@ public class CellularAutomata {
 	
 	// Calculate the neighborhood indices - returns array of indices
 	private static int[] calculateNB (int x) {
-		int[] idx = new int[3];
+		int[] idx = new int[NB];
 		
-		for (int i=0; i<3; i++) {
+		for (int i=0; i<NB; i++) {
 			// Calculates the index location -- Can be negative
 			int temp = x - 1 + i;
 			
@@ -66,16 +66,16 @@ public class CellularAutomata {
 	
 	// Lookup DNA with index number -- Usage Counter Increment
 	private static int lookupDNA (int[] DNA, int idx) {
-		USE_COUNT[idx] += 1;
-		return DNA[idx];
+		USE_COUNT [idx] += 1;
+		return DNA [idx];
 	}
 	
 	
 	// Apply CA rule to generate each row - Hard coded to work with 3 NB
 	private static void applyCA (int[] input, int[] output, int[] DNA) {
-		// Working Array
+		// Working Array Variables
 		int[] neighbor = new int[NB];
-		int[] nb_idx = new int[NB];
+		int[] nb_idx;
 		
 		for (int x=0; x<DIMX; x++) {
 			// Get index for neighborhood
@@ -97,14 +97,11 @@ public class CellularAutomata {
 	public static void generateGrid (int[][] GRID, int[] DNA) {
 		// Generates first row from bottom row
 		applyCA (GRID[DIMY-1], GRID[0], DNA);
-//		CircuitAnalysis.printRow (GRID[0]);
 		
 		// Generates GRID, except first row
 		for (int y=0; y<(DIMY-1); y++) {
 			int next = (y + 1) % DIMY;
-			
 			applyCA (GRID[y], GRID[next], DNA);
-//			CircuitAnalysis.printRow (GRID[next]);
 		}
 	}
 	
@@ -113,14 +110,11 @@ public class CellularAutomata {
 	public static void generateGrid (int[][] GRID, int[] SEED, int[] DNA) {
 		// Generates first row from SEED
 		applyCA (SEED, GRID[0], DNA);
-//		CircuitAnalysis.printRow (GRID[0]);
 		
 		// Generates GRID, except first row
 		for (int y=0; y<(DIMY-1); y++) {
 			int next = (y + 1) % DIMY;
-			
 			applyCA (GRID[y], GRID[next], DNA);
-//			CircuitAnalysis.printRow (GRID[next]);
 		}
 	}
 	

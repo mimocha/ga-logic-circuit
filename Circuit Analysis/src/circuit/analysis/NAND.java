@@ -6,8 +6,10 @@
 package circuit.analysis;
 
 /**
- *
- * @author mimocha
+ * A monstrosity of switch-case logic.
+ * The following is a horrifying stack of switch-case logic,
+ * because 4-bit unsigned integers in Java is messy.
+ * Should've done this in C++ with bitwise ops.
  */
 public class NAND {
 	
@@ -49,11 +51,8 @@ public class NAND {
 //	F|F|E|D|C|B|A|9|8|7|6|5|4|3|2|1|0|
 	
 	// ---------------------------------------------------------
-	// NAND LOGIC METHODS
+	// NAND LOGIC HORROR
 	// ---------------------------------------------------------
-	//	The following is a horrifying stack of switch-case logic,
-	//	because 4-bit unsigned integers in Java is messy.
-	//	Should've done this in C++ with bitwise ops.
 	
 	public static void logic (int logic_left, int logic_right, Cell c) {
 		

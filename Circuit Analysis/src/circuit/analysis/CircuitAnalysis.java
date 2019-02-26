@@ -1,16 +1,11 @@
 /*
- * Simple Java program for analyzing synthesized circuit
+ * >>> This is the top-level file. <<<
+ * Java program for analyzing results.
  * Repo: https://github.com/mimocha/ga-logic-circuit
  * Copyright (c) 2019 Chawit Leosrisook
  */
 package circuit.analysis;
 
-import java.util.Scanner;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.util.Random;
 
 /**
@@ -23,7 +18,19 @@ import java.util.Random;
  *   2.2 Inherit constants
  *   2.3 Checks for short circuits (GND + NANDs == TRUE)
  *   2.4 Checks NAND Logic
+ *  3. 
  * 
+ * > Note [1]: GRID vs LCA
+ * 
+ * GRID is an INT array of DIMY-DIMX size.
+ * GRID stores the array of number, generated with cellular automata.
+ * It is a representation of a logical circuit, where each number is a single cell's state.
+ * The same thing exists in the C++ Genetic Algorithm program.
+ * 
+ * LCA is a CELL object array of DIMX-DIMY size.
+ * This is a more elaborate representation of a logical circuit.
+ * The CELL object stores the CELL's state, and its *effective* logical function, among other stats.
+ * This program uses the LCA to store a logically simplified circuit.
  * 
  */
 public class CircuitAnalysis {
@@ -42,28 +49,32 @@ public class CircuitAnalysis {
 	public static final int DIMY = 64;
 	
 	// Define Grid
+	// This is different from Cell[][] LCA -> See Note [1] ^(Top of this file)
 	public static final int[][] GRID = new int[DIMY][DIMX];
 	
 	// Define Seed
-	private static final int[] SEED = new int[DIMX];
+	public static final int[] SEED = new int[DIMX];
 	
 	// Define Loop Count
-	private static final int LOOP = 16;
+	// This defines how many times the signal is allowed to loop.
+	// Set this to the range 
+	public static final int LOOP = 16;
 	
 	
-	// ---------------------------------------------------------
+	// ----- Logic Simplification Variables ----- //
 	
 	// INPUT and OUTPUT node definitions
-	private static final int[] INPUT_NODE = new int[DIMX];
-	private static final int[] OUTPUT_NODE = new int[DIMX];
+	public static final int[] INPUT_NODE = new int[DIMX];
+	public static final int[] OUTPUT_NODE = new int[DIMX];
 	
 	// Determines OUTPUT
 	// 1 == Active (Considered) Node
 	// 0 == Inactive (Ignored) Node
-	private static final int OUT_BIT_1 = 1;
-	private static final int OUT_BIT_2 = 0;
+	public static final int OUT_BIT_1 = 1;
+	public static final int OUT_BIT_2 = 0;
 	
-	// Define Cell Array
+	// Define Logical Cell Array
+	// This is different from int[][] GRID -> See Note [1] ^(Top of this file)
 	public static Cell[][] LCA = new Cell[DIMY][DIMX];
 	
 	
@@ -72,72 +83,91 @@ public class CircuitAnalysis {
 	// MAIN METHODS
 	// ---------------------------------------------------------
 	
-	// Main
+	// Main Function
 	public static void main (String[] args) throws Exception {
 
+		// ===== Initialize Stuff ===== //
 		init();
 
-		// ===== Analyzing Solution Logic ===== //
-		
-		logicAnalysis ();
-		
-		// ===== Checking Rule Usage in batches =====//
-		
-//		countingAnalysis ();
-
-
-		// ===== Print Random CA Rules ===== //
-
-//		int[][] DNA = randGenDNA (100);
-//
-//		for (int i=0; i<DNA.length; i++) {
-//			System.out.printf ("'");
-//			for (int j=0; j<64; j++) {
-//				System.out.printf("%1d", DNA[i][j]);
-//			}
-//			System.out.printf ("', ...\n");
-//		}
+		// ===== Main Menu ===== //
+		while (true) {
+			
+			System.out.printf ("\n\t===== Circuit Analysis Main Menu =====\n");
+			
+			String menu =	"\t0. Exit Program\n" +
+							"\t1. Circuit Logic Analysis\n" +
+							"\t2. Save Connection Mask\n" +
+							"\t3. Generate & Print Random DNA\n" +
+							"\t4. Rule Usage Counting Analysis\n" +
+							"\t5. Extract Solutions from CSV Files\n" +
+							"\t6. \n";
+			
+			System.out.printf (menu);
+			
+			// Get User Input & Switch
+			int sel = Helper.promptInt ("\nWaiting for input: ");
+			switch (sel) {
+				// ===== Exit Program ===== //
+				case 0:
+					System.out.printf ("\nExiting Program\n");
+					return;
+					
+				// ===== Analyzing Circuit Logic ===== //
+				case 1:
+					LogicAnalysis.logicAnalysis ();
+					break;
+					
+				// ===== Checking Rule Usage in batches =====//
+				case 2:
+					LogicAnalysis.saveMask ();
+					break;
+					
+				// ===== Print Random CA Rules ===== //
+				case 3:
+					printRandDNA ();
+					break;
+					
+				// ===== Get and Print Solutions ===== //
+				case 4:
+					System.out.printf ("Selection 4\n");
+					break;
+					
+				// ===== Syntax Error ===== //
+				default:
+					System.out.printf (Color.RED + "Unknown Option: %d\n" + Color.RESET, sel);
+			}
+		}
 		
 
 		// ===== Get and Print Solutions ===== //
 		
-//		String dir = null;
-//		String[] DNA_String = readCSV (dir);
-//
-//		int[][] DNA = new int [DNA_String.length][LENGTH];
-//		int solution_count = DNA_String.length;
-//		
-//		for (int i=0; i<solution_count; i++) {
-//			DNA[i] = convertDNA (DNA_String[i]);
-//		}
-//		
-//		for (int i=0; i<solution_count; i++) {
-//			System.out.printf ("'");
-//			for (int j=0; j<64; j++) {
-//				System.out.printf("%1d", DNA[i][j]);
-//			}
-//			if (i!=solution_count-1) System.out.printf ("', ...\n");
-//			else System.out.printf ("'\n");
-//		}
+		String dir = null;
+		String[] DNA_String = readCSV (dir);
+
+		int[][] DNA = new int [DNA_String.length][LENGTH];
+		int solution_count = DNA_String.length;
+		
+		for (int i=0; i<solution_count; i++) {
+			DNA[i] = convertDNA (DNA_String[i]);
+		}
+		
+		for (int i=0; i<solution_count; i++) {
+			System.out.printf ("'");
+			for (int j=0; j<64; j++) {
+				System.out.printf("%1d", DNA[i][j]);
+			}
+			if (i!=solution_count-1) System.out.printf ("', ...\n");
+			else System.out.printf ("'\n");
+		}
 	}
 	
 	// Initialize function
 	private static void init () {
 		// Determines SEED
 		// GA Program C++ Code uses floor(DIMX/2) == 32
-		// Thus, the experimental setting used was mid = 32
+		// Thus, the experimental setting used was `mid = 32`
 		int mid = Math.round(DIMX/2);
 		SEED[mid] = 1;
-	}
-	
-	
-	
-	// ---------------------------------------------------------
-	// LOGIC ANALYSIS METHODS
-	// ---------------------------------------------------------
-	
-	// Wrapper function for logic analysis
-	private static void logicAnalysis () throws IOException {
 		
 		// Determines OUTPUT
 		// 1 == Active (Considered) Node
@@ -155,356 +185,42 @@ public class CircuitAnalysis {
 				INPUT_NODE[i] = 2;
 			}
 		}
-		
-		for (;;) {
-			// User Sets DNA
-			int[] DNA = inputDNA();
-			
-
-			// ----- Cellular Automata ----- //
-
-			// Print CA Generation
-			System.out.printf ("\n\tCA Generation Output:\n");
-			CellularAutomata.generateGrid (GRID, SEED, DNA);
-			System.out.println ();
-			CellularAutomata.generateGrid (GRID, DNA);
-			printGrid (GRID);
-
-
-			// ----- Logic Simplification ----- //
-
-			// Initialize Cell Objects
-			initLCA ();
-
-			// Connection Simulation
-			System.out.printf ("\n\t Connection Simulation:\n");
-			printOutput (OUTPUT_NODE);
-
-			// Max Update Cycle = 1024
-			// Max Loop Count = Max Update Cycle / DIMY == 16
-			Simplify.simplify (LOOP, OUTPUT_NODE, INPUT_NODE);
-			Simplify.printConnection ();
-
-			printInput (INPUT_NODE);
-			Simplify.saveMask (null);
-		}
 	}
 	
-	
-	// Get DNA string
-	private static int[] inputDNA () {
-		// DNA String Length
-		int dna_length = (int)Math.pow(COLOR, NB);
-		
-		// Get DNA String
-		System.out.printf("Input DNA String (%d): ", dna_length);
-		Scanner in = new Scanner (System.in);
-		String input = in.next();
-		
-		// Convert from String to INT array
-		char[] buffer = input.toCharArray();
-		int[] output = new int[dna_length];
-		
-		for (int x=0; x<DIMX; x++) {
-			switch (buffer[x]) {
-				case '0':
-					output[x] = 0;
-					break;
-				case '1':
-					output[x] = 1;
-					break;
-				case '2':
-					output[x] = 2;
-					break;
-				case '3':
-					output[x] = 3;
-					break;
-			}
-		}
-		
-		return output;
-	}
-	
-	
-	// Initialize Virtual Logical Cell Array (LCA)
-	private static void initLCA () {
-		for (int y=0; y<DIMY; y++) {
-			for (int x=0; x<DIMX; x++) {
-				LCA[y][x] = new Cell (y, x, GRID[y][x]);
-			}
-		}
-	}
 	
 	
 	// ---------------------------------------------------------
-	// USAGE COUNTING METHODS
+	// GENERATE RANDOM DNA
 	// ---------------------------------------------------------
 	
-	// Wrapper function for this analysis
-	private static void countingAnalysis () throws Exception {
+	// Function to generate & print N random DNAs, as MATLAB cell array of strings.
+	private static void printRandDNA () {
+
+		System.out.printf ("\n\tThis function will print N number of DNA, "
+					+ "in MATLAB 'array of strings' format.\n");
 		
-		// ===== Actual Experimental Data ===== //
-		
-		for (int j=0; j<18; j++) {
-			String dir = null;
-			String filename = null;
+		int N = Helper.promptInt ("\nInput number of DNA strings to generate: ");
+		int[][] DNA = randGenDNA (N);
 
-			setName (dir, filename, j);
-			String[] DNA_String = readCSV (dir);
-
-			int[][] DNA = new int [DNA_String.length][LENGTH];
-			int solution_count = DNA_String.length;
-
-			for (int i=0; i<solution_count; i++) {
-				DNA[i] = convertDNA (DNA_String[i]);
+		System.out.printf ("\nList = { ...\n");
+		for (int i=0; i<DNA.length; i++) {
+			System.out.printf ("'");
+			for (int j=0; j<64; j++) {
+				System.out.printf("%1d", DNA[i][j]);
 			}
-
-			System.out.printf ("Checking %d DNA entries\n", solution_count);
-			for (int i=0; i<solution_count; i++) {
-				CellularAutomata.generateGrid (GRID, SEED, DNA[i]);
-				CellularAutomata.generateGrid (GRID, DNA[i]);
-			}
-
-//			saveResults (solution_count, filename);
-
-			dispResults (solution_count);
+			System.out.printf ("', ...\n");
 		}
-
-
-
-		// ===== Randomly Generate CA Rule ===== //
-		
-//		int[][] DNA = randGenDNA (2000);
-//		int solution_count = 2000;
-//
-//		System.out.printf ("Checking %d DNA entries\n", solution_count);
-//		for (int i=0; i<solution_count; i++) {
-//			CellularAutomata.generateGrid (GRID, SEED, DNA[i]);
-//			CellularAutomata.generateGrid (GRID, DNA[i]);
-//		}
-//
-//		saveResults (solution_count, "C:/dump/random.csv");
-	}
-	
-	
-	// Automatically Set Filename
-	private static void setName (String dir, String filename, int number) {
-		switch (number) {
-			case 0:
-				dir = "C:/dump/0";
-				filename = "C:/dump/0.csv";
-				break;
-			case 1:
-				dir = "C:/dump/1";
-				filename = "C:/dump/1.csv";
-				break;
-			case 2:
-				dir = "C:/dump/2";
-				filename = "C:/dump/2.csv";
-				break;
-			case 3:
-				dir = "C:/dump/3";
-				filename = "C:/dump/3.csv";
-				break;
-			case 4:
-				dir = "C:/dump/4";
-				filename = "C:/dump/4.csv";
-				break;
-			case 5:
-				dir = "C:/dump/5";
-				filename = "C:/dump/5.csv";
-				break;
-			case 6:
-				dir = "C:/dump/6";
-				filename = "C:/dump/6.csv";
-				break;
-			case 7:
-				dir = "C:/dump/7";
-				filename = "C:/dump/7.csv";
-				break;
-			case 8:
-				dir = "C:/dump/8";
-				filename = "C:/dump/8.csv";
-				break;
-			case 9:
-				dir = "C:/dump/9";
-				filename = "C:/dump/9.csv";
-				break;
-			case 10:
-				dir = "C:/dump/a";
-				filename = "C:/dump/a.csv";
-				break;
-			case 11:
-				dir = "C:/dump/b";
-				filename = "C:/dump/b.csv";
-				break;
-			case 12:
-				dir = "C:/dump/c";
-				filename = "C:/dump/c.csv";
-				break;
-			case 13:
-				dir = "C:/dump/d";
-				filename = "C:/dump/d.csv";
-				break;
-			case 14:
-				dir = "C:/dump/e";
-				filename = "C:/dump/e.csv";
-				break;
-			case 15:
-				dir = "C:/dump/f";
-				filename = "C:/dump/f.csv";
-				break;
-			case 16:
-				dir = "C:/dump/nand";
-				filename = "C:/dump/nand.csv";
-				break;
-			case 17:
-				dir = "C:/dump/nor";
-				filename = "C:/dump/nor.csv";
-				break;
-			default:
-				dir = null;
-				filename = null;
-		}
-	}
-	
-	
-	// Get DNA from CSV file
-	private static String[] readCSV (String inname) throws Exception {
-		
-		// ========== Get Directory Path ========== //
-		
-		String dirpath;
-		if (inname == null) {
-			System.out.printf ("Input Folder Absolute Path: ");
-			Scanner in = new Scanner (System.in);
-			dirpath = in.nextLine();
-			in.close();
-		} else {
-			dirpath = inname;
-		}
-		
-		File dp = new File (dirpath);
-		if (dp.isDirectory()) {
-			System.out.printf ("%s : IS DIRECTORY\n", dirpath);
-		} else {
-			System.out.printf ("%s : NOT DIRECTORY\n", dirpath);
-			throw new java.lang.Error ("Invalid Directory");
-		}
-		
-		// Get file list
-		String[] filelist = dp.list();
-		
-		
-		
-		// ========== Count Solutions ========== //
-		
-		// Solution Counter for each file
-		int counter = 0;
-		
-		System.out.printf ("\nFound %d files:\n", filelist.length);
-		for (int i=0; i<filelist.length; i++) {
-			// Set next file to read
-			File fp = new File (dirpath, filelist[i]);
-			if (fp.canRead() == false) {
-				throw new java.lang.Exception ("Cannot Read File");
-			}
-			Scanner inputStream = new Scanner (fp);
-			
-			
-			
-			// Skip to line 28
-			for (int j=0; j<27; j++) {
-				inputStream.nextLine();
-			}
-			
-			if (inputStream.hasNext("UID")) { // At population dump
-				inputStream.nextLine();
-			} else { // Goto population dump
-				inputStream.nextLine();
-				inputStream.nextLine();
-				inputStream.nextLine();
-			}
-			
-			
-			
-			while (inputStream.hasNextLine()) {
-				inputStream.next();
-				inputStream.next();
-				if (inputStream.nextInt() == 1) counter++;
-				inputStream.nextLine();
-			}
-			inputStream.close();
-		}
-		System.out.printf ("Found %d solutions\n", counter);
-		
-		// DNA List [Number of Solution]
-		String[] DNA_List = new String[counter];
-		
-		// ========== Process Solutions ========== //
-		
-		counter = 0;
-		
-		for (int i=0; i<filelist.length; i++) {
-			// Set next file to read
-			File fp = new File (dirpath, filelist[i]);
-			if (fp.canRead() == false) {
-				throw new java.lang.Exception ("Cannot Read File");
-			}
-			Scanner inputStream = new Scanner (fp);
-			
-			
-			
-			// Skip to line 28
-			for (int j=0; j<27; j++) {
-				inputStream.nextLine();
-			}
-			
-			if (inputStream.hasNext("UID")) { // At population dump
-				inputStream.nextLine();
-			} else { // Goto population dump
-				inputStream.nextLine();
-				inputStream.nextLine();
-				inputStream.nextLine();
-			}
-			
-			
-			
-			// Shoddy code of the year
-			while (inputStream.hasNextLine()) {
-				inputStream.next();
-				inputStream.next();
-				
-				if (inputStream.nextInt() == 1) {
-					inputStream.next();
-					inputStream.next();
-					inputStream.next();
-					inputStream.next();
-					inputStream.next();
-					
-					DNA_List [counter] = inputStream.next();
-
-					counter++;
-				} else {
-					inputStream.nextLine();
-				}
-			}
-			
-			inputStream.close();
-		}
-		System.out.printf ("Parsed %d solutions\n\n", counter);
-		
-		return DNA_List;
+		System.out.printf ("};\n");
 	}
 	
 	
 	// Randomly generate DNA
-	private static int[][] randGenDNA (int number) {
-		int[][] results = new int[number][LENGTH];
+	private static int[][] randGenDNA (int N) {
+		int[][] results = new int[N][LENGTH];
 		
 		Random rng = new Random( System.currentTimeMillis() );
 		
-		for (int i=0; i<number; i++) {
+		for (int i=0; i<N; i++) {
 			for (int j=0; j<LENGTH; j++) {
 				results[i][j] = rng.nextInt(COLOR);
 			}
@@ -514,149 +230,13 @@ public class CircuitAnalysis {
 	}
 	
 	
-	// Convert DNA String to int[]
-	private static int[] convertDNA (String input) {
-		int[] result = new int [LENGTH];
-		
-		char[] buffer = input.toCharArray();
-		
-		for (int i=0; i<buffer.length; i++) {
-			result[i] = Character.getNumericValue(buffer[i]);
-		}
-		
-		return result;
-	}
-	
-	
-	// Save Analysis Result
-	private static void saveResults (int solution_count, String inname) throws IOException {
-		int[] result = CellularAutomata.getUsage();
-		
-		int sum = 0;
-		for (int i=0; i<LENGTH; i++) {
-			sum += result[i];
-		}
-		
-		float[] percent = new float [LENGTH];
-		float total = 0;
-		for (int i=0; i<LENGTH; i++) {
-			percent[i] = (float) result[i] / sum * 100;
-			total += percent[i];
-		}
-		
-		
-		// ========== SAVE ========== //
-		
-		String filename;
-		if (inname == null) {
-			filename = "C:/dump/analysis.csv";
-		} else {
-			filename = inname;
-		}
-		System.out.printf ("Saving file as: %s\n", filename);
-		
-		FileWriter fileWriter = new FileWriter(filename);
-		PrintWriter printWriter = new PrintWriter(fileWriter);
-		
-		printWriter.printf ("%d,", solution_count);
-		for (int i=0; i<LENGTH; i++) {
-			printWriter.printf ("%d,", result[i]);
-		}
-		
-		printWriter.close();
-		fileWriter.close();
-	}
-	
-	
-	// Display Analysis Result
-	private static void dispResults (int solution_count) {
-		int[] result = CellularAutomata.getUsage();
-		
-		int sum = 0;
-		for (int i=0; i<LENGTH; i++) {
-			sum += result[i];
-		}
-		
-		float[] percent = new float [LENGTH];
-		float total = 0;
-		for (int i=0; i<LENGTH; i++) {
-			percent[i] = (float) result[i] / sum * 100;
-			total += percent[i];
-		}
-		
-		
-		System.out.printf ("INDEX | USAGE | PERCENT\n");
-		for (int i=0; i<LENGTH; i++) {
-			System.out.printf ("%5d |%7d| %5.2f%%\n", i, result[i], percent[i]);
-		}
-		System.out.printf ("TOTAL |%7d| %6.2f%%\n", sum, total);
-	}
-	
-	
 	
 	// ---------------------------------------------------------
-	// PRINT METHODS
+	// EXTRACT DNA FROM CSV
 	// ---------------------------------------------------------
 	
-	// Print Single Cell - No Line Break
-	public static void printCell (int cell) {
-		switch (cell) {
-			case 0: System.out.printf ("0"); break;
-			case 1: System.out.printf ("|"); break;
-			case 2: System.out.printf ("\\"); break;
-			case 3: System.out.printf ("3"); break;
-			default: System.out.printf ("%d", cell); break;
-		}
-		System.out.print(Color.RESET);
-	}
-	
-	// Print Single Row + Line Break
-	public static void printRow (int[] row) {
-		for (int x=0; x<DIMX; x++) {
-			CircuitAnalysis.printCell (row[x]);
-		}
-		System.out.println();
-	}
-	
-	// Print entire grid - No Line Break
-	public static void printGrid (int[][] grid) {
-		for (int y=0; y<DIMY; y++) {
-			CircuitAnalysis.printRow(grid[y]);
-		}
-	}
-	
-	// Prints Input Row + Line Break
-	private static void printInput (int[] row) {
-		for (int x=0; x<DIMX; x++) {
-			switch (row[x]) {
-				case 1:
-					System.out.printf (Color.GREEN + "A" + Color.RESET);
-					break;
-				case 2:
-					System.out.printf (Color.BLUE + "B" + Color.RESET);
-					break;
-				default:
-					System.out.printf ("X");
-					break;
-			}
-		}
-		System.out.println();
-	}
-	
-	// Prints Output Row + Line Break
-	private static void printOutput (int[] row) {
-		for (int x=0; x<DIMX; x++) {
-			switch (row[x]) {
-				case 1:
-					System.out.printf (Color.MAGNTA + "O" + Color.RESET);
-					break;
-				default:
-					System.out.printf ("-");
-					break;
-			}
-		}
-		System.out.println();
-	}
+	// Function to extract DNA from preset CSV file
+//	private static void extractCSV ()
 	
 	// Prints Rule Usage
 	private static void printUsage (int[] USAGE, int[] DNA) {
