@@ -103,22 +103,31 @@ public class Helper {
 	}
 	
 	
-	// Get DNA from all CSV files in a given folder
-	public static String[] readCSV (String indir) throws FileNotFoundException {
+	// Get DNA from all RPT files in a given folder
+	public static String[] readRPT (String indir) throws FileNotFoundException {
 
+		// Regex Pattern for checking for solutions
+		String RegexSol = ".+\\s1\\s.+";
+		// Regex Pattern for removing everthing before the DNA string, in that line
+		String RegexDNA = ".+\\|\\s+";
+		// Regex Pattern for skipping to population dump section
+		String RegexSection = ".+DNA\\s$";
+		
 		// ========== Get Directory Path ========== //
 
 		String dirpath;
 		// Has an option to set directory by passing argument
+		// Pass nullstring as argument to prompt user for a directory path
 		if (indir != null) {
 			dirpath = indir;
 		} else {
 			dirpath = promptString ("\nInput Absolute Path to CSV Folder: ");
 		}
 
+		// Checks if directory is valid
 		File dp = new File (dirpath);
 		if (dp.isDirectory()) {
-			System.out.printf ("%s : IS DIRECTORY\n", dirpath);
+			System.out.printf ("%s : DIRECTORY OK\n", dirpath);
 		} else {
 			System.out.printf (Color.RED + "%s : NOT DIRECTORY\n" + Color.RESET, dirpath);
 			return null;
@@ -129,6 +138,7 @@ public class Helper {
 
 
 		// ========== Count Solutions ========== //
+		// Counts how many solutions exists in directory, and allocates string memory accordingly.
 
 		// Solution Counter for each file
 		int counter = 0;
@@ -139,39 +149,33 @@ public class Helper {
 		for (String filelist1 : filelist) {
 			// Set next file to read
 			File fp = new File(dirpath, filelist1);
+			System.out.printf ("Checking: %s | ", filelist1);
 
-			// If Cannot Read File, Break
+			// If Cannot Read File, Continue to next file
+			if (!filelist1.contains(".rpt")) {
+				System.out.printf (Color.YELLOW + "Non-RPT File\n" + Color.RESET);
+				continue;
+			}
 			if (fp.canRead() == false) {
-				System.out.printf (Color.RED + "\nCannot Read File: %s\n" + Color.RESET, filelist1);
-				return null;
+				System.out.printf (Color.RED + "Cannot Read File\n" + Color.RESET);
+				continue;
 			}
 
 			Scanner inputStream = new Scanner (fp);
 
-			// HARDCODED FOR CUSTOM CSV FORMAT -> Skips to line 28
-			for (int j=0; j<27; j++) {
-				inputStream.nextLine();
-			}
-
-			// Skips to where the DNA list is
-			if (inputStream.hasNext("UID")) {
-				inputStream.nextLine();
-			} else {
-				inputStream.nextLine();
-				inputStream.nextLine();
-				inputStream.nextLine();
+			// Skips to Population Dump Section
+			while (inputStream.hasNextLine() && !inputStream.nextLine().matches(RegexSection)) {
+				// Skips Line
 			}
 
 			// Counts Number of Solution DNA
 			while (inputStream.hasNextLine()) {
-				inputStream.next();
-				inputStream.next();
 				// This checks the 'solutions' flag | 1 == Is a solution | 0 == Is not a solution
-				if (inputStream.nextInt() == 1) counter++;
-				inputStream.nextLine();
+				if (inputStream.nextLine().matches(RegexSol)) counter++;
 			}
 
 			inputStream.close();
+			System.out.printf (Color.GREEN + "OK\n" + Color.RESET);
 		}
 		System.out.printf ("Found %d solutions\n", counter);
 
@@ -180,7 +184,6 @@ public class Helper {
 
 		// DNA List [Number of Solution]
 		String[] DNA_List = new String[counter];
-
 		counter = 0;
 
 		// Same as the previous part, but loads DNA string into list.
@@ -188,47 +191,36 @@ public class Helper {
 			// Set next file to read
 			File fp = new File(dirpath, filelist1);
 
-			// If Cannot Read File, Break
+			// If Cannot Read File, Continue to next file
+			if (!filelist1.contains(".rpt")) {
+				continue;
+			}
 			if (fp.canRead() == false) {
-				System.out.printf (Color.RED + "\nCannot Read File: %s\n" + Color.RESET, filelist1);
-				return null;
+				continue;
 			}
 
 			Scanner inputStream = new Scanner (fp);
 
-			// HARDCODED FOR CUSTOM CSV FORMAT -> Skips to line 28
-			for (int j=0; j<27; j++) {
-				inputStream.nextLine();
+			// Skips to Population Dump Section
+			while (inputStream.hasNextLine() && !inputStream.nextLine().matches(RegexSection)) {
+				// Skips Line
 			}
 
-			// Skips to where the DNA list is
-			if (inputStream.hasNext("UID")) {
-				inputStream.nextLine();
-			} else {
-				inputStream.nextLine();
-				inputStream.nextLine();
-				inputStream.nextLine();
-			}
-
-			// Shoddy code of the year
+			// Adds DNA strings to list, one-by-one
 			while (inputStream.hasNextLine()) {
-				inputStream.next();
-				inputStream.next();
-
-				if (inputStream.nextInt() == 1) {
-					inputStream.next();
-					inputStream.next();
-					inputStream.next();
-					inputStream.next();
-					inputStream.next();
-
-					DNA_List [counter] = inputStream.next();
-
+				// Sets buffer for next line
+				String currentLine = inputStream.nextLine();
+				// If line contains a solution
+				if (currentLine.matches(RegexSol)) {
+					// Remove everything before DNA string
+					currentLine = currentLine.replaceAll(RegexDNA, "");
+					// Add DNA to list & increment counter
+					DNA_List [counter] = currentLine;
 					counter++;
-				} else {
-					inputStream.nextLine();
 				}
+
 			}
+
 			inputStream.close();
 		}
 		System.out.printf ("Parsed %d solutions\n\n", counter);

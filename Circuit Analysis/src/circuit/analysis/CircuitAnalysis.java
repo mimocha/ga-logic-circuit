@@ -6,6 +6,7 @@
  */
 package circuit.analysis;
 
+import java.io.FileNotFoundException;
 import java.util.Random;
 
 /**
@@ -96,10 +97,10 @@ public class CircuitAnalysis {
 			
 			String menu =	"\t0. Exit Program\n" +
 							"\t1. Circuit Logic Analysis\n" +
-							"\t2. Save Connection Mask\n" +
+							"\t2. Generate Circuit Connection Mask\n" +
 							"\t3. Generate & Print Random DNA\n" +
 							"\t4. Rule Usage Counting Analysis\n" +
-							"\t5. Extract Solutions from CSV Files\n" +
+							"\t5. Print Solutions from RPT Files\n" +
 							"\t6. \n";
 			
 			System.out.printf (menu);
@@ -117,7 +118,7 @@ public class CircuitAnalysis {
 					LogicAnalysis.logicAnalysis ();
 					break;
 					
-				// ===== Checking Rule Usage in batches =====//
+				// ===== Generate Circuit Connection Mask =====//
 				case 2:
 					LogicAnalysis.saveMask ();
 					break;
@@ -127,37 +128,20 @@ public class CircuitAnalysis {
 					printRandDNA ();
 					break;
 					
-				// ===== Get and Print Solutions ===== //
+				// ===== Rule Usage Counting Analysis ===== //
 				case 4:
 					System.out.printf ("Selection 4\n");
+					break;
+					
+				// ===== Extract Solutions from RPT Files ===== //
+				case 5:
+					extractRPT ();
 					break;
 					
 				// ===== Syntax Error ===== //
 				default:
 					System.out.printf (Color.RED + "Unknown Option: %d\n" + Color.RESET, sel);
 			}
-		}
-		
-
-		// ===== Get and Print Solutions ===== //
-		
-		String dir = null;
-		String[] DNA_String = readCSV (dir);
-
-		int[][] DNA = new int [DNA_String.length][LENGTH];
-		int solution_count = DNA_String.length;
-		
-		for (int i=0; i<solution_count; i++) {
-			DNA[i] = convertDNA (DNA_String[i]);
-		}
-		
-		for (int i=0; i<solution_count; i++) {
-			System.out.printf ("'");
-			for (int j=0; j<64; j++) {
-				System.out.printf("%1d", DNA[i][j]);
-			}
-			if (i!=solution_count-1) System.out.printf ("', ...\n");
-			else System.out.printf ("'\n");
 		}
 	}
 	
@@ -197,16 +181,16 @@ public class CircuitAnalysis {
 	private static void printRandDNA () {
 
 		System.out.printf ("\n\tThis function will print N number of DNA, "
-					+ "in MATLAB 'array of strings' format.\n");
+					+ "in MATLAB 'cell array of strings' format.\n");
 		
 		int N = Helper.promptInt ("\nInput number of DNA strings to generate: ");
 		int[][] DNA = randGenDNA (N);
 
 		System.out.printf ("\nList = { ...\n");
-		for (int i=0; i<DNA.length; i++) {
+		for (int[] DNA1 : DNA) {
 			System.out.printf ("'");
-			for (int j=0; j<64; j++) {
-				System.out.printf("%1d", DNA[i][j]);
+			for (int j = 0; j<64; j++) {
+				System.out.printf("%1d", DNA1[j]);
 			}
 			System.out.printf ("', ...\n");
 		}
@@ -235,8 +219,36 @@ public class CircuitAnalysis {
 	// EXTRACT DNA FROM CSV
 	// ---------------------------------------------------------
 	
-	// Function to extract DNA from preset CSV file
-//	private static void extractCSV ()
+	// Function to extract DNA from preset RPT file, prints to console
+	private static void extractRPT () throws FileNotFoundException {
+		
+		String about = "\n\tThis function extracts and prints solution DNAs from .rpt files."
+			  + "\n\tThis function prints DNA into MATLAB 'cell array of strings' format."
+			  + "\n\t'.rpt' files are custom text files. You can read them with a text editor."
+			  + "\n\tThey contain the settings and results of an experiment."
+			  + "\n\tEnter the absolute directory path to the folder to begin.\n";
+		System.out.printf (about);
+		
+		// Read DNA from Directory
+		String[] DNA_List = Helper.readRPT(null);
+		
+		// Empty DNA List Check
+		if (DNA_List == null) {
+			System.out.printf (Color.YELLOW + "No Solution DNA found.\n" + Color.RESET);
+			return;
+		}
+		
+		// Print Solution List to console as array
+		System.out.printf ("\tExtracted Solutions List, MATLAB style:\n");
+		System.out.printf ("Array = {\n");
+		for (int i=0; i<DNA_List.length; i++) {
+			System.out.printf ("'%s' ...\n", DNA_List[i]);
+		}
+		System.out.printf ("};");
+		
+		return;
+	}
+	
 	
 	// Prints Rule Usage
 	private static void printUsage (int[] USAGE, int[] DNA) {

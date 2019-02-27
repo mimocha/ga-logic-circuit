@@ -6,7 +6,8 @@
 package circuit.analysis;
 
 /**
- *
+ * Colored Console Output
+ * 
  * @author mimocha
  */
 public class Color {

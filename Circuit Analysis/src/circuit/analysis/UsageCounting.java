@@ -49,22 +49,6 @@ public class UsageCounting {
 			dispResults (solution_count);
 		}
 
-
-
-		// ===== Randomly Generate CA Rule ===== //
-		
-//		int[][] DNA = randGenDNA (2000);
-//		int solution_count = 2000;
-//
-//		System.out.printf ("Checking %d DNA entries\n", solution_count);
-//		for (int i=0; i<solution_count; i++) {
-//			CellularAutomata.generateGrid (GRID, SEED, DNA[i]);
-//			CellularAutomata.generateGrid (GRID, DNA[i]);
-//		}
-//
-//		saveResults (solution_count, "C:/dump/random.csv");
-	}
-	
 	
 	// Automatically Set Filename
 	private static void setName (String dir, String filename, int number) {
