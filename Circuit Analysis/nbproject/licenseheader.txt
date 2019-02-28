@@ -1,9 +1,0 @@
-<#if licenseFirst??>
-${licenseFirst}
-</#if>
-${licensePrefix}Simple Java program for analyzing synthesized circuit
-${licensePrefix}Repo: https://github.com/mimocha/ga-logic-circuit
-${licensePrefix}Copyright (c) 2019 Chawit Leosrisook
-<#if licenseLast??>
-${licenseLast}
-</#if>
