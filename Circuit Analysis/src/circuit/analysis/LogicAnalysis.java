@@ -73,7 +73,7 @@ public class LogicAnalysis {
 	}
 	
 	
-	// Prints about information
+	// Prints information about this class
 	private static void about () {
 		final String about = "\n\tThis function generates a circuit from a given DNA string."
 			  + "\n\tThe circuits are then simplified with the following rules:"

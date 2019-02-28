@@ -54,12 +54,9 @@ public class CellularAutomata {
 	// Convert neighbor cells into CA Rule LUT index
 	private static int convertNB (int[] neighbor) {
 		int idx = 0;
-		
-		// 
 		for (int n=0; n<NB; n++) {
 			idx += neighbor[n]*(int)(Math.pow(COLOR, n));
 		}
-		
 		return idx;
 	}
 	

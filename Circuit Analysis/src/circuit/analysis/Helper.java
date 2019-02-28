@@ -21,39 +21,26 @@ import java.util.Scanner;
  */
 public class Helper {
 
-	// Get DNA string
+	// Get DNA from user input
 	public static int[] inputDNA () {
-		int[] output = new int[LENGTH];
-		
 		// Get DNA String
 		System.out.printf("\nInput DNA String (Length:%d): ", LENGTH);
 		Scanner in = new Scanner (System.in);
 		String input = in.next();
 		
-		// Input length is not DNA length -> return failed string
-		if (input.length() != LENGTH) {
-			int[] fail = new int[3];
-			return fail;
-		}
-		
 		// Convert from String to INT array
-		char[] buffer = input.toCharArray();
+		int[] output = convertDNA(input.toCharArray());
 		
-		for (int x=0; x<DIMX; x++) {
-			switch (buffer[x]) {
-				case '0':
-					output[x] = 0;
-					break;
-				case '1':
-					output[x] = 1;
-					break;
-				case '2':
-					output[x] = 2;
-					break;
-				case '3':
-					output[x] = 3;
-					break;
-			}
+		return output;
+	}
+	
+	
+	// Convert Char array of DNA to int array
+	public static int[] convertDNA (char[] input) {
+		int[] output = new int [input.length];
+		
+		for (int i=0; i<input.length; i++) {
+			output[i] = Character.getNumericValue(input[i]);
 		}
 		
 		return output;
@@ -62,16 +49,28 @@ public class Helper {
 	
 	// Check DNA string
 	public static boolean checkDNA (int[] DNA) {
+		boolean result = true;
+		
 		// Check DNA Length
-		if (DNA.length != LENGTH) return false;
+		if (DNA.length != LENGTH) {
+			result = false;
+			System.out.printf (Color.YELLOW + 
+				  "DNA Length Mismatch: expected=%d ; actual=%d\n" + 
+				  Color.RESET, LENGTH, DNA.length);
+		}
 		
 		// Check DNA Radix
-		for (int i=0; i<LENGTH; i++) {
-			if (DNA[i] >= COLOR || DNA[i] < 0) return false;
+		for (int i=0; i<DNA.length; i++) {
+			if (DNA[i] >= COLOR || DNA[i] < 0) {
+				result = false;
+				System.out.printf (Color.YELLOW + 
+					  "DNA Radix Warning: idx=%d ; DNA[idx]=%d\n" + 
+					  Color.RESET, i, DNA[i]);
+			}
 		}
 		
 		// Passed validity check, Valid == True
-		return true;
+		return result;
 	}
 	
 	

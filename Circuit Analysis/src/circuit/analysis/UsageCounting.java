@@ -7,212 +7,123 @@ package circuit.analysis;
 
 import static circuit.analysis.CircuitAnalysis.GRID;
 import static circuit.analysis.CircuitAnalysis.LENGTH;
-import java.io.File;
+import static circuit.analysis.CircuitAnalysis.SEED;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Scanner;
 
 /**
- *
+ * DNA Rule Usage Counting Analysis
+ * This class applies DNA strings to generate Cellular Automata grids.
+ * The usage of each DNA loci is counted, printed, and saved to a CSV file for analysis.
  * @author mimocha
  */
 public class UsageCounting {
 	
 	// Wrapper function for this analysis
 	public static void countingAnalysis () throws Exception {
+		about ();
+
+		// Get directory
+		String[] DNA_String = Helper.readRPT (null);
 		
-		// ===== Actual Experimental Data ===== //
+		// DNA Array
+		int[][] DNA = new int [DNA_String.length][LENGTH];
 		
-		for (int j=0; j<18; j++) {
-			String dir = null;
-			String filename = null;
-
-			setName (dir, filename, j);
-			String[] DNA_String = readCSV (dir);
-
-			int[][] DNA = new int [DNA_String.length][LENGTH];
-			int solution_count = DNA_String.length;
-
-			for (int i=0; i<solution_count; i++) {
-				DNA[i] = convertDNA (DNA_String[i]);
+		// Convert DNA & Check Validity
+		for (int i=0; i<DNA_String.length; i++) {
+			// Convert string to int[]
+			int[] buffer = Helper.convertDNA (DNA_String[i].toCharArray());
+			
+			// Skip invalid DNA, add valid DNA to workinglist
+			boolean valid = Helper.checkDNA(buffer);
+			if (!valid) {
+				System.out.printf 
+					(Color.YELLOW + "Skipping Invalid DNA: %s\n" + Color.RESET, DNA_String[i]);
+				continue;
+			} else {
+				DNA[i] = buffer;
 			}
-
-			System.out.printf ("Checking %d DNA entries\n", solution_count);
-			for (int i=0; i<solution_count; i++) {
-				CellularAutomata.generateGrid (GRID, SEED, DNA[i]);
-				CellularAutomata.generateGrid (GRID, DNA[i]);
-			}
-
-//			saveResults (solution_count, filename);
-
-			dispResults (solution_count);
 		}
-
-	
-	// Automatically Set Filename
-	private static void setName (String dir, String filename, int number) {
-		switch (number) {
-			case 0:
-				dir = "C:/dump/0";
-				filename = "C:/dump/0.csv";
-				break;
-			case 1:
-				dir = "C:/dump/1";
-				filename = "C:/dump/1.csv";
-				break;
-			case 2:
-				dir = "C:/dump/2";
-				filename = "C:/dump/2.csv";
-				break;
-			case 3:
-				dir = "C:/dump/3";
-				filename = "C:/dump/3.csv";
-				break;
-			case 4:
-				dir = "C:/dump/4";
-				filename = "C:/dump/4.csv";
-				break;
-			case 5:
-				dir = "C:/dump/5";
-				filename = "C:/dump/5.csv";
-				break;
-			case 6:
-				dir = "C:/dump/6";
-				filename = "C:/dump/6.csv";
-				break;
-			case 7:
-				dir = "C:/dump/7";
-				filename = "C:/dump/7.csv";
-				break;
-			case 8:
-				dir = "C:/dump/8";
-				filename = "C:/dump/8.csv";
-				break;
-			case 9:
-				dir = "C:/dump/9";
-				filename = "C:/dump/9.csv";
-				break;
-			case 10:
-				dir = "C:/dump/a";
-				filename = "C:/dump/a.csv";
-				break;
-			case 11:
-				dir = "C:/dump/b";
-				filename = "C:/dump/b.csv";
-				break;
-			case 12:
-				dir = "C:/dump/c";
-				filename = "C:/dump/c.csv";
-				break;
-			case 13:
-				dir = "C:/dump/d";
-				filename = "C:/dump/d.csv";
-				break;
-			case 14:
-				dir = "C:/dump/e";
-				filename = "C:/dump/e.csv";
-				break;
-			case 15:
-				dir = "C:/dump/f";
-				filename = "C:/dump/f.csv";
-				break;
-			case 16:
-				dir = "C:/dump/nand";
-				filename = "C:/dump/nand.csv";
-				break;
-			case 17:
-				dir = "C:/dump/nor";
-				filename = "C:/dump/nor.csv";
-				break;
-			default:
-				dir = null;
-				filename = null;
+		
+		// Check Rule Usage
+		CellularAutomata.resetUsage();
+		System.out.printf ("Checking %d DNA entries\n", DNA.length);
+		for (int i=0; i<DNA.length; i++) {
+			CellularAutomata.generateGrid (GRID, SEED, DNA[i]);
+			CellularAutomata.generateGrid (GRID, DNA[i]);
 		}
+		int [] usage = CellularAutomata.getUsage();
+
+		// Print Rule Usage
+		printUsage (usage);
+		
+		// Save Rule Usage to CSV
+		String filename = Helper.promptString("\nSave usage csv as: ");
+		saveUsage (usage, DNA.length, filename);
 	}
 	
 	
-	
-	
-	
-	// Convert DNA String to int[]
-	private static int[] convertDNA (String input) {
-		int[] result = new int [LENGTH];
-		
-		char[] buffer = input.toCharArray();
-		
-		for (int i=0; i<buffer.length; i++) {
-			result[i] = Character.getNumericValue(buffer[i]);
-		}
-		
-		return result;
+	// Prints information about this class
+	private static void about () {
+		String about = "\n\tRule Usage Counting Analysis"
+			  + "\n\tThis function counts how many time each DNA loci gets used for CA generation."
+			  + "\n\tThe function prints the results, and saves to CSV file."
+			  + "\n\tAnalyzes entire folder with .rpt files.\n";
+		System.out.printf (about);
 	}
 	
 	
 	// Save Analysis Result
-	private static void saveResults (int solution_count, String inname) throws IOException {
-		int[] result = CellularAutomata.getUsage();
+	private static void saveUsage (int[] usage, int sol_count, String filename) throws IOException {
+		
+		// ========== CALCULATE ========== //
 		
 		int sum = 0;
-		for (int i=0; i<LENGTH; i++) {
-			sum += result[i];
+		for (int i=0; i<usage.length; i++) {
+			sum = sum + usage[i];
 		}
 		
-		float[] percent = new float [LENGTH];
-		float total = 0;
+		float[] percent = new float [usage.length];
 		for (int i=0; i<LENGTH; i++) {
-			percent[i] = (float) result[i] / sum * 100;
-			total += percent[i];
+			percent[i] = (float) usage[i] / sum * 100;
 		}
 		
 		
 		// ========== SAVE ========== //
-		
-		String filename;
-		if (inname == null) {
-			filename = "C:/dump/analysis.csv";
-		} else {
-			filename = inname;
-		}
-		System.out.printf ("Saving file as: %s\n", filename);
+
+		System.out.printf ("Saving file as: %s ", filename);
 		
 		FileWriter fileWriter = new FileWriter(filename);
 		PrintWriter printWriter = new PrintWriter(fileWriter);
 		
-		printWriter.printf ("%d,", solution_count);
-		for (int i=0; i<LENGTH; i++) {
-			printWriter.printf ("%d,", result[i]);
+		// Solution Count
+		printWriter.printf ("%d,\n", sol_count);
+		// Usage Data - Raw & Percentage
+		for (int i=0; i<usage.length; i++) {
+			printWriter.printf ("%d,%f,\n", usage[i], percent[i]);
 		}
 		
 		printWriter.close();
 		fileWriter.close();
+		
+		System.out.printf (Color.GREEN + "DONE.\n" + Color.RESET);
 	}
 	
 	
-	// Display Analysis Result
-	private static void dispResults (int solution_count) {
-		int[] result = CellularAutomata.getUsage();
+	// Prints Rule Usage
+	private static void printUsage (int[] usage) {
+		System.out.printf ("\n\tRule Usage:\n"
+							+ "INDEX |  USAGE  | PERCENT\n");
 		
 		int sum = 0;
-		for (int i=0; i<LENGTH; i++) {
-			sum += result[i];
+		for (int i=0; i<usage.length; i++) {
+			sum = sum + usage[i];
 		}
 		
-		float[] percent = new float [LENGTH];
-		float total = 0;
 		for (int i=0; i<LENGTH; i++) {
-			percent[i] = (float) result[i] / sum * 100;
-			total += percent[i];
+			System.out.printf ("%5d | %7d | %7.4f %%\n", i, usage[i], (float)usage[i]/sum*100);
 		}
-		
-		
-		System.out.printf ("INDEX | USAGE | PERCENT\n");
-		for (int i=0; i<LENGTH; i++) {
-			System.out.printf ("%5d |%7d| %5.2f%%\n", i, result[i], percent[i]);
-		}
-		System.out.printf ("TOTAL |%7d| %6.2f%%\n", sum, total);
 	}
-	
-	
 	
 }

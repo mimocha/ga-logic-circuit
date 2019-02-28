@@ -19,7 +19,9 @@ import java.util.Random;
  *   2.2 Inherit constants
  *   2.3 Checks for short circuits (GND + NANDs == TRUE)
  *   2.4 Checks NAND Logic
- *  3. 
+ *  3. Generates Random CA Rules for comparison
+ *  4. Counts Rule Usage during Cellular Automata Generation
+ *  5. Generates NETPBM Masks of connected cell
  * 
  * > Note [1]: GRID vs LCA
  * 
@@ -100,8 +102,7 @@ public class CircuitAnalysis {
 							"\t2. Generate Circuit Connection Mask\n" +
 							"\t3. Generate & Print Random DNA\n" +
 							"\t4. Rule Usage Counting Analysis\n" +
-							"\t5. Print Solutions from RPT Files\n" +
-							"\t6. \n";
+							"\t5. Print Solutions from RPT Files\n";
 			
 			System.out.printf (menu);
 			
@@ -130,7 +131,7 @@ public class CircuitAnalysis {
 					
 				// ===== Rule Usage Counting Analysis ===== //
 				case 4:
-					System.out.printf ("Selection 4\n");
+					UsageCounting.countingAnalysis ();
 					break;
 					
 				// ===== Extract Solutions from RPT Files ===== //
@@ -248,19 +249,4 @@ public class CircuitAnalysis {
 		
 		return;
 	}
-	
-	
-	// Prints Rule Usage
-	private static void printUsage (int[] USAGE, int[] DNA) {
-		System.out.printf ("\n\nRule Usage:\n");
-		System.out.printf ("INDEX | RULE | USAGE\n");
-		
-		for (int i=0; i<LENGTH; i++) {
-			System.out.printf ("%5d | %4d | %5d\n", i, DNA[i], USAGE[i]);
-		}
-		
-	}
-	
-	
-    
 }
